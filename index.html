@@ -1,1886 +1,1366 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Roar Ball 🏀</title>
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Roar Ball 3D</title>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #0d0d1a;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
-    #game-container canvas { display: block; }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{background:#0d0d1a;font-family:Arial,sans-serif;overflow:hidden;width:100vw;height:100vh;}
+    canvas{display:block;}
+    #ui{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;}
+    /* ---- MENUS ---- */
+    .screen{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0d1a;pointer-events:all;z-index:20;}
+    .screen.hidden{display:none;}
+    .title{font-size:80px;font-family:'Arial Black',sans-serif;color:#FF6B35;text-shadow:0 0 40px #FF2200,0 0 10px #FF6B35;letter-spacing:4px;margin-bottom:8px;}
+    .subtitle{font-size:14px;color:#FFD700;background:#00000099;padding:6px 16px;border-radius:4px;margin-bottom:32px;}
+    .btn{font-size:24px;font-family:'Arial Black',sans-serif;color:#fff;border:none;border-radius:8px;padding:16px 48px;cursor:pointer;margin:8px;transition:transform 0.1s;}
+    .btn:hover{transform:scale(1.06);}
+    .btn-red{background:#CC3300;}
+    .btn-blue{background:#1D6FA4;}
+    .btn-green{background:#1A7A4A;}
+    .btn-orange{background:#FF6B35;}
+    /* Team select */
+    #teamSelect .cards{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:1100px;}
+    .card{background:#1a1a2e;border:2px solid #333;border-radius:10px;padding:16px;cursor:pointer;width:190px;text-align:center;transition:transform 0.15s,border-color 0.15s;}
+    .card:hover{transform:scale(1.06);}
+    .card.selected{border-color:#FFD700;}
+    .card .team-name{font-size:13px;font-family:'Arial Black',sans-serif;color:#fff;margin-bottom:4px;}
+    .card .team-loc{font-size:11px;color:#aaa;font-style:italic;margin-bottom:8px;}
+    .card .team-emojis{font-size:20px;margin-bottom:6px;}
+    .player-card{background:#1a1a2e;border:2px solid #333;border-radius:10px;padding:14px;cursor:pointer;width:160px;text-align:center;transition:transform 0.15s;}
+    .player-card:hover{transform:scale(1.06);}
+    .player-card.goat{border-color:#FFD700;}
+    .player-card .p-emoji{font-size:36px;margin-bottom:6px;}
+    .player-card .p-name{font-size:13px;font-family:'Arial Black',sans-serif;color:#fff;margin-bottom:2px;}
+    .player-card .p-animal{font-size:11px;color:#FFD700;font-style:italic;margin-bottom:6px;}
+    .stat-bar-wrap{text-align:left;font-size:10px;color:#aaa;}
+    .stat-row{display:flex;align-items:center;gap:4px;margin-bottom:2px;}
+    .stat-fill{height:6px;background:#00ff88;border-radius:3px;}
+    /* HUD */
+    #hud{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+    #scoreboard{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:#080808ee;border:2px solid #FF6B35;border-radius:10px;padding:8px 28px;display:flex;align-items:center;gap:18px;min-width:420px;justify-content:center;}
+    #scoreboard .team-name-sb{font-size:13px;font-family:'Arial Black';font-weight:900;}
+    #scoreboard .score{font-size:38px;font-family:'Arial Black';color:#fff;}
+    #scoreboard .divider{font-size:22px;color:#555;}
+    #scoreboard .qtr-info{display:flex;flex-direction:column;align-items:center;gap:0px;}
+    #scoreboard .qtr{font-size:11px;font-family:'Arial Black';color:#FFD700;}
+    #scoreboard .clock{font-size:20px;font-family:'Courier New';color:#eee;}
+    #scoreboard .shotclock{font-size:16px;font-family:'Arial Black';color:#FF4500;}
+    #possession{position:absolute;top:90px;left:50%;transform:translateX(-50%);font-size:13px;font-family:'Arial Black';color:#FFD700;background:#00000099;padding:3px 12px;border-radius:4px;}
+    #cam-label{position:absolute;top:10px;left:10px;font-size:13px;color:#fff;background:#00000088;padding:4px 8px;border-radius:4px;}
+    #controls-hint{position:absolute;bottom:6px;right:6px;font-size:10px;color:#555;background:#00000033;padding:3px 6px;border-radius:3px;text-align:right;}
+    #meter-wrap{position:absolute;display:none;flex-direction:column;align-items:center;pointer-events:none;}
+    #meter-label{font-size:9px;font-family:'Arial Black';color:#FFD700;margin-bottom:2px;}
+    #meter-outer{width:14px;height:84px;background:#111;border:1.5px solid #555;border-radius:4px;position:relative;overflow:hidden;}
+    #meter-zone{position:absolute;left:1px;right:1px;background:rgba(0,221,68,0.45);}
+    #meter-fill{position:absolute;bottom:0;left:1px;right:1px;background:#ff2200;border-radius:0 0 3px 3px;transition:none;}
+    #toast-area{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
+    .toast{position:absolute;font-size:26px;font-family:'Arial Black';text-shadow:0 2px 6px #000;transform:translateX(-50%);animation:toastUp 1.5s ease forwards;}
+    @keyframes toastUp{0%{opacity:1;top:0}100%{opacity:0;top:-70px}}
+    /* Overlays */
+    #qtr-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:#000000bb;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:50;pointer-events:none;}
+    #qtr-overlay .qo-title{font-size:70px;font-family:'Arial Black';color:#FFD700;text-shadow:0 0 20px #FFD700;}
+    #qtr-overlay .qo-score{font-size:28px;font-family:'Arial Black';color:#fff;margin-top:12px;}
+    /* How to play modal */
+    #howto-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#000000dd;display:none;align-items:center;justify-content:center;z-index:100;pointer-events:all;}
+    #howto-modal .modal-box{background:#0d0d1a;border:2px solid #FF6B35;border-radius:12px;padding:36px 44px;max-width:680px;color:#fff;font-family:'Courier New',monospace;font-size:14px;line-height:1.8;white-space:pre-wrap;}
+    #howto-modal .close-btn{margin-top:20px;font-size:22px;font-family:'Arial Black';color:#FF6B35;background:none;border:2px solid #FF6B35;border-radius:8px;padding:8px 28px;cursor:pointer;}
+    .select-header{font-size:28px;font-family:'Arial Black';color:#FFD700;text-shadow:0 0 10px #FFD700;margin-bottom:6px;}
+    .select-sub{font-size:15px;color:#aaa;margin-bottom:22px;}
+    .back-link{font-size:18px;color:#aaa;cursor:pointer;margin-top:16px;font-family:'Arial Black';}
+    .back-link:hover{color:#fff;}
+    #gameover-screen .go-title{font-size:56px;font-family:'Arial Black';color:#FFD700;text-shadow:0 0 20px #FFD700;margin-bottom:8px;}
+    #gameover-screen .go-winner{font-size:48px;font-family:'Arial Black';margin-bottom:8px;}
+    #gameover-screen .go-score{font-size:36px;font-family:'Arial Black';color:#fff;margin-bottom:8px;}
+    #gameover-screen .go-flavor{font-size:18px;color:#FFD700;margin-bottom:28px;}
   </style>
 </head>
 <body>
-<div id="game-container"></div>
+
+<!-- ===== MAIN MENU ===== -->
+<div id="menu-screen" class="screen">
+  <div class="title">ROARBALL</div>
+  <div class="subtitle">🐐 AS SEEN IN THE G.O.A.T. 🐐 &nbsp;|&nbsp; FULL-CONTACT ANIMAL BASKETBALL &nbsp;|&nbsp; 5 TEAMS &nbsp;|&nbsp; 30 PLAYERS</div>
+  <button class="btn btn-red" onclick="startMode('cpu')">🤖 VS CPU</button>
+  <button class="btn btn-blue" onclick="startMode('2player')">👥 2 PLAYERS</button>
+  <button class="btn btn-green" onclick="showHowTo()">❓ HOW TO PLAY</button>
+</div>
+
+<!-- ===== TEAM SELECT ===== -->
+<div id="teamSelect" class="screen hidden">
+  <div id="ts-header" class="select-header"></div>
+  <div id="ts-sub" class="select-sub"></div>
+  <div id="ts-cards" class="cards"></div>
+  <div class="back-link" onclick="tsBack()">← BACK</div>
+</div>
+
+<!-- ===== HOW TO PLAY ===== -->
+<div id="howto-modal">
+  <div class="modal-box">🐐  ROARBALL  ─  AS SEEN IN THE G.O.A.T.  🏀
+Full-contact animal basketball — no fouls, no mercy.
+
+PLAYER 1                         PLAYER 2 (2-player)
+Move ──────  W A S D            Move ──────  Arrow Keys
+Shoot ─────  SPACE (hold→release)   Shoot ─────  ENTER
+Sprint ────  SHIFT              Sprint ────  CTRL
+Pass ──────  E   Switch def ──  Q   Pass/Switch ──  /
+
+──  SHOOTING  ──
+Hold the shoot button — a power meter fills up.
+Release in the GREEN zone for the best shot!
+Red = too weak / too strong → lower chance to score.
+
+──  FULL CONTACT  ──
+Sprint into a ball carrier to attempt a body-check steal.
+On defense, press Q to switch to the closest teammate.
+Control auto-switches to whoever catches the ball.
+
+──  CAMERA  ──  Press C to cycle views
+Broadcast  |  2K  |  Follow  |  Overhead
+  <button class="close-btn" onclick="document.getElementById('howto-modal').style.display='none'">[ CLOSE ]</button></div>
+</div>
+
+<!-- ===== THREE.JS CANVAS ===== -->
+<div id="three-container" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;"></div>
+
+<!-- ===== HUD (shown during game) ===== -->
+<div id="hud" style="display:none;">
+  <div id="cam-label">📺 Broadcast</div>
+  <div id="scoreboard">
+    <span id="sb-t1" class="team-name-sb" style="color:#A855F7">VTH</span>
+    <span id="sb-s1" class="score">0</span>
+    <div class="qtr-info">
+      <span id="sb-qtr" class="qtr">Q1</span>
+      <span id="sb-clock" class="clock">2:00</span>
+      <span id="sb-sc" class="shotclock">24</span>
+    </div>
+    <span id="sb-s2" class="score">0</span>
+    <span id="sb-t2" class="team-name-sb" style="color:#FF5500">MAG</span>
+  </div>
+  <div id="possession">▶ Team 1 Ball</div>
+  <div id="controls-hint">WASD Move · SPACE Shoot · SHIFT Sprint · E Pass · Q Switch/Pass · C Cam</div>
+  <div id="meter-wrap">
+    <div id="meter-label">SHOOT</div>
+    <div id="meter-outer">
+      <div id="meter-zone"></div>
+      <div id="meter-fill"></div>
+    </div>
+  </div>
+  <div id="toast-area"></div>
+  <div id="qtr-overlay">
+    <div class="qo-title" id="qo-title"></div>
+    <div class="qo-score" id="qo-score"></div>
+  </div>
+</div>
+
+<!-- ===== GAME OVER ===== -->
+<div id="gameover-screen" class="screen hidden">
+  <div class="go-title" id="go-title"></div>
+  <div class="go-winner" id="go-winner"></div>
+  <div class="go-score" id="go-score"></div>
+  <div class="go-flavor" id="go-flavor"></div>
+  <button class="btn btn-orange" id="go-rematch">🔄 REMATCH</button>
+  <button class="btn btn-blue" id="go-menu">🏠 MAIN MENU</button>
+</div>
+
 <script>
-// ============================================================
-//  ROAR BALL  –  Animal Basketball Game
-//  Inspired by The G.O.A.T. animated movie
-// ============================================================
+// ================================================================
+//  ROAR BALL 3D  —  Three.js edition
+// ================================================================
 
-const W = 1280, H = 720;
-
-// Court layout
-const CX = 170, CY = 110, CW = 940, CH = 500;
-
-// ── Team / Player data ──────────────────────────────────────
+// ── Team / Player data ───────────────────────────────────────────
 const TEAMS = [
   {
-    id: 0, name: 'VINELAND THORNS', abbr: 'VTH',
-    location: 'Vineland',
-    color: 0x6B21A8, textColor: '#A855F7', secondary: 0x22C55E,
-    players: [
-      { name: 'Jett Fillmore',    animal: 'Panther',        emoji: '🐈‍⬛', spd: 9, sht: 7, drb: 9, def: 8, str: 8 },
-      { name: 'Lenny Williamson', animal: 'Giraffe',        emoji: '🦒',  spd: 4, sht: 8, drb: 5, def: 7, str: 9 },
-      { name: 'Olivia Burke',     animal: 'Ostrich',        emoji: '🦃',  spd:10, sht: 6, drb: 8, def: 5, str: 5 },
-      { name: 'Modo Olachenko',   animal: 'Komodo Dragon',  emoji: '🦎',  spd: 5, sht: 6, drb: 6, def: 9, str: 9 },
-      { name: 'Archie Everhardt', animal: 'Rhino',          emoji: '🦏',  spd: 5, sht: 7, drb: 5, def: 9, str:10 },
-      { name: 'Will Harris',      animal: 'Goat',           emoji: '🐐',  spd: 7, sht: 9, drb: 8, def: 7, str: 7 },
+    id:0, name:'VINELAND THORNS', abbr:'VTH',
+    location:'Vineland',
+    color:0x6B21A8, textColor:'#A855F7', hex:'#6B21A8',
+    floorColor:0x1A3A0A, lineColor:0xffffff,
+    players:[
+      {name:'Jett Fillmore',    animal:'Panther',       emoji:'🐈\u200D⬛',spd:9,sht:7,drb:9,def:8,str:8},
+      {name:'Lenny Williamson', animal:'Giraffe',        emoji:'🦒', spd:4,sht:8,drb:5,def:7,str:9},
+      {name:'Olivia Burke',     animal:'Ostrich',        emoji:'🦃', spd:10,sht:6,drb:8,def:5,str:5},
+      {name:'Modo Olachenko',   animal:'Komodo Dragon',  emoji:'🦎', spd:5,sht:6,drb:6,def:9,str:9},
+      {name:'Archie Everhardt', animal:'Rhino',          emoji:'🦏', spd:5,sht:7,drb:5,def:9,str:10},
+      {name:'Will Harris',      animal:'Goat',           emoji:'🐐', spd:7,sht:9,drb:8,def:7,str:7},
     ]
   },
   {
-    id: 1, name: 'TEAM MAGMA', abbr: 'MAG',
-    location: 'Inferno Lava Coast',
-    color: 0xCC2200, textColor: '#FF5500', secondary: 0xFF8800,
-    players: [
-      { name: 'Mane Attraction',  animal: 'Andalusian Horse', emoji: '🐎',  spd: 8, sht: 9, drb: 7, def: 6, str: 8 },
-      { name: 'Grizz',            animal: 'Bear',             emoji: '🐻',  spd: 5, sht: 7, drb: 6, def: 9, str:10 },
-      { name: 'Kong',             animal: 'Gorilla',          emoji: '🦍',  spd: 6, sht: 8, drb: 7, def: 8, str:10 },
-      { name: 'Lary',             animal: 'Lizard',           emoji: '🦎',  spd: 9, sht: 6, drb: 8, def: 7, str: 5 },
-      { name: 'Bill',             animal: 'Bull',             emoji: '🐂',  spd: 6, sht: 7, drb: 6, def: 8, str:10 },
-      { name: 'Cinder',           animal: 'Fire Salamander',  emoji: '🔥',  spd: 8, sht: 8, drb: 8, def: 7, str: 6 },
+    id:1, name:'TEAM MAGMA', abbr:'MAG',
+    location:'Inferno Lava Coast',
+    color:0xCC2200, textColor:'#FF5500', hex:'#CC2200',
+    floorColor:0x1A0900, lineColor:0xFF8800,
+    players:[
+      {name:'Mane Attraction', animal:'Andalusian Horse',emoji:'🐎', spd:8,sht:9,drb:7,def:6,str:8},
+      {name:'Grizz',           animal:'Bear',            emoji:'🐻', spd:5,sht:7,drb:6,def:9,str:10},
+      {name:'Kong',            animal:'Gorilla',         emoji:'🦍', spd:6,sht:8,drb:7,def:8,str:10},
+      {name:'Lary',            animal:'Lizard',          emoji:'🦎', spd:9,sht:6,drb:8,def:7,str:5},
+      {name:'Bill',            animal:'Bull',            emoji:'🐂', spd:6,sht:7,drb:6,def:8,str:10},
+      {name:'Cinder',          animal:'Fire Salamander', emoji:'🔥', spd:8,sht:8,drb:8,def:7,str:6},
     ]
   },
   {
-    id: 2, name: 'TEAM SHADOWS', abbr: 'SHA',
-    location: 'Sunken City',
-    color: 0x1E1B4B, textColor: '#818CF8', secondary: 0x06B6D4,
-    players: [
-      { name: 'Kouyate',  animal: 'Alligator', emoji: '🐊',  spd: 5, sht: 7, drb: 6, def: 9, str:10 },
-      { name: 'Rosette',  animal: 'Bull',      emoji: '🐂',  spd: 6, sht: 7, drb: 6, def: 8, str:10 },
-      { name: 'Daskas',   animal: 'Gorilla',   emoji: '🦍',  spd: 6, sht: 8, drb: 7, def: 8, str:10 },
-      { name: 'Chase',    animal: 'Lion',      emoji: '🦁',  spd: 8, sht: 8, drb: 8, def: 8, str: 8 },
-      { name: 'Ripper',   animal: 'Jaguar',    emoji: '🐆',  spd: 9, sht: 7, drb: 8, def: 8, str: 7 },
-      { name: 'Viper',    animal: 'Black Mamba', emoji: '🐍', spd:10, sht: 8, drb: 9, def: 7, str: 4 },
+    id:2, name:'TEAM SHADOWS', abbr:'SHA',
+    location:'Sunken City',
+    color:0x1E1B4B, textColor:'#818CF8', hex:'#1E1B4B',
+    floorColor:0x0B101E, lineColor:0x44AACC,
+    players:[
+      {name:'Kouyate', animal:'Alligator', emoji:'🐊', spd:5,sht:7,drb:6,def:9,str:10},
+      {name:'Rosette', animal:'Bull',      emoji:'🐂', spd:6,sht:7,drb:6,def:8,str:10},
+      {name:'Daskas',  animal:'Gorilla',   emoji:'🦍', spd:6,sht:8,drb:7,def:8,str:10},
+      {name:'Chase',   animal:'Lion',      emoji:'🦁', spd:8,sht:8,drb:8,def:8,str:8},
+      {name:'Ripper',  animal:'Jaguar',    emoji:'🐆', spd:9,sht:7,drb:8,def:8,str:7},
+      {name:'Viper',   animal:'Black Mamba',emoji:'🐍',spd:10,sht:8,drb:9,def:7,str:4},
     ]
   },
   {
-    id: 3, name: 'TEAM SHIVERS', abbr: 'SHV',
-    location: 'Arctic',
-    color: 0x0E4D91, textColor: '#38BDF8', secondary: 0xE0F2FE,
-    players: [
-      { name: 'Propp',    animal: 'Polar Bear',    emoji: '🐻‍❄️', spd: 5, sht: 8, drb: 6, def: 9, str:10 },
-      { name: 'Spots',    animal: 'Snow Leopard',  emoji: '🐆',   spd: 9, sht: 8, drb: 8, def: 7, str: 7 },
-      { name: 'Fang',     animal: 'Sabertooth Cat',emoji: '🦁',   spd: 8, sht: 7, drb: 7, def: 9, str: 9 },
-      { name: 'Moe',      animal: 'Moose',         emoji: '🦌',   spd: 5, sht: 7, drb: 5, def: 8, str: 9 },
-      { name: 'Blizzard', animal: 'Arctic Wolf',   emoji: '🐺',   spd: 9, sht: 7, drb: 8, def: 8, str: 7 },
-      { name: 'Tusk',     animal: 'Walrus',        emoji: '🦭',   spd: 3, sht: 8, drb: 5, def: 9, str:10 },
+    id:3, name:'TEAM SHIVERS', abbr:'SHV',
+    location:'Arctic',
+    color:0x0E4D91, textColor:'#38BDF8', hex:'#0E4D91',
+    floorColor:0xB4D8F2, lineColor:0xffffff,
+    players:[
+      {name:'Propp',    animal:'Polar Bear',     emoji:'🐻\u200D❄️',spd:5,sht:8,drb:6,def:9,str:10},
+      {name:'Spots',    animal:'Snow Leopard',   emoji:'🐆', spd:9,sht:8,drb:8,def:7,str:7},
+      {name:'Fang',     animal:'Sabertooth Cat', emoji:'🦁', spd:8,sht:7,drb:7,def:9,str:9},
+      {name:'Moe',      animal:'Moose',          emoji:'🦌', spd:5,sht:7,drb:5,def:8,str:9},
+      {name:'Blizzard', animal:'Arctic Wolf',    emoji:'🐺', spd:9,sht:7,drb:8,def:8,str:7},
+      {name:'Tusk',     animal:'Walrus',         emoji:'🦭', spd:3,sht:8,drb:5,def:9,str:10},
     ]
   },
   {
-    id: 4, name: 'THE SANDSTORMS', abbr: 'SND',
-    location: 'Scorch Valley',
-    color: 0x92400E, textColor: '#F59E0B', secondary: 0xFDE68A,
-    players: [
-      { name: 'Dune',    animal: 'Camel',              emoji: '🐪',  spd: 6, sht: 7, drb: 6, def: 7, str: 8 },
-      { name: 'Sting',   animal: 'Scorpion',           emoji: '🦂',  spd: 7, sht: 8, drb: 7, def: 9, str: 7 },
-      { name: 'Sandy',   animal: 'Fennec Fox',         emoji: '🦊',  spd:10, sht: 8, drb: 9, def: 6, str: 4 },
-      { name: 'Rattles', animal: 'Sidewinder Snake',   emoji: '🐍',  spd: 8, sht: 7, drb: 8, def: 7, str: 5 },
-      { name: 'Cleo',    animal: 'Sand Cat',           emoji: '🐱',  spd: 9, sht: 8, drb: 8, def: 7, str: 6 },
-      { name: 'Sly',     animal: 'Meerkat',            emoji: '🐿️', spd: 8, sht: 9, drb: 8, def: 7, str: 5 },
+    id:4, name:'THE SANDSTORMS', abbr:'SND',
+    location:'Scorch Valley',
+    color:0x92400E, textColor:'#F59E0B', hex:'#92400E',
+    floorColor:0xC09040, lineColor:0xF5DEB3,
+    players:[
+      {name:'Dune',    animal:'Camel',            emoji:'🐪', spd:6,sht:7,drb:6,def:7,str:8},
+      {name:'Sting',   animal:'Scorpion',         emoji:'🦂', spd:7,sht:8,drb:7,def:9,str:7},
+      {name:'Sandy',   animal:'Fennec Fox',       emoji:'🦊', spd:10,sht:8,drb:9,def:6,str:4},
+      {name:'Rattles', animal:'Sidewinder Snake', emoji:'🐍', spd:8,sht:7,drb:8,def:7,str:5},
+      {name:'Cleo',    animal:'Sand Cat',         emoji:'🐱', spd:9,sht:8,drb:8,def:7,str:6},
+      {name:'Sly',     animal:'Meerkat',          emoji:'🐿️',spd:8,sht:9,drb:8,def:7,str:5},
     ]
   }
 ];
 
-// Shared game state
 const GS = {
-  mode: 'cpu',           // 'cpu' | '2player'
-  team1: 0, team2: 1,
-  p1idx: 0, p2idx: 0,
-  score: [0, 0],
-  quarter: 1,
-  camMode: 0,            // index into CAM_MODES
+  mode:'cpu', team1:0, team2:1, p1idx:0, p2idx:0,
+  score:[0,0], quarter:1, camMode:0
 };
-
-const CAM_MODES = ['2K', 'Broadcast', 'Overhead', 'Follow'];
+const CAM_MODES = ['Broadcast','2K','Follow','Overhead'];
 const QTR_SECS  = 120;
+const BALL_R    = 0.28;
+const RIM_Y     = 3.05;
+const RIM_R     = 0.45;
+const THREE_PT  = 7.2;
 
-// ╔══════════════════════════════════════════════════════════╗
-// ║  MENU SCENE                                              ║
-// ╚══════════════════════════════════════════════════════════╝
-class MenuScene extends Phaser.Scene {
-  constructor() { super('Menu'); }
+// ── Team Select state ────────────────────────────────────────────
+let tsStep = 'team1';
+let tsSel  = {team1:0, team2:1, p1:0, p2:0};
 
-  create() {
-    const g = this.add.graphics();
-
-    // ── Deep arena background ───────────────────────────────
-    g.fillGradientStyle(0x120008, 0x120008, 0x1a0520, 0x1a0520, 1);
-    g.fillRect(0, 0, W, H);
-
-    // ── Hardwood court floor (bottom half) ──────────────────
-    g.fillStyle(0x8B4A10, 1);
-    g.fillRect(0, H * 0.62, W, H * 0.38);
-    // Plank lines
-    g.lineStyle(1, 0x7A3D0A, 0.7);
-    for (let i = 0; i < 20; i++) { g.moveTo(0, H * 0.62 + i * 14); g.lineTo(W, H * 0.62 + i * 14); }
-    g.strokePath();
-    // Court markings on floor
-    g.lineStyle(3, 0xffffff, 0.25);
-    g.strokeCircle(W / 2, H * 0.62, 70);
-    g.moveTo(W / 2, H * 0.62 - 70); g.lineTo(W / 2, H); g.strokePath();
-    g.lineStyle(3, 0xffffff, 0.18);
-    g.strokeRect(60, H * 0.62 - 40, 180, 80);
-    g.strokeRect(W - 240, H * 0.62 - 40, 180, 80);
-
-    // ── Arena spotlight beams from above ────────────────────
-    const spotColors = [0xFF6B35, 0xFFD700, 0xFF3300, 0xFFAA00];
-    [[W * 0.2, 0], [W * 0.5, 0], [W * 0.8, 0]].forEach(([sx, sy], si) => {
-      for (let layer = 0; layer < 3; layer++) {
-        g.fillStyle(spotColors[si % spotColors.length], 0.025 - layer * 0.007);
-        g.fillTriangle(sx, sy, sx - 120 - layer * 40, H, sx + 120 + layer * 40, H);
-      }
-    });
-
-    // ── Arena glow behind title ──────────────────────────────
-    g.fillStyle(0xFF4400, 0.12); g.fillCircle(W / 2, 120, 340);
-    g.fillStyle(0xFF6600, 0.08); g.fillCircle(W / 2, 120, 220);
-
-    // ── Crowd silhouettes (two rows, top and bottom) ─────────
-    const crowdEmojis = ['🦁','🐻','🐆','🦊','🦍','🐺','🐊','🦅','🐂','🦏','🦒','🐎'];
-    // Top row
-    for (let i = 0; i < 26; i++) {
-      const em = crowdEmojis[i % crowdEmojis.length];
-      const cx = 16 + i * (W / 26);
-      const dy = Math.sin(i * 1.3) * 8;
-      const crowd = this.add.text(cx, 640 + dy, em, { fontSize: '26px', alpha: 0.55 }).setOrigin(0.5);
-      this.tweens.add({ targets: crowd, y: crowd.y - 10, duration: 900 + i * 80, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    }
-
-    // ── Floating embers / sparks ─────────────────────────────
-    for (let i = 0; i < 28; i++) {
-      const px = Phaser.Math.Between(0, W);
-      const py = Phaser.Math.Between(H * 0.3, H);
-      const ember = this.add.circle(px, py, Phaser.Math.Between(2, 4), 0xFF6600, 0.5 + Math.random() * 0.4);
-      this.tweens.add({
-        targets: ember, y: -20, x: px + Phaser.Math.Between(-60, 60), alpha: 0,
-        duration: Phaser.Math.Between(2200, 4800), delay: Phaser.Math.Between(0, 3000),
-        repeat: -1,
-        onRepeat: () => { ember.setPosition(Phaser.Math.Between(0, W), H + 10); ember.setAlpha(0.5 + Math.random() * 0.4); }
-      });
-    }
-
-    // ── ROARBALL title ───────────────────────────────────────
-    this.add.text(W / 2, 108, 'ROARBALL', {
-      fontSize: '112px', fontFamily: 'Arial Black',
-      color: '#FF6B35', stroke: '#FFD700', strokeThickness: 10,
-      shadow: { offsetX: 0, offsetY: 0, color: '#FF2200', blur: 40, fill: true }
-    }).setOrigin(0.5).setDepth(5);
-
-    // Subtitle glow line
-    const glowLine = this.add.graphics().setDepth(4);
-    glowLine.lineStyle(2, 0xFFD700, 0.6);
-    glowLine.moveTo(W / 2 - 260, 172); glowLine.lineTo(W / 2 + 260, 172); glowLine.strokePath();
-
-    // Movie tie-in badge
-    this.add.text(W / 2, 193, '🐐  AS SEEN IN  THE G.O.A.T.  🐐', {
-      fontSize: '17px', fontFamily: 'Arial Black', color: '#FFD700',
-      backgroundColor: '#00000099', padding: { x: 14, y: 6 }
-    }).setOrigin(0.5).setDepth(5);
-
-    // Sport tagline
-    this.add.text(W / 2, 244, 'FULL-CONTACT ANIMAL BASKETBALL  •  5 TEAMS  •  30 PLAYERS', {
-      fontSize: '14px', color: '#cccccc', fontFamily: 'Arial'
-    }).setOrigin(0.5).setDepth(5);
-
-    // ── Buttons ──────────────────────────────────────────────
-    this._btn(W / 2, 340, '🤖  VS CPU',       0xCC3300, () => { GS.mode = 'cpu';      this.scene.start('TeamSelect'); });
-    this._btn(W / 2, 428, '👥  2 PLAYERS',    0x1D6FA4, () => { GS.mode = '2player';  this.scene.start('TeamSelect'); });
-    this._btn(W / 2, 516, '❓  HOW TO PLAY',  0x1A7A4A, () => this._howTo(), 22);
-
-    // Animated ball that bounces across the court floor
-    const ball = this.add.text(80, 652, '🏀', { fontSize: '38px' }).setDepth(6);
-    this.tweens.add({ targets: ball, x: W - 80, duration: 2800, yoyo: true, repeat: -1 });
-    this.tweens.add({ targets: ball, y: 628, duration: 320, yoyo: true, repeat: -1, ease: 'Bounce.easeOut' });
-
-    // Will Harris the goat — featured centre bottom
-    const goat = this.add.text(W / 2, 615, '🐐', { fontSize: '48px' }).setOrigin(0.5).setDepth(6);
-    this.tweens.add({ targets: goat, scaleX: 1.18, scaleY: 1.18, duration: 950, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    const goatLabel = this.add.text(W / 2, 668, 'WILL HARRIS  •  THE G.O.A.T.', {
-      fontSize: '11px', fontFamily: 'Arial Black', color: '#FFD700aa'
-    }).setOrigin(0.5).setDepth(6);
-  }
-
-  _btn(x, y, label, bg, cb, size = 30) {
-    const t = this.add.text(x, y, label, {
-      fontSize: `${size}px`, fontFamily: 'Arial Black', color: '#fff',
-      backgroundColor: '#' + bg.toString(16).padStart(6, '0'),
-      padding: { x: 40, y: 18 }
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-    t.on('pointerover', () => t.setScale(1.06));
-    t.on('pointerout',  () => t.setScale(1));
-    t.on('pointerdown', cb);
-    return t;
-  }
-
-  _howTo() {
-    const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(20);
-    const txt = [
-      '🐐  ROARBALL  ─  AS SEEN IN THE G.O.A.T.  🏀',
-      'Full-contact animal basketball — no fouls, no mercy.',
-      '',
-      'PLAYER 1                         PLAYER 2 (2-player)',
-      'Move ──────  W A S D            Move ──────  Arrow Keys',
-      'Shoot ─────  SPACE (hold→release)   Shoot ─────  ENTER',
-      'Sprint ────  SHIFT              Sprint ────  CTRL',
-      'Pass ──────  E   Switch def ──  Q   Pass/Switch ──  / ',
-      '',
-      '──  SHOOTING  ──',
-      'Hold the shoot button — a power meter fills up.',
-      'Release in the GREEN zone for the best shot!',
-      'Red = too weak / too strong → lower chance to score.',
-      '',
-      '──  FULL CONTACT  ──',
-      'Sprint into a ball carrier to attempt a body-check steal.',
-      'On defense, press Q to switch to the closest teammate.',
-      'Control auto-switches to whoever catches the ball.',
-      '',
-      '──  CAMERA  ──  Press C to cycle views',
-      '2K  |  Broadcast  |  Overhead  |  Follow-Cam',
-    ].join('\n');
-
-    const t = this.add.text(W / 2, H / 2 - 10, txt, {
-      fontSize: '18px', fontFamily: 'Courier New', color: '#fff',
-      lineSpacing: 6, align: 'left'
-    }).setOrigin(0.5).setDepth(21);
-
-    const close = this.add.text(W / 2, H - 60, '[ CLOSE ]', {
-      fontSize: '28px', fontFamily: 'Arial Black', color: '#FF6B35'
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(21);
-    close.on('pointerdown', () => { ov.destroy(); t.destroy(); close.destroy(); });
-  }
+function startMode(mode){
+  GS.mode = mode;
+  tsStep  = 'team1';
+  tsSel   = {team1:0, team2:1, p1:0, p2:0};
+  show('teamSelect');
+  renderTeamSelect();
 }
 
-// ╔══════════════════════════════════════════════════════════╗
-// ║  TEAM SELECT SCENE                                       ║
-// ╚══════════════════════════════════════════════════════════╝
-class TeamSelectScene extends Phaser.Scene {
-  constructor() { super('TeamSelect'); }
+function show(id){
+  ['menu-screen','teamSelect','gameover-screen'].forEach(s=>{
+    document.getElementById(s).classList.add('hidden');
+  });
+  const el = document.getElementById(id);
+  if(el) el.classList.remove('hidden');
+}
 
-  create() {
-    this.step = 'team1';
-    this.sel  = { team1: 0, team2: 1, p1: 0, p2: 0 };
-    this.cards = [];
+function showHowTo(){
+  document.getElementById('howto-modal').style.display='flex';
+}
 
-    const g = this.add.graphics();
-    g.fillStyle(0x0d0d1a); g.fillRect(0, 0, W, H);
+// ── Team / Player Select rendering ──────────────────────────────
+function renderTeamSelect(){
+  const headers = {
+    team1:  ['PLAYER 1 — PICK YOUR SQUAD',        'Choose wisely. Full-contact animal basketball awaits.'],
+    player1:['PLAYER 1 — CHOOSE YOUR PLAYER',      '🐐 Will Harris is the G.O.A.T. — just saying'],
+    team2:  ['PLAYER 2 — PICK THE OPPOSITION',     'Who dares challenge you?'],
+    player2:['PLAYER 2 — CHOOSE YOUR PLAYER',      'Click a player to step onto the court'],
+  };
+  document.getElementById('ts-header').textContent = headers[tsStep][0];
+  document.getElementById('ts-sub').textContent    = headers[tsStep][1];
+  const container = document.getElementById('ts-cards');
+  container.innerHTML='';
 
-    // Subtle radial vignette
-    for (let r = 600; r > 0; r -= 80) {
-      g.fillStyle(0x000000, 0.04); g.fillCircle(W / 2, H / 2, r);
-    }
-
-    // Floating ambient particles
-    for (let i = 0; i < 24; i++) {
-      const px = Phaser.Math.Between(0, W);
-      const py = Phaser.Math.Between(0, H);
-      const r  = Phaser.Math.Between(2, 5);
-      const dot = this.add.circle(px, py, r, 0x9933cc, 0.25 + Math.random() * 0.3);
-      this.tweens.add({
-        targets: dot, y: py - Phaser.Math.Between(90, 260), alpha: 0,
-        duration: Phaser.Math.Between(3200, 6400),
-        delay:    Phaser.Math.Between(0, 3200),
-        repeat: -1,
-        onRepeat: () => { dot.setPosition(Phaser.Math.Between(0, W), H + 10); dot.setAlpha(0.25 + Math.random() * 0.3); }
-      });
-    }
-
-    this.header = this.add.text(W / 2, 38, '', {
-      fontSize: '32px', fontFamily: 'Arial Black', color: '#FFD700',
-      stroke: '#000', strokeThickness: 4
-    }).setOrigin(0.5);
-
-    this.subHeader = this.add.text(W / 2, 78, '', {
-      fontSize: '18px', color: '#aaa'
-    }).setOrigin(0.5);
-
-    this._refresh();
-  }
-
-  // Destroy all card objects then redraw
-  _refresh() {
-    this.cards.forEach(o => { if (o && o.destroy) o.destroy(); });
-    this.cards = [];
-
-    const steps = {
-      team1:   ['PLAYER 1 — PICK YOUR SQUAD',          'Full-contact animal basketball — choose wisely'],
-      player1: ['PLAYER 1 — CHOOSE YOUR PLAYER',       '🐐 Will Harris is the G.O.A.T. — just saying'],
-      team2:   ['PLAYER 2 — PICK THE OPPOSITION',      'Who dares challenge you on the Roarball court?'],
-      player2: ['PLAYER 2 — CHOOSE YOUR PLAYER',       'Click a player to step onto the court'],
-    };
-    this.header.setText(steps[this.step][0]);
-    this.subHeader.setText(steps[this.step][1]);
-
-    if (this.step === 'team1' || this.step === 'team2') {
-      this._drawTeams();
-    } else {
-      const teamIdx = this.step === 'player1' ? this.sel.team1 : this.sel.team2;
-      this._drawPlayers(TEAMS[teamIdx]);
-    }
-  }
-
-  // Helper: add scene objects to the tracked list
-  _track(...objs) { objs.forEach(o => this.cards.push(o)); }
-
-  _drawTeams() {
-    const cardW = 218, cardH = 200, gap = 13;
-    const totalW = TEAMS.length * (cardW + gap) - gap;
-    const startX = (W - totalW) / 2;
-
-    TEAMS.forEach((team, i) => {
-      const cx = startX + i * (cardW + gap) + cardW / 2;
-      const cy = 200 + cardH / 2;
-
-      const sh = this.add.rectangle(cx + 5, cy + 5, cardW, cardH, 0x000000, 0.55);
-
-      const selected = (this.step === 'team1' && this.sel.team1 === i) ||
-                       (this.step === 'team2' && this.sel.team2 === i);
-      const bg = this.add.rectangle(cx, cy, cardW, cardH, team.color, selected ? 1 : 0.72)
-        .setStrokeStyle(selected ? 3 : 2, selected ? 0xFFD700 : 0xffffff, selected ? 1 : 0.4);
-
-      // Glass effect: top shimmer stripe + bottom dark vignette
-      const shimmer = this.add.rectangle(cx, cy - cardH / 2 + 10, cardW - 4, 20, 0xffffff, 0.14);
-      const darkBot = this.add.rectangle(cx, cy + cardH / 4,       cardW - 4, cardH / 2, 0x000000, 0.24);
-
-      // Selected: pulsing gold outer ring
-      if (selected) {
-        const glow = this.add.rectangle(cx, cy, cardW + 8, cardH + 8, 0, 0)
-          .setStrokeStyle(3, 0xFFD700, 1);
-        this.tweens.add({ targets: glow, alpha: 0.25, duration: 550, yoyo: true, repeat: -1 });
-        this._track(glow);
-      }
-
-      const name    = this.add.text(cx, cy - cardH / 2 + 22, team.name, {
-        fontSize: '15px', fontFamily: 'Arial Black', color: '#fff',
-        wordWrap: { width: cardW - 10 }, align: 'center'
-      }).setOrigin(0.5, 0);
-      const locTxt  = this.add.text(cx, cy - cardH / 2 + 54, team.location, {
-        fontSize: '11px', color: '#ddd', fontStyle: 'italic'
-      }).setOrigin(0.5, 0);
-      const emojis  = team.players.map(p => p.emoji).join('');
-      const emoText = this.add.text(cx, cy - cardH / 2 + 98, emojis, { fontSize: '18px' }).setOrigin(0.5, 0);
-      const abbr    = this.add.text(cx, cy - cardH / 2 + 154, `${team.players.length} players`, {
-        fontSize: '12px', color: '#ddd'
-      }).setOrigin(0.5, 0);
-
-      // Zone added LAST so it is the topmost object and always receives input
-      const zone = this.add.zone(cx, cy, cardW, cardH)
-        .setInteractive({ useHandCursor: true });
-
-      this._track(sh, bg, shimmer, darkBot, name, locTxt, emoText, abbr, zone);
-
-      zone.on('pointerover', () => { bg.setScale(1.06); shimmer.setScale(1.06); darkBot.setScale(1.06); });
-      zone.on('pointerout',  () => { bg.setScale(1.0);  shimmer.setScale(1.0);  darkBot.setScale(1.0);  });
-      zone.on('pointerdown', () => {
-        if (this.step === 'team1') { this.sel.team1 = i; this.step = 'player1'; }
-        else                       { this.sel.team2 = i; this.step = 'player2'; }
-        this._refresh();
-      });
+  if(tsStep==='team1'||tsStep==='team2'){
+    TEAMS.forEach((team,i)=>{
+      const card = document.createElement('div');
+      card.className='card';
+      if((tsStep==='team1'&&tsSel.team1===i)||(tsStep==='team2'&&tsSel.team2===i))card.classList.add('selected');
+      card.style.borderColor = team.hex;
+      card.innerHTML=`<div class="team-name" style="color:${team.textColor};font-family:'Arial Black'">${team.name}</div>
+        <div class="team-loc">${team.location}</div>
+        <div class="team-emojis">${team.players.map(p=>p.emoji).join('')}</div>
+        <div style="font-size:11px;color:#ddd">${team.players.length} players</div>`;
+      card.onclick=()=>{
+        if(tsStep==='team1'){tsSel.team1=i;tsStep='player1';}
+        else               {tsSel.team2=i;tsStep='player2';}
+        renderTeamSelect();
+      };
+      container.appendChild(card);
     });
-
-    this._backBtn();
-  }
-
-  _drawPlayers(team) {
-    const cardW = 184, cardH = 250, gap = 13;
-    const totalW = team.players.length * (cardW + gap) - gap;
-    const startX = (W - totalW) / 2;
-
-    team.players.forEach((player, i) => {
-      const cx = startX + i * (cardW + gap) + cardW / 2;
-      const cy = 148 + cardH / 2;
-
-      const shadow = this.add.rectangle(cx + 5, cy + 5, cardW, cardH, 0x000000, 0.55);
-      const bg = this.add.rectangle(cx, cy, cardW, cardH, team.color, 0.88)
-        .setStrokeStyle(2, 0xffffff, 0.45);
-      // Glass layers
-      const shimmer = this.add.rectangle(cx, cy - cardH / 2 + 10, cardW - 4, 20, 0xffffff, 0.13);
-      const darkBot = this.add.rectangle(cx, cy + cardH / 4,       cardW - 4, cardH / 2, 0x000000, 0.22);
-
-      const emoText = this.add.text(cx, cy - cardH / 2 + 44, player.emoji, { fontSize: '44px' }).setOrigin(0.5, 0);
-      const nameT   = this.add.text(cx, cy - cardH / 2 + 94, player.name, {
-        fontSize: '15px', fontFamily: 'Arial Black', color: '#fff',
-        wordWrap: { width: cardW - 8 }, align: 'center'
-      }).setOrigin(0.5, 0);
-      const animalT = this.add.text(cx, cy - cardH / 2 + 118, player.animal, {
-        fontSize: '11px', color: '#ffeeaa', fontStyle: 'italic'
-      }).setOrigin(0.5, 0);
-
-      const stats = [
-        { label: 'SPD', val: player.spd },
-        { label: 'SHT', val: player.sht },
-        { label: 'DRB', val: player.drb },
-        { label: 'DEF', val: player.def },
-      ];
-      stats.forEach((s, si) => {
-        const sy = cy - cardH / 2 + 136 + si * 24;
-        const lbl = this.add.text(startX + i * (cardW + gap) + 10, sy, s.label, { fontSize: '11px', color: '#ddd' });
-        const bar = this.add.rectangle(startX + i * (cardW + gap) + 46 + (s.val * 6), sy + 7, s.val * 12, 9, 0x00ff88);
-        this._track(lbl, bar);
-      });
-
-      // Will Harris — the G.O.A.T. — gets a gold glow + badge
-      if (player.animal === 'Goat') {
-        const glow = this.add.rectangle(cx, cy, cardW + 10, cardH + 10, 0, 0)
-          .setStrokeStyle(3, 0xFFD700, 1);
-        this.tweens.add({ targets: glow, alpha: 0.2, duration: 600, yoyo: true, repeat: -1 });
-        const badge = this.add.text(cx, cy - cardH / 2 - 2, '⭐ THE G.O.A.T. ⭐', {
-          fontSize: '11px', fontFamily: 'Arial Black', color: '#FFD700',
-          backgroundColor: '#000000cc', padding: { x: 6, y: 3 }
-        }).setOrigin(0.5, 1);
-        this._track(glow, badge);
-      }
-
-      // Zone added LAST so it is the topmost object and always receives input
-      const zone = this.add.zone(cx, cy, cardW, cardH)
-        .setInteractive({ useHandCursor: true });
-
-      this._track(shadow, bg, shimmer, darkBot, emoText, nameT, animalT, zone);
-
-      zone.on('pointerover', () => { bg.setScale(1.06); shimmer.setScale(1.06); darkBot.setScale(1.06); });
-      zone.on('pointerout',  () => { bg.setScale(1.0);  shimmer.setScale(1.0);  darkBot.setScale(1.0);  });
-      zone.on('pointerdown', () => {
-        if (this.step === 'player1') {
-          this.sel.p1 = i;
-          if (GS.mode === 'cpu') {
-            this.sel.team2 = (this.sel.team1 + 1) % TEAMS.length;
-            this.sel.p2 = Phaser.Math.Between(0, TEAMS[this.sel.team2].players.length - 1);
-            this._startGame();
-          } else {
-            this.step = 'team2';
-            this._refresh();
-          }
+  } else {
+    const teamIdx = tsStep==='player1'?tsSel.team1:tsSel.team2;
+    const team = TEAMS[teamIdx];
+    TEAMS[teamIdx].players.forEach((player,i)=>{
+      const card = document.createElement('div');
+      card.className='player-card';
+      if(player.animal==='Goat')card.classList.add('goat');
+      card.style.borderColor = team.hex;
+      const stats = ['spd','sht','drb','def'].map(k=>`<div class="stat-row"><span style="width:22px;display:inline-block">${k.toUpperCase()}</span><div class="stat-fill" style="width:${player[k]*12}px"></div></div>`).join('');
+      const goatBadge = player.animal==='Goat'?'<div style="font-size:10px;color:#FFD700;font-family:Arial Black">⭐ THE G.O.A.T. ⭐</div>':'';
+      card.innerHTML=`${goatBadge}<div class="p-emoji">${player.emoji}</div>
+        <div class="p-name">${player.name}</div>
+        <div class="p-animal">${player.animal}</div>
+        <div class="stat-bar-wrap">${stats}</div>`;
+      card.onclick=()=>{
+        if(tsStep==='player1'){
+          tsSel.p1=i;
+          if(GS.mode==='cpu'){
+            tsSel.team2=(tsSel.team1+1)%TEAMS.length;
+            tsSel.p2=Math.floor(Math.random()*TEAMS[tsSel.team2].players.length);
+            startGame();
+          } else {tsStep='team2';renderTeamSelect();}
         } else {
-          this.sel.p2 = i;
-          this._startGame();
+          tsSel.p2=i;
+          startGame();
         }
-      });
+      };
+      container.appendChild(card);
     });
-
-    this._backBtn();
-  }
-
-  _backBtn() {
-    const back = this.add.text(30, H - 50, '← BACK', {
-      fontSize: '22px', fontFamily: 'Arial Black', color: '#aaa'
-    }).setInteractive({ useHandCursor: true });
-    back.on('pointerdown', () => {
-      if      (this.step === 'team1')   this.scene.start('Menu');
-      else if (this.step === 'player1') { this.step = 'team1';   this._refresh(); }
-      else if (this.step === 'team2')   { this.step = 'player1'; this._refresh(); }
-      else                              { this.step = 'team2';   this._refresh(); }
-    });
-    this._track(back);
-  }
-
-  _startGame() {
-    GS.team1 = this.sel.team1; GS.team2 = this.sel.team2;
-    GS.p1idx = this.sel.p1;    GS.p2idx = this.sel.p2;
-    GS.score = [0, 0];         GS.quarter = 1;
-    this.scene.start('Game');
   }
 }
 
-// ╔══════════════════════════════════════════════════════════╗
-// ║  GAME SCENE                                              ║
-// ╚══════════════════════════════════════════════════════════╝
-class GameScene extends Phaser.Scene {
-  constructor() { super('Game'); }
+function tsBack(){
+  if(tsStep==='team1')    show('menu-screen');
+  else if(tsStep==='player1'){tsStep='team1';renderTeamSelect();}
+  else if(tsStep==='team2') {tsStep='player1';renderTeamSelect();}
+  else                      {tsStep='team2';renderTeamSelect();}
+}
 
-  // ── lifecycle ──────────────────────────────────────────────
-  create() {
-    this.t1 = TEAMS[GS.team1];
-    this.t2 = TEAMS[GS.team2];
+// ================================================================
+//  THREE.JS GAME ENGINE
+// ================================================================
+let renderer, scene, camera;
+let team1Players=[], team2Players=[];
+let ctrl1=null, ctrl2=null;
+let ball3d=null, ballMesh=null;
+let hoop1pos, hoop2pos;
+let gameActive=false, transitioning=false;
+let possession=1;
+let timeLeft=QTR_SECS, shotClock=24;
+let meterState={on:false,power:0,pNum:0};
+let _lastTime=0;
+let _aiInterval=null;
+let _clockInterval=null;
+let _camTarget={x:0,y:16,z:20};
+let _camLookTarget={x:0,y:0,z:-1};
+let _animFrame=null;
 
-    this.timeLeft   = QTR_SECS;
-    this.shotClock  = 24;
-    this.possession = 1;      // 1 or 2
-    this.active     = true;
-    this.transitioning = false;
+// Keys
+const KEYS={};
+window.addEventListener('keydown',e=>{KEYS[e.code]=true;onKeyDown(e);});
+window.addEventListener('keyup',  e=>{KEYS[e.code]=false;onKeyUp(e);});
 
-    // Meter state
-    this.meter = { on: false, power: 0, pNum: 0 };
+function startGame(){
+  GS.team1=tsSel.team1; GS.team2=tsSel.team2;
+  GS.p1idx=tsSel.p1;    GS.p2idx=tsSel.p2;
+  GS.score=[0,0];        GS.quarter=1;
 
-    // Draw court
-    this._drawCourt();
+  show('_none_'); // hide all menu screens
+  document.getElementById('three-container').style.display='block';
+  document.getElementById('hud').style.display='block';
 
-    // Basket positions (set during drawCourt)
-    // this.hoop1 / this.hoop2
+  initThree();
+  buildScene();
+  spawnPlayers();
+  spawnBall();
+  updateHUD();
+  startClockTimer();
+  startAI();
+  gameActive=true;
+  transitioning=false;
+  tipOff();
 
-    // Players
-    this._spawnPlayers();
+  if(_animFrame) cancelAnimationFrame(_animFrame);
+  _lastTime=performance.now();
+  gameLoop();
+}
 
-    // Ball
-    this._spawnBall();
+function initThree(){
+  if(renderer){
+    renderer.dispose();
+    document.getElementById('three-container').innerHTML='';
+  }
+  renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.setClearColor(0x050510);
+  document.getElementById('three-container').appendChild(renderer.domElement);
 
-    // HUD
-    this._buildHUD();
+  scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x050510, 30, 80);
 
-    // Input
-    this._setupKeys();
+  camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 200);
+  camera.position.set(0,16,20);
+  camera.lookAt(0,0,-1);
 
-    // Timers
-    this.qtrTimer = this.time.addEvent({ delay: 1000, repeat: QTR_SECS - 1, callback: this._tick, callbackScope: this });
-    this.aiTimer  = this.time.addEvent({ delay: 150, loop: true, callback: this._runAI, callbackScope: this });
+  // Lights
+  const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+  scene.add(ambient);
 
-    // Initial tip-off
-    this._tipOff();
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+  dirLight.position.set(5,15,8);
+  dirLight.castShadow=true;
+  dirLight.shadow.mapSize.width=2048;
+  dirLight.shadow.mapSize.height=2048;
+  dirLight.shadow.camera.near=0.5;
+  dirLight.shadow.camera.far=80;
+  dirLight.shadow.camera.left=-20;
+  dirLight.shadow.camera.right=20;
+  dirLight.shadow.camera.top=15;
+  dirLight.shadow.camera.bottom=-15;
+  scene.add(dirLight);
+
+  const fillLight = new THREE.DirectionalLight(0x4466ff, 0.3);
+  fillLight.position.set(-5,8,-5);
+  scene.add(fillLight);
+
+  // Arena spotlights
+  [[-8,12,2],[0,12,2],[8,12,2]].forEach(([x,y,z])=>{
+    const pt = new THREE.PointLight(0xffeedd, 0.8, 35);
+    pt.position.set(x,y,z);
+    scene.add(pt);
+  });
+
+  window.addEventListener('resize',()=>{
+    camera.aspect=window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth,window.innerHeight);
+  });
+}
+
+function buildScene(){
+  // Clear old scene objects (except lights)
+  const toRemove=[];
+  scene.traverse(obj=>{if(obj.isMesh||obj.isLine||obj.isGroup)toRemove.push(obj);});
+  toRemove.forEach(o=>scene.remove(o));
+
+  const t1=TEAMS[GS.team1];
+  const floorColor = t1.floorColor;
+  const lineColor  = t1.lineColor;
+
+  // ── Floor ────────────────────────────────────────────────────
+  const floorGeo = new THREE.PlaneGeometry(30,15);
+  const floorMat = new THREE.MeshLambertMaterial({color:floorColor});
+  const floor    = new THREE.Mesh(floorGeo,floorMat);
+  floor.rotation.x=-Math.PI/2;
+  floor.receiveShadow=true;
+  scene.add(floor);
+
+  // ── Court lines ──────────────────────────────────────────────
+  const lc = lineColor;
+  const Y  = 0.02;
+
+  function lineSeg(pts){
+    const geo=new THREE.BufferGeometry().setFromPoints(pts.map(([x,z])=>new THREE.Vector3(x,Y,z)));
+    const mat=new THREE.LineBasicMaterial({color:lc,transparent:true,opacity:0.85});
+    scene.add(new THREE.Line(geo,mat));
   }
 
-  update(_, delta) {
-    if (!this.active || this.transitioning) return;
-    const dt = delta / 1000;
-
-    this._moveHuman(this.ctrl1, this.ctrl1.keys, 1, dt);
-    if (GS.mode === '2player') this._moveHuman(this.ctrl2, this.ctrl2.keys, 2, dt);
-
-    // Shot meter fill
-    if (this.meter.on) {
-      this.meter.power = Math.min(this.meter.power + 75 * dt, 100);
-      this._updateMeterGfx();
-      if (this.meter.power >= 100) this._release(this.meter.pNum);
-    }
-
-    // Ball glow + trail when flying
-    if (this.ball.flying) {
-      this.ballGlow.setPosition(this.ball.x, this.ball.y).setAlpha(0.55);
-      this._ballTrailTimer += delta;
-      if (this._ballTrailTimer > 42) {
-        this._ballTrailTimer = 0;
-        const dot = this.add.circle(this.ball.x, this.ball.y, 7, 0xFF8800, 0.65).setDepth(7);
-        this.tweens.add({ targets: dot, scaleX: 0.05, scaleY: 0.05, alpha: 0,
-          duration: 270, onComplete: () => dot.destroy() });
-      }
-    } else {
-      this.ballGlow.setAlpha(0);
-      this._ballTrailTimer = 0;
-    }
-
-    // Ball follows holder
-    if (this.ball.holder) {
-      this.ball.x = this.ball.holder.x;
-      this.ball.y = this.ball.holder.y - 2;
-    }
-
-    // Loose ball pickup
-    if (!this.ball.holder && !this.ball.flying) {
-      this._allPlayers().forEach(p => {
-        if (Phaser.Math.Distance.Between(p.x, p.y, this.ball.x, this.ball.y) < 28) {
-          this._give(p);
-        }
-      });
-    }
-
-    this._updateCamera();
+  // Court border
+  lineSeg([[-15,-7.5],[15,-7.5],[15,7.5],[-15,7.5],[-15,-7.5]]);
+  // Half-court line
+  lineSeg([[0,-7.5],[0,7.5]]);
+  // Center circle r=2.5
+  {
+    const pts=[];
+    for(let i=0;i<=64;i++){const a=i/64*Math.PI*2;pts.push([Math.cos(a)*2.5,Math.sin(a)*2.5]);}
+    lineSeg(pts);
+  }
+  // Paint left (x: -15 to -9.5, z: -2.5 to 2.5)
+  lineSeg([[-15,-2.5],[-9.5,-2.5],[-9.5,2.5],[-15,2.5]]);
+  // Paint right
+  lineSeg([[15,-2.5],[9.5,-2.5],[9.5,2.5],[15,2.5]]);
+  // 3pt arc left (center at x=-13)
+  {
+    const cx=-13,cz=0,r=THREE_PT;
+    const pts=[];
+    for(let i=0;i<=64;i++){const a=-Math.PI/2+i/64*Math.PI;const x=cx+Math.cos(a)*r;const z=cz+Math.sin(a)*r;if(x>=-15)pts.push([x,z]);}
+    lineSeg(pts);
+    // corner straights
+    lineSeg([[-15,7.2],[-15+(r-Math.sqrt(r*r-7.2*7.2)),7.2]].slice(0,2));
+    lineSeg([[-15,-7.2],[-15+(r-Math.sqrt(r*r-7.2*7.2)),-7.2]].slice(0,2));
+    // simplified corner lines
+    lineSeg([[-15,7.2],[-8.2,7.2]]);
+    lineSeg([[-15,-7.2],[-8.2,-7.2]]);
+  }
+  // 3pt arc right
+  {
+    const cx=13,cz=0,r=THREE_PT;
+    const pts=[];
+    for(let i=0;i<=64;i++){const a=Math.PI/2+i/64*Math.PI;const x=cx+Math.cos(a)*r;const z=cz+Math.sin(a)*r;if(x<=15)pts.push([x,z]);}
+    lineSeg(pts);
+    lineSeg([[15,7.2],[8.2,7.2]]);
+    lineSeg([[15,-7.2],[8.2,-7.2]]);
+  }
+  // Free-throw circles
+  {
+    const pts=[];for(let i=0;i<=64;i++){const a=i/64*Math.PI*2;pts.push([-9.5+Math.cos(a)*1.8,Math.sin(a)*1.8]);}
+    lineSeg(pts);
+  }
+  {
+    const pts=[];for(let i=0;i<=64;i++){const a=i/64*Math.PI*2;pts.push([9.5+Math.cos(a)*1.8,Math.sin(a)*1.8]);}
+    lineSeg(pts);
   }
 
-  // ── court ──────────────────────────────────────────────────
-  // ── stadium themes ─────────────────────────────────────────
-  _stadiumTheme() {
-    return [
-      { // 0 – Vineland Thorns — Thorn Garden Arena
-        name: 'Thorn Garden Arena', loc: 'Vineland',
-        bg: 0x071403, floor: 0x2C5014, plank: 0x1E3D0C, plankA: 0.5,
-        line: 0xffffff, hoop: 0x88DD33, banner: 0x6B21A8,
-      },
-      { // 1 – Team Magma — The Inferno
-        name: 'The Inferno', loc: 'Inferno Lava Coast',
-        bg: 0x150600, floor: 0x1A0900, plank: 0x260D00, plankA: 0.6,
-        line: 0xFF8800, hoop: 0xFF4400, banner: 0xCC2200,
-      },
-      { // 2 – Team Shadows — The Cave
-        name: 'The Cave', loc: 'Sunken City',
-        bg: 0x03060F, floor: 0x0B101E, plank: 0x0F1628, plankA: 0.45,
-        line: 0x44AACC, hoop: 0x00CCEE, banner: 0x1E1B4B,
-      },
-      { // 3 – Team Shivers — The Cryosphere
-        name: 'The Cryosphere', loc: 'Arctic',
-        bg: 0x051525, floor: 0xB4D8F2, plank: 0x9AC4E4, plankA: 0.35,
-        line: 0xffffff, hoop: 0x66BBDD, banner: 0x0E4D91,
-      },
-      { // 4 – The Sandstorms — Scorch Valley Arena
-        name: 'Scorch Valley Arena', loc: 'Scorch Valley',
-        bg: 0x381600, floor: 0xC09040, plank: 0xAA7C2C, plankA: 0.4,
-        line: 0xF5DEB3, hoop: 0xFF8C00, banner: 0x92400E,
-      },
-    ][GS.team1] || this._stadiumTheme()[0];
-  }
+  // ── Stands ───────────────────────────────────────────────────
+  const standMat = new THREE.MeshLambertMaterial({color:0x111122});
+  [[0,-10.5,28,4,5],[0,10.5,28,4,5]].forEach(([x,z,w,h,d])=>{
+    const g=new THREE.BoxGeometry(w,h,d);
+    const m=new THREE.Mesh(g,standMat);
+    m.position.set(x,h/2-0.5,z);
+    scene.add(m);
+  });
+  // Side stands
+  [[-17,0,4,4,15],[17,0,4,4,15]].forEach(([x,z,w,h,d])=>{
+    const g=new THREE.BoxGeometry(w,h,d);
+    const m=new THREE.Mesh(g,standMat);
+    m.position.set(x,h/2-0.5,z);
+    scene.add(m);
+  });
 
-  _drawCourt() {
-    const t  = this._stadiumTheme();
-    const [x, y, w, h] = [CX, CY, CW, CH];
-    const mid = { x: x + w / 2, y: y + h / 2 };
+  // ── Hoops ───────────────────────────────────────────────────
+  hoop1pos = new THREE.Vector3(-13, RIM_Y, 0);
+  hoop2pos = new THREE.Vector3( 13, RIM_Y, 0);
+  buildHoop(-13);
+  buildHoop(13);
+}
 
-    // Background layer
-    const bg = this.add.graphics().setDepth(0);
-    bg.fillStyle(t.bg); bg.fillRect(0, 0, W, H);
+function buildHoop(x){
+  const side = x<0?-1:1;
 
-    // Stadium-specific atmosphere (drawn behind the court)
-    this._drawAtmosphere(bg, t, x, y, w, h);
+  // Pole
+  const poleGeo=new THREE.CylinderGeometry(0.05,0.05,RIM_Y,8);
+  const poleMat=new THREE.MeshLambertMaterial({color:0x888888});
+  const pole=new THREE.Mesh(poleGeo,poleMat);
+  pole.position.set(x+side*0.6,RIM_Y/2,0);
+  scene.add(pole);
 
-    // ── Court floor ─────────────────────────────────────────
-    const g = this.add.graphics().setDepth(1);
-    g.fillStyle(t.floor); g.fillRect(x, y, w, h);
+  // Backboard
+  const bbGeo=new THREE.BoxGeometry(0.1,1.0,1.8);
+  const bbMat=new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:0.7});
+  const bb=new THREE.Mesh(bbGeo,bbMat);
+  bb.position.set(x+side*0.55,RIM_Y+0.3,0);
+  scene.add(bb);
 
-    // Floor plank texture
-    g.lineStyle(1, t.plank, t.plankA);
-    for (let i = 0; i < h; i += 20) { g.moveTo(x, y + i); g.lineTo(x + w, y + i); }
-    g.strokePath();
+  // Rim (torus)
+  const rimGeo=new THREE.TorusGeometry(RIM_R,0.04,8,32);
+  const rimMat=new THREE.MeshLambertMaterial({color:0xFF6600});
+  const rim=new THREE.Mesh(rimGeo,rimMat);
+  rim.rotation.x=Math.PI/2;
+  rim.position.set(x,RIM_Y,0);
+  scene.add(rim);
 
-    // ── Arena spotlight (concentric soft glow over court) ────
-    g.fillStyle(0xffffff, 0.024); g.fillCircle(mid.x, mid.y, 360);
-    g.fillStyle(0xffffff, 0.020); g.fillCircle(mid.x, mid.y, 240);
-    g.fillStyle(0xffffff, 0.016); g.fillCircle(mid.x, mid.y, 140);
-
-    // ── Painted lane fills ───────────────────────────────────
-    const laneW = 155, laneH = 155;
-    g.fillStyle(t.hoop, 0.13);
-    g.fillRect(x, mid.y - laneH / 2, laneW, laneH);
-    g.fillRect(x + w - laneW, mid.y - laneH / 2, laneW, laneH);
-    // Centre circle fill
-    g.fillStyle(t.line, 0.07); g.fillCircle(mid.x, mid.y, 55);
-
-    // ── Court lines ─────────────────────────────────────────
-    g.lineStyle(3, t.line, 1);
-    g.strokeRect(x, y, w, h);
-    g.moveTo(mid.x, y); g.lineTo(mid.x, y + h); g.strokePath();
-    g.strokeCircle(mid.x, mid.y, 55);
-    g.fillStyle(t.line, 0.6); g.fillCircle(mid.x, mid.y, 6);
-
-    g.lineStyle(3, t.line, 1);
-    g.strokeRect(x, mid.y - laneH / 2, laneW, laneH);
-    g.strokeCircle(x + laneW, mid.y, 55);
-    g.strokeRect(x + w - laneW, mid.y - laneH / 2, laneW, laneH);
-    g.strokeCircle(x + w - laneW, mid.y, 55);
-
-    // 3-point arcs + corner straight lines
-    g.beginPath(); g.arc(x + 65, mid.y, 185, -1.35, 1.35); g.strokePath();
-    g.beginPath(); g.arc(x + w - 65, mid.y, 185, Math.PI - 1.35, Math.PI + 1.35); g.strokePath();
-    g.moveTo(x,       mid.y - 181); g.lineTo(x + 106, mid.y - 181);
-    g.moveTo(x,       mid.y + 181); g.lineTo(x + 106, mid.y + 181);
-    g.moveTo(x + w,   mid.y - 181); g.lineTo(x + w - 106, mid.y - 181);
-    g.moveTo(x + w,   mid.y + 181); g.lineTo(x + w - 106, mid.y + 181);
-    g.strokePath();
-
-    // Restricted-area arcs
-    g.beginPath(); g.arc(x + laneW, mid.y, 30, -Math.PI / 2, Math.PI / 2); g.strokePath();
-    g.beginPath(); g.arc(x + w - laneW, mid.y, 30, Math.PI / 2, -Math.PI / 2); g.strokePath();
-
-    // ── Backboards ──────────────────────────────────────────
-    g.lineStyle(5, 0xCCCCCC);
-    g.moveTo(x + 20, mid.y - 30); g.lineTo(x + 20, mid.y + 30); g.strokePath();
-    g.moveTo(x + w - 20, mid.y - 30); g.lineTo(x + w - 20, mid.y + 30); g.strokePath();
-
-    // ── Hoops ───────────────────────────────────────────────
-    g.fillStyle(t.hoop);
-    g.fillCircle(x + 50, mid.y, 14);
-    g.lineStyle(3, 0xffffff, 0.8); g.strokeCircle(x + 50, mid.y, 14);
-    g.fillStyle(t.hoop);
-    g.fillCircle(x + w - 50, mid.y, 14);
-    g.lineStyle(3, 0xffffff, 0.8); g.strokeCircle(x + w - 50, mid.y, 14);
-
-    // Net lines
-    g.lineStyle(2, 0xffffff, 0.5);
-    for (let i = -3; i <= 3; i++) {
-      g.moveTo(x + 50 + i * 3, mid.y + 14); g.lineTo(x + 50 + i * 4, mid.y + 30);
-    }
-    for (let i = -3; i <= 3; i++) {
-      g.moveTo(x + w - 50 + i * 3, mid.y + 14); g.lineTo(x + w - 50 + i * 4, mid.y + 30);
-    }
-    g.strokePath();
-
-    // Stadium name watermark
-    this.add.text(W / 2, H - 18, `🏟️  ${t.name}  •  ${t.loc}`, {
-      fontSize: '13px', color: '#ffffff44', fontStyle: 'italic'
-    }).setOrigin(0.5).setDepth(2);
-
-    // Store hoop positions
-    this.hoop1 = { x: x + 50,     y: CY + CH / 2 };
-    this.hoop2 = { x: x + w - 50, y: CY + CH / 2 };
-    this.courtBounds = new Phaser.Geom.Rectangle(x + 5, y + 5, w - 10, h - 10);
-  }
-
-  // ── per-stadium atmosphere drawings ────────────────────────
-  _drawAtmosphere(g, t, x, y, w, h) {
-    switch (GS.team1) {
-      case 0: this._atmoVineland(g, x, y, w, h, t); break;
-      case 1: this._atmoMagma(g, x, y, w, h, t); break;
-      case 2: this._atmoShadows(g, x, y, w, h, t); break;
-      case 3: this._atmoShivers(g, x, y, w, h, t); break;
-      case 4: this._atmoSandstorms(g, x, y, w, h, t); break;
-    }
-  }
-
-  _crowd(g, x, y, w, h, colors, rows = 2) {
-    // Draw crowd silhouettes above and below court
-    for (let r = 0; r < rows; r++) {
-      for (let i = 0; i < 55; i++) {
-        const cx = 30 + i * (W / 56);
-        const cyTop = y - 14 - r * 16 + Math.sin(i * 0.7) * 5;
-        const cyBot = y + h + 12 + r * 16 + Math.sin(i * 0.8) * 5;
-        g.fillStyle(colors[i % colors.length], 0.75);
-        g.fillCircle(cx, cyTop, 7);
-        g.fillCircle(cx, cyBot, 7);
-      }
-    }
-  }
-
-  _banners(g, x, y, h, color) {
-    // Vertical banners on sidelines
-    g.fillStyle(color, 0.85);
-    for (let i = 0; i < 4; i++) {
-      const by = y + 15 + i * (h / 4.2);
-      g.fillRect(8 + (i % 2) * 30, by, 16, 38);
-      g.fillRect(x + CW + 10 + (i % 2) * 30, by, 16, 38);
-    }
-  }
-
-  _atmoVineland(g, x, y, w, h, t) {
-    // Deep jungle gradient above / below
-    for (let i = 0; i < 6; i++) {
-      g.fillStyle(0x071403 + i * 0x020501, 0.95);
-      g.fillRect(0, i * (CY / 6), W, CY / 6 + 1);
-    }
-
-    // Dense foliage strips on left and right margins
-    const leafColors = [0x1A4D08, 0x256010, 0x0F3205, 0x347014];
-    for (let i = 0; i < 18; i++) {
-      const lx = (i % 2 === 0) ? Math.floor(Math.random() * (x - 10)) : x + w + Math.floor(Math.random() * (W - x - w - 10));
-      const ly = y + Math.floor(Math.random() * h);
-      const lr = 12 + Math.floor(Math.random() * 22);
-      g.fillStyle(leafColors[i % 4], 0.75);
-      g.fillEllipse(lx, ly, lr * 2, lr);
-    }
-
-    // Thick thorn-vine border along court edges
-    g.lineStyle(4, 0x1E5C0A, 0.9);
-    g.strokeRect(x - 8, y - 8, w + 16, h + 16);
-    g.lineStyle(2, 0x0D3006, 0.7);
-    g.strokeRect(x - 14, y - 14, w + 28, h + 28);
-
-    // Thorn spikes along top/bottom border
-    g.fillStyle(0x0D3006, 0.9);
-    for (let i = 0; i < 30; i++) {
-      const tx = x + i * (w / 29);
-      g.fillTriangle(tx - 4, y - 8, tx + 4, y - 8, tx, y - 18);
-      g.fillTriangle(tx - 4, y + h + 8, tx + 4, y + h + 8, tx, y + h + 18);
-    }
-    // Thorns on sides
-    for (let i = 0; i < 14; i++) {
-      const ty = y + i * (h / 13);
-      g.fillTriangle(x - 8, ty - 4, x - 8, ty + 4, x - 18, ty);
-      g.fillTriangle(x + w + 8, ty - 4, x + w + 8, ty + 4, x + w + 18, ty);
-    }
-
-    this._crowd(g, x, y, w, h, [0x2D5A1B, 0x1A3D0A, 0x7B2D8B, 0x4CAF50, 0x388E3C]);
-    this._banners(g, x, y, h, t.banner);
-  }
-
-  _atmoMagma(g, x, y, w, h, t) {
-    // Volcanic sky — dark reddish gradient
-    for (let i = 0; i < H; i += 4) {
-      const a = (1 - i / H) * 0.6;
-      g.fillStyle(0x3A0800, a); g.fillRect(0, i, W, 4);
-    }
-
-    // Glow halos from lava pools on sides
-    [{ cx: x - 55, cy: y + h * 0.35 }, { cx: x - 65, cy: y + h * 0.72 },
-     { cx: x + w + 55, cy: y + h * 0.28 }, { cx: x + w + 65, cy: y + h * 0.65 }
-    ].forEach(lp => {
-      g.fillStyle(0xFF5500, 0.12); g.fillCircle(lp.cx, lp.cy, 110);
-      g.fillStyle(0xFF7700, 0.18); g.fillCircle(lp.cx, lp.cy, 70);
-      g.fillStyle(0xFFAA00, 0.25); g.fillCircle(lp.cx, lp.cy, 36);
-      // Lava pool surface
-      g.fillStyle(0xFF4400, 0.75); g.fillEllipse(lp.cx, lp.cy, 70, 24);
-      g.fillStyle(0xFF8800, 0.85); g.fillEllipse(lp.cx, lp.cy, 40, 14);
-      g.fillStyle(0xFFCC00, 0.6);  g.fillEllipse(lp.cx, lp.cy, 16, 6);
-    });
-
-    // Lava crack lines radiating from court corners
-    g.lineStyle(2, 0xFF6600, 0.7);
-    [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([cx, cy], i) => {
-      const dx = (i % 2 === 0) ? -1 : 1;
-      const dy = (i < 2) ? -1 : 1;
-      g.moveTo(cx, cy); g.lineTo(cx + dx * 60, cy + dy * 25);
-      g.moveTo(cx, cy); g.lineTo(cx + dx * 30, cy + dy * 55);
-    });
-    g.strokePath();
-
-    // Volcanic rocks on side margins (dark irregular blobs)
-    g.fillStyle(0x1A0800, 0.9);
-    [[x - 65, y + 40, 50, 34], [x - 50, y + h - 60, 44, 28],
-     [x + w + 65, y + 60, 48, 32], [x + w + 50, y + h - 70, 40, 26]
-    ].forEach(([rx, ry, rw, rh]) => g.fillEllipse(rx, ry, rw, rh));
-
-    this._crowd(g, x, y, w, h, [0xFF4400, 0xCC2200, 0xFF8800, 0xDD3300, 0xFF6600]);
-    this._banners(g, x, y, h, t.banner);
-  }
-
-  _atmoShadows(g, x, y, w, h, t) {
-    // Deep murky underwater / cavern void
-    g.fillStyle(0x03060F, 0.98); g.fillRect(0, 0, W, H);
-
-    // Stalactites hanging from ceiling above court
-    const stalX = [x+60, x+170, x+310, x+450, x+580, x+700, x+820, x+900];
-    stalX.forEach((sx, i) => {
-      const sh = 35 + (i % 3) * 28, sw = 10 + (i % 2) * 5;
-      g.fillStyle(0x141C30, 0.95);
-      g.fillTriangle(sx - sw, y - 4, sx + sw, y - 4, sx, y + sh);
-      g.fillStyle(0x1E2A44, 0.7);
-      g.fillTriangle(sx - sw + 3, y - 2, sx + sw - 3, y - 2, sx, y + sh - 10);
-      // Drip dot
-      g.fillStyle(0x1A3040, 0.65); g.fillCircle(sx, y + 4, 3);
-    });
-
-    // Stalagmites rising from floor
-    const stagX = [x+100, x+300, x+520, x+750, x+880];
-    stagX.forEach((sx, i) => {
-      const sh = 20 + (i % 2) * 14, sw = 7;
-      g.fillStyle(0x141C30, 0.8);
-      g.fillTriangle(sx - sw, y + h + 4, sx + sw, y + h + 4, sx, y + h - sh);
-    });
-
-    // Bioluminescent glows on side walls
-    [[x - 40, y + h * 0.25], [x - 55, y + h * 0.65],
-     [x + w + 40, y + h * 0.35], [x + w + 50, y + h * 0.7]
-    ].forEach(([bx, by]) => {
-      g.fillStyle(0x0088AA, 0.12); g.fillCircle(bx, by, 60);
-      g.fillStyle(0x00AACC, 0.2);  g.fillCircle(bx, by, 30);
-      g.fillStyle(0x00CCEE, 0.35); g.fillCircle(bx, by, 12);
-    });
-
-    // Floating bubbles in margins
-    for (let i = 0; i < 22; i++) {
-      const bx = (i < 11) ? Math.floor(Math.random() * (x - 5)) : x + w + Math.floor(Math.random() * (W - x - w));
-      const by = y + Math.floor(Math.random() * h);
-      const br = 2 + Math.floor(Math.random() * 5);
-      g.fillStyle(0x00AACC, 0.3); g.fillCircle(bx, by, br);
-      g.lineStyle(1, 0x00DDFF, 0.2); g.strokeCircle(bx, by, br);
-    }
-
-    // Murky water tint at floor level
-    g.fillStyle(0x0066AA, 0.07); g.fillRect(x, y + h - 50, w, 50);
-
-    this._crowd(g, x, y, w, h, [0x1A1F30, 0x252A40, 0x1E1B4B, 0x2D2550]);
-    this._banners(g, x, y, h, t.banner);
-  }
-
-  _atmoShivers(g, x, y, w, h, t) {
-    // Arctic sky gradient — midnight blue to steel
-    for (let i = 0; i < H / 3; i++) {
-      g.fillStyle(0x051525, 0.95); g.fillRect(0, i * 3, W, 3);
-    }
-
-    // Northern lights shimmer (faint arcs above court)
-    [[0x00FF88, 0.04], [0x00AAFF, 0.05], [0x8800FF, 0.03]].forEach(([col, a], i) => {
-      g.lineStyle(18, col, a);
-      g.beginPath(); g.arc(W / 2, y - 200 + i * 40, 400 + i * 60, Math.PI + 0.3, -0.3); g.strokePath();
-    });
-
-    // Ice wall panels on side margins
-    const icePanel = [0xB8DCF0, 0x90C8E8, 0xC8E8F8, 0xA0D0F0];
-    for (let i = 0; i < 5; i++) {
-      const py = y + i * (h / 5), ph = h / 5 - 3;
-      g.fillStyle(icePanel[i % 4], 0.28); g.fillRect(6, py + 2, x - 16, ph);
-      g.lineStyle(1, 0xD8F0FF, 0.25); g.strokeRect(6, py + 2, x - 16, ph);
-      g.fillStyle(icePanel[(i+1) % 4], 0.28); g.fillRect(x + w + 10, py + 2, W - x - w - 16, ph);
-      g.lineStyle(1, 0xD8F0FF, 0.25); g.strokeRect(x + w + 10, py + 2, W - x - w - 16, ph);
-      // Ice glare streak
-      g.fillStyle(0xffffff, 0.12); g.fillRect(10, py + 4, 20, 4);
-      g.fillStyle(0xffffff, 0.12); g.fillRect(x + w + 14, py + 4, 20, 4);
-    }
-
-    // Ice cracks on court floor (overlaid after floor is drawn)
-    // We draw them in the atmosphere pass at a slight offset
-    g.lineStyle(1, 0xffffff, 0.22);
-    g.moveTo(x + 180, y + 45); g.lineTo(x + 270, y + 130); g.lineTo(x + 200, y + 210);
-    g.moveTo(x + 580, y + h - 70); g.lineTo(x + 680, y + h - 150); g.lineTo(x + 620, y + h - 55);
-    g.moveTo(x + w - 190, y + 80); g.lineTo(x + w - 260, y + 170);
-    g.strokePath();
-
-    // Snow drift mounds below court
-    g.fillStyle(0xD0EBFA, 0.55);
-    for (let i = 0; i < 7; i++) {
-      const sx = 30 + i * (W / 7), sr = 30 + (i % 3) * 18;
-      g.fillCircle(sx, y + h + 55, sr);
-    }
-
-    // Snowflakes drifting above
-    g.fillStyle(0xffffff, 0.6);
-    for (let i = 0; i < 35; i++) {
-      const sx = x + Math.floor(Math.random() * w);
-      const sy = y - 75 + Math.floor(Math.random() * 70);
-      g.fillCircle(sx, sy, 2);
-    }
-
-    this._crowd(g, x, y, w, h, [0x0E4D91, 0x1565C0, 0x38BDF8, 0x0C3D70, 0x7DD3FC]);
-    this._banners(g, x, y, h, t.banner);
-  }
-
-  _atmoSandstorms(g, x, y, w, h, t) {
-    // Desert sky — dark terracotta
-    g.fillStyle(0x381600, 0.98); g.fillRect(0, 0, W, H);
-
-    // Scorching sun glow high up
-    g.fillStyle(0xFF8C00, 0.10); g.fillCircle(W / 2, 28, 160);
-    g.fillStyle(0xFFAA00, 0.15); g.fillCircle(W / 2, 28, 100);
-    g.fillStyle(0xFFCC00, 0.20); g.fillCircle(W / 2, 28, 55);
-    g.fillStyle(0xFFEE44, 0.35); g.fillCircle(W / 2, 28, 22);
-
-    // Heat shimmer lines
-    g.lineStyle(1, 0xFF8C00, 0.06);
-    for (let i = 0; i < 8; i++) {
-      const hx = x + (i / 8) * w;
-      g.moveTo(hx, CY); g.lineTo(hx + 12, y + h); g.strokePath();
-    }
-
-    // Sandstone rock pillars on sides
-    const pillarColor = [0x8B5C20, 0x7A4E18, 0x9B6828];
-    [[8, y + 15, 34, h * 0.42], [50, y + 80, 22, h * 0.3], [8, y + h * 0.62, 28, h * 0.35],
-     [x+w+10, y+20, 34, h*0.38], [x+w+50, y+90, 22, h*0.28], [x+w+10, y+h*0.60, 28, h*0.37]
-    ].forEach(([rx, ry, rw, rh], i) => {
-      g.fillStyle(pillarColor[i % 3], 0.88); g.fillRect(rx, ry, rw, rh);
-      // Cap
-      g.fillStyle(0xC09840, 0.5); g.fillRect(rx - 3, ry, rw + 6, 8);
-      // Shadow stripe
-      g.fillStyle(0x5A3A0A, 0.4); g.fillRect(rx + rw - 8, ry, 8, rh);
-    });
-
-    // Sand dunes at bottom
-    g.fillStyle(0xB07030, 0.55);
-    [[W*0.1, y+h+60, 340, 100], [W*0.5, y+h+78, 440, 120], [W*0.85, y+h+55, 300, 90]]
-      .forEach(([dx, dy, dw, dh]) => g.fillEllipse(dx, dy, dw, dh));
-    g.fillStyle(0xC8943C, 0.4);
-    [[W*0.25, y+h+50, 200, 60], [W*0.7, y+h+48, 220, 55]]
-      .forEach(([dx, dy, dw, dh]) => g.fillEllipse(dx, dy, dw, dh));
-
-    // Wind-blown sand streaks
-    g.lineStyle(1, 0xD4A030, 0.2);
-    for (let i = 0; i < 12; i++) {
-      const sy = y + 20 + i * (h / 12);
-      g.moveTo(x - 30, sy); g.lineTo(x + 15, sy + 3);
-      g.moveTo(x + w - 15, sy); g.lineTo(x + w + 30, sy + 3);
-    }
-    g.strokePath();
-
-    this._crowd(g, x, y, w, h, [0x8B4513, 0xD2691E, 0xF59E0B, 0xA0522D, 0xCD853F]);
-    this._banners(g, x, y, h, t.banner);
-  }
-
-  // ── players ────────────────────────────────────────────────
-  _spawnPlayers() {
-    const mid = { x: CX + CW / 2, y: CY + CH / 2 };
-
-    // Starting positions for up to 6 players on each side
-    const offsets1 = [
-      { x: -160, y:   0 }, { x: -260, y: -90 }, { x: -260, y:  90 },
-      { x: -90,  y:-140 }, { x:  -90, y: 140 }, { x: -190, y:   0 }
+  // Net (lines)
+  const netColor=0xffffff;
+  for(let i=0;i<12;i++){
+    const a=i/12*Math.PI*2;
+    const pts=[
+      new THREE.Vector3(x+Math.cos(a)*RIM_R, RIM_Y, Math.sin(a)*RIM_R),
+      new THREE.Vector3(x+Math.cos(a)*RIM_R*0.5, RIM_Y-0.5, Math.sin(a)*RIM_R*0.5)
     ];
-    const offsets2 = offsets1.map(o => ({ x: -o.x, y: o.y }));
-
-    this.team1 = [];
-    this.team2 = [];
-
-    // Build shared key maps (created once, re-assigned on ctrl switch)
-    this._p1keyMap = this._p1keys();
-    this._p2keyMap = this._p2keys();
-
-    this.t1.players.forEach((pd, i) => {
-      const o = offsets1[i] || { x: -160 + i * 20, y: i * 30 };
-      this.team1.push(this._makePlayer(mid.x + o.x, mid.y + o.y, pd, this.t1.color, 1, true));
-    });
-
-    this.t2.players.forEach((pd, i) => {
-      const o = offsets2[i] || { x: 160 - i * 20, y: i * 30 };
-      this.team2.push(this._makePlayer(mid.x + o.x, mid.y + o.y, pd, this.t2.color, 2, true));
-    });
-
-    // Activate initial controlled players (gold ring + keys)
-    this._setCtrl1(this.team1[GS.p1idx] || this.team1[0]);
-    if (GS.mode === '2player') {
-      this.ctrl2 = this.team2[GS.p2idx] || this.team2[0];
-      this._setCtrl2(this.ctrl2);
-    } else {
-      this.ctrl2 = this.team2[GS.p2idx] || this.team2[0];
-    }
-  }
-
-  _makePlayer(x, y, pd, color, team, isAI) {
-    const c = this.add.container(x, y).setDepth(5);
-
-    // Shadow
-    c.add(this.add.ellipse(0, 30, 42, 14, 0x000000, 0.35));
-
-    // Player indicator ring — all start dim; _setCtrl activates gold pulse
-    const gndRing = this.add.circle(0, 30, 23, 0, 0)
-      .setStrokeStyle(2, color, 0.25);
-    c.add(gndRing);
-    c.gndRing = gndRing;
-
-    // Legs (behind body) — origins at hip so they rotate like limbs
-    const legL = this.add.rectangle(-6, 10, 8, 22, color);
-    const legR = this.add.rectangle( 6, 10, 8, 22, color);
-    legL.setOrigin(0.5, 0);
-    legR.setOrigin(0.5, 0);
-    c.add(legL); c.add(legR);
-
-    // Shoes
-    const shoeL = this.add.ellipse(-7, 34, 14, 8, 0x222222);
-    const shoeR = this.add.ellipse( 7, 34, 14, 8, 0x222222);
-    c.add(shoeL); c.add(shoeR);
-
-    // Torso
-    const torso = this.add.rectangle(0, -3, 18, 20, color).setStrokeStyle(1, 0xffffff, 0.5);
-    c.add(torso);
-    // Jersey number
-    c.add(this.add.text(0, -2, String(((pd.spd + pd.sht) % 55) + 1), {
-      fontSize: '7px', fontFamily: 'Arial Black', color: '#ffffffbb'
-    }).setOrigin(0.5));
-
-    // Arms — origins at shoulder
-    const armL = this.add.rectangle(-14, -6, 7, 18, color);
-    const armR = this.add.rectangle( 14, -6, 7, 18, color);
-    armL.setOrigin(0.5, 0);
-    armR.setOrigin(0.5, 0);
-    c.add(armL); c.add(armR);
-
-    // Head
-    const head = this.add.circle(0, -22, 14, color).setStrokeStyle(2, 0xffffff);
-    c.add(head);
-
-    // Emoji face on head
-    c.add(this.add.text(0, -23, pd.emoji, { fontSize: '15px' }).setOrigin(0.5));
-
-    // Name tag
-    const shortName = pd.name.split(' ')[0];
-    c.add(this.add.text(0, -44, shortName, {
-      fontSize: '11px', color: '#fff',
-      backgroundColor: '#00000099', padding: { x: 4, y: 1 }
-    }).setOrigin(0.5));
-
-    // Ball dot indicator
-    const dot = this.add.circle(18, -22, 6, 0xFFD700).setVisible(false);
-    c.add(dot);
-
-    // Properties
-    c.pd     = pd;
-    c.team   = team;
-    c.isAI   = isAI;
-    c.hasBall = false;
-    c.dot    = dot;
-    c.legL = legL; c.legR = legR;
-    c.armL = armL; c.armR = armR;
-    c.walkPhase = 0;
-    c.vx = 0; c.vy = 0;
-    c.aiState  = 'idle';
-    c.aiCooldown = 0;
-    c.setSize(40, 60);
-    return c;
-  }
-
-  // ── ball ───────────────────────────────────────────────────
-  _spawnBall() {
-    const mid = { x: CX + CW / 2, y: CY + CH / 2 };
-    // Warm glow circle shown when the ball is in flight
-    this.ballGlow = this.add.circle(mid.x, mid.y, 22, 0xFF8800, 0).setDepth(7);
-    this.ball = this.add.text(mid.x, mid.y, '🏀', { fontSize: '28px' })
-      .setOrigin(0.5).setDepth(8);
-    this.ball.holder = null;
-    this.ball.flying = false;
-    this._ballTrailTimer = 0;
-  }
-
-  // ── HUD ────────────────────────────────────────────────────
-  _buildHUD() {
-    // ── 2K-style bottom score bug ──────────────────────────────
-    const bugW = 620, bugH = 56, bugX = W / 2 - bugW / 2, bugY = H - bugH - 8;
-    const sb = this.add.graphics().setDepth(20);
-
-    // Dark pill
-    sb.fillStyle(0x080808, 0.95);
-    sb.fillRoundedRect(bugX, bugY, bugW, bugH, 10);
-    sb.lineStyle(1, 0x2a2a2a, 1);
-    sb.strokeRoundedRect(bugX, bugY, bugW, bugH, 10);
-
-    // Team colour accents on each edge
-    sb.fillStyle(this.t1.color, 1);
-    sb.fillRoundedRect(bugX, bugY, 8, bugH, { tl: 10, bl: 10, tr: 0, br: 0 });
-    sb.fillStyle(this.t2.color, 1);
-    sb.fillRoundedRect(bugX + bugW - 8, bugY, 8, bugH, { tl: 0, bl: 0, tr: 10, br: 10 });
-
-    // Centre divider
-    sb.lineStyle(1, 0x222222, 1);
-    sb.moveTo(W / 2, bugY + 8); sb.lineTo(W / 2, bugY + bugH - 8); sb.strokePath();
-
-    // Team name abbreviations (last word of team name, up to 4 chars)
-    const t1Abbr = this.t1.name.split(' ').pop().slice(0, 5).toUpperCase();
-    const t2Abbr = this.t2.name.split(' ').pop().slice(0, 5).toUpperCase();
-    this.add.text(bugX + 20, bugY + bugH / 2, t1Abbr, {
-      fontSize: '12px', fontFamily: 'Arial Black', color: '#bbbbbb'
-    }).setOrigin(0, 0.5).setDepth(21);
-    this.add.text(bugX + bugW - 20, bugY + bugH / 2, t2Abbr, {
-      fontSize: '12px', fontFamily: 'Arial Black', color: '#bbbbbb'
-    }).setOrigin(1, 0.5).setDepth(21);
-
-    // Score digits – large, bold
-    this.scoreT1 = this.add.text(W / 2 - 65, bugY + bugH / 2, '0', {
-      fontSize: '36px', fontFamily: 'Arial Black', color: '#ffffff'
-    }).setOrigin(1, 0.5).setDepth(21);
-    this.scoreT2 = this.add.text(W / 2 + 65, bugY + bugH / 2, '0', {
-      fontSize: '36px', fontFamily: 'Arial Black', color: '#ffffff'
-    }).setOrigin(0, 0.5).setDepth(21);
-
-    // Quarter badge
-    this.qtrTxt = this.add.text(W / 2, bugY + 7, `Q${GS.quarter}`, {
-      fontSize: '10px', fontFamily: 'Arial Black', color: '#FFD700'
-    }).setOrigin(0.5, 0).setDepth(21);
-
-    // Game clock + shot clock centred
-    this.clockTxt = this.add.text(W / 2 - 28, bugY + bugH - 9, '2:00', {
-      fontSize: '17px', fontFamily: 'Courier New', color: '#eeeeee'
-    }).setOrigin(1, 1).setDepth(21);
-    this.add.text(W / 2, bugY + bugH - 9, '·', {
-      fontSize: '14px', color: '#444'
-    }).setOrigin(0.5, 1).setDepth(21);
-    this.scTxt = this.add.text(W / 2 + 28, bugY + bugH - 9, '24', {
-      fontSize: '17px', fontFamily: 'Arial Black', color: '#FF4500'
-    }).setOrigin(0, 1).setDepth(21);
-
-    // Possession arrow (left of score)
-    this.possTxt = this.add.text(W / 2 - 46, bugY + bugH / 2, '▶', {
-      fontSize: '14px', color: '#FFD700'
-    }).setOrigin(0.5).setDepth(21);
-
-    // Ball-holder name floats just above the score bug
-    this.ballHolderTxt = this.add.text(W / 2, bugY - 8, '', {
-      fontSize: '13px', fontFamily: 'Arial Black', color: '#FFD700',
-      backgroundColor: '#000000bb', padding: { x: 10, y: 4 }
-    }).setOrigin(0.5, 1).setDepth(21);
-
-    // Camera label (top-left)
-    this.camTxt = this.add.text(12, 12, '📷 2K', {
-      fontSize: '13px', color: '#fff',
-      backgroundColor: '#00000088', padding: { x: 5, y: 3 }
-    }).setDepth(21);
-
-    // Controls hints (small, top-right)
-    this.add.text(W - 8, 10, 'WASD Move · SPACE Shoot · SHIFT Sprint/Body-Check · E Pass · Q Switch Def · C Cam', {
-      fontSize: '10px', color: '#555', backgroundColor: '#00000033', padding: { x: 3, y: 2 }
-    }).setOrigin(1, 0).setDepth(21);
-    if (GS.mode === '2player') {
-      this.add.text(W - 8, 28, 'P2 → Arrows · ENTER Shoot · CTRL Sprint · / Pass or Switch', {
-        fontSize: '10px', color: '#555', backgroundColor: '#00000033', padding: { x: 3, y: 2 }
-      }).setOrigin(1, 0).setDepth(21);
-    }
-
-    // Floating shot meter (created per-shot in _startMeter)
-    this.activeMeter = null;
-  }
-
-  // ── input ──────────────────────────────────────────────────
-  _p1keys() {
-    return this.input.keyboard.addKeys({
-      up: 'W', down: 'S', left: 'A', right: 'D',
-      sprint: Phaser.Input.Keyboard.KeyCodes.SHIFT,
-      pass: 'Q',
-    });
-  }
-  _p2keys() {
-    return this.input.keyboard.addKeys({
-      up: Phaser.Input.Keyboard.KeyCodes.UP,
-      down: Phaser.Input.Keyboard.KeyCodes.DOWN,
-      left: Phaser.Input.Keyboard.KeyCodes.LEFT,
-      right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
-      sprint: Phaser.Input.Keyboard.KeyCodes.CTRL,
-      pass: Phaser.Input.Keyboard.KeyCodes.FORWARD_SLASH,
-    });
-  }
-
-  _setupKeys() {
-    // Shoot – P1
-    this.input.keyboard.on('keydown-SPACE', () => {
-      if (!this.active || this.transitioning) return;
-      if (this.ctrl1.hasBall && !this.meter.on) this._startMeter(1);
-    });
-    this.input.keyboard.on('keyup-SPACE', () => {
-      if (this.meter.on && this.meter.pNum === 1) this._release(1);
-    });
-
-    // Shoot – P2
-    this.input.keyboard.on('keydown-ENTER', () => {
-      if (!this.active || this.transitioning) return;
-      if (this.ctrl2 && this.ctrl2.hasBall && !this.meter.on) this._startMeter(2);
-    });
-    this.input.keyboard.on('keyup-ENTER', () => {
-      if (this.meter.on && this.meter.pNum === 2) this._release(2);
-    });
-
-    // Pass (E) – P1
-    this.input.keyboard.on('keydown-E', () => {
-      if (this.ctrl1.hasBall) this._pass(this.ctrl1, this.team1);
-    });
-    // Q – pass on offense, switch defender on defense
-    this.input.keyboard.on('keydown-Q', () => {
-      if (!this.active || this.transitioning) return;
-      if (this.ctrl1.hasBall) this._pass(this.ctrl1, this.team1);
-      else this._switchDefender(1);
-    });
-    // Pass / switch defender – P2 (2player mode)
-    this.input.keyboard.on('keydown-FORWARD_SLASH', () => {
-      if (!this.ctrl2) return;
-      if (this.ctrl2.hasBall) this._pass(this.ctrl2, this.team2);
-      else this._switchDefender(2);
-    });
-
-    // Camera
-    this.input.keyboard.on('keydown-C', () => {
-      GS.camMode = (GS.camMode + 1) % CAM_MODES.length;
-      const labels = ['📷 2K', '📺 Broadcast', '🔭 Overhead', '👤 Follow'];
-      this.camTxt.setText(labels[GS.camMode]);
-    });
-  }
-
-  // ── movement ───────────────────────────────────────────────
-  _moveHuman(player, keys, pNum, dt) {
-    if (!player || !keys) return;
-    const topSpd = player.pd.spd * (keys.sprint.isDown ? 38 : 28);
-    let dx = 0, dy = 0;
-    if (keys.up.isDown)    dy -= 1;
-    if (keys.down.isDown)  dy += 1;
-    if (keys.left.isDown)  dx -= 1;
-    if (keys.right.isDown) dx += 1;
-
-    if (dx !== 0 || dy !== 0) {
-      const len = Math.sqrt(dx * dx + dy * dy);
-      // Smooth acceleration – feels like 2K momentum
-      player.vx = Phaser.Math.Linear(player.vx, (dx / len) * topSpd, 0.22);
-      player.vy = Phaser.Math.Linear(player.vy, (dy / len) * topSpd, 0.22);
-      // Walking animation driven by actual speed
-      const spd = Math.sqrt(player.vx ** 2 + player.vy ** 2);
-      player.walkPhase += spd * dt * 0.13;
-      const swing = Math.sin(player.walkPhase) * 30;
-      if (player.legL) player.legL.setAngle(swing);
-      if (player.legR) player.legR.setAngle(-swing);
-      if (player.armL) player.armL.setAngle(-swing * 0.5);
-      if (player.armR) player.armR.setAngle(swing * 0.5);
-    } else {
-      // Smooth deceleration
-      player.vx = Phaser.Math.Linear(player.vx, 0, 0.28);
-      player.vy = Phaser.Math.Linear(player.vy, 0, 0.28);
-      if (Math.abs(player.vx) < 0.5 && Math.abs(player.vy) < 0.5) {
-        player.vx = 0; player.vy = 0;
-        if (player.legL) { player.legL.setAngle(0); player.legR.setAngle(0); }
-        if (player.armL) { player.armL.setAngle(0); player.armR.setAngle(0); }
-      }
-    }
-
-    player.x += player.vx * dt;
-    player.y += player.vy * dt;
-
-    // Clamp to court
-    player.x = Phaser.Math.Clamp(player.x, CX + 18, CX + CW - 18);
-    player.y = Phaser.Math.Clamp(player.y, CY + 18, CY + CH - 18);
-
-    // Steal attempt
-    if (keys.sprint.isDown && !player.hasBall) {
-      const opp = pNum === 1 ? this.team2 : this.team1;
-      opp.forEach(op => {
-        if (!op.hasBall) return;
-        const d = Phaser.Math.Distance.Between(player.x, player.y, op.x, op.y);
-        if (d < 30 && Math.random() < player.pd.def / 140) {
-          this._give(player);
-          this._toast(player.x, player.y - 20, 'STEAL! 🔥', '#00ccff');
-        }
-      });
-    }
-  }
-
-  // ── shot meter (vertical, floats beside the shooter) ───────
-  _startMeter(pNum) {
-    const shooter = pNum === 1 ? this.ctrl1 : this.ctrl2;
-    if (!shooter) return;
-    this.meter = { on: true, power: 0, pNum };
-
-    const mW = 14, mH = 80;
-    const mx  = shooter.x + 26;
-    const my  = shooter.y - 10;
-
-    // Background frame
-    const bgGfx = this.add.graphics().setDepth(30);
-    bgGfx.fillStyle(0x111111, 0.92);
-    bgGfx.fillRoundedRect(mx - mW / 2, my - mH / 2, mW, mH, 4);
-    bgGfx.lineStyle(1.5, 0x555555, 1);
-    bgGfx.strokeRoundedRect(mx - mW / 2, my - mH / 2, mW, mH, 4);
-
-    // Green sweet-spot band (65 – 85 % of the way up)
-    const zoneTop = my - mH / 2 + mH * 0.15;   // 85 % mark from bottom
-    const zoneH   = mH * 0.20;
-    const zoneGfx = this.add.graphics().setDepth(31);
-    zoneGfx.fillStyle(0x00dd44, 0.45);
-    zoneGfx.fillRect(mx - mW / 2 + 2, zoneTop, mW - 4, zoneH);
-
-    // Fill bar – grows upward from the bottom of the frame
-    const fillBar = this.add.rectangle(mx, my + mH / 2 - 2, mW - 4, 2, 0xff2200)
-      .setOrigin(0.5, 1).setDepth(32);
-
-    // Label
-    const lbl = this.add.text(mx, my - mH / 2 - 6, 'SHOOT', {
-      fontSize: '9px', fontFamily: 'Arial Black', color: '#FFD700'
-    }).setOrigin(0.5, 1).setDepth(32);
-
-    this.activeMeter = { bgGfx, zoneGfx, fillBar, lbl, mx, my, mH, mW };
-  }
-
-  _updateMeterGfx() {
-    if (!this.activeMeter) return;
-    const { fillBar, mH, mW } = this.activeMeter;
-    const p = this.meter.power;
-    const fillH = Math.max((p / 100) * (mH - 4), 2);
-    fillBar.setSize(mW - 4, fillH);
-    const col = p < 65 ? 0xff2200 : p <= 85 ? 0x00ee44 : 0xff6600;
-    fillBar.setFillStyle(col);
-  }
-
-  _release(pNum) {
-    if (!this.meter.on || this.meter.pNum !== pNum) return;
-    const power    = this.meter.power;
-    this.meter.on  = false;
-
-    // Show timing feedback and destroy meter graphics
-    if (this.activeMeter) {
-      const { bgGfx, zoneGfx, fillBar, lbl, mx, my } = this.activeMeter;
-      const inGreen = power >= 65 && power <= 85;
-      const timing  = inGreen          ? 'PERFECT RELEASE 🔥'
-                    : power >= 50      ? (power < 65 ? 'EARLY' : 'LATE')
-                    : 'WAY EARLY';
-      const col     = inGreen ? '#00ff55' : power >= 50 ? '#ffbb00' : '#ff3300';
-      this._toast(mx, my - 55, timing, col);
-      this.time.delayedCall(180, () => {
-        bgGfx.destroy(); zoneGfx.destroy(); fillBar.destroy(); lbl.destroy();
-      });
-      this.activeMeter = null;
-    }
-
-    const shooter = pNum === 1 ? this.ctrl1 : this.ctrl2;
-    if (!shooter || !shooter.hasBall) return;
-
-    const inGreen = power >= 65 && power <= 85;
-    const base    = shooter.pd.sht / 10;
-    const chance  = inGreen ? Math.min(base * 1.35, 0.97) : base * (power / 100) * 0.75;
-    this._shoot(shooter, pNum, chance);
-  }
-
-  // ── shooting ───────────────────────────────────────────────
-  _shoot(player, pNum, chance) {
-    if (!player.hasBall) return;
-
-    const target = pNum === 1 ? this.hoop2 : this.hoop1;
-    const dist   = Phaser.Math.Distance.Between(player.x, player.y, target.x, target.y);
-    const is3    = dist > 200;
-    const pts    = is3 ? 3 : 2;
-
-    // Distance penalty
-    const finalChance = Math.max(chance - dist / 600, 0.08);
-
-    // Detach ball
-    this._clearBall();
-    this.ball.flying = true;
-    this.ball.x = player.x;
-    this.ball.y = player.y;
-
-    const dur = 550 + dist * 0.5;
-
-    // Arc tween
-    this.tweens.add({
-      targets: this.ball,
-      x: target.x, y: target.y,
-      duration: dur, ease: 'Power2',
-      onComplete: () => this._resolveShot(pNum, finalChance, pts)
-    });
-    this.tweens.add({
-      targets: this.ball,
-      y: player.y - 130,
-      duration: dur / 2, yoyo: true, ease: 'Sine.easeOut'
-    });
-
-    this._toast(player.x, player.y - 30, is3 ? '3PT! 🏀' : '2PT! 🏀', '#FFD700');
-  }
-
-  _resolveShot(pNum, chance, pts) {
-    this.ball.flying = false;
-    if (Math.random() < chance) {
-      GS.score[pNum - 1] += pts;
-      this.scoreT1.setText(GS.score[0]);
-      this.scoreT2.setText(GS.score[1]);
-      const msg = pts === 3 ? 'TRIPLE! +3 🎯' : 'BUCKET! +2 ✅';
-      const col = pts === 3 ? '#00aaff' : '#00ee55';
-      this._toast(this.ball.x, this.ball.y - 20, msg, col);
-      this._scoreSplash(this.ball.x, this.ball.y, pts === 3 ? 0x00aaff : 0x00ee55);
-      const next = pNum === 1 ? 2 : 1;
-      this.time.delayedCall(700, () => this._reset(next));
-    } else {
-      this._toast(this.ball.x, this.ball.y - 20, 'NO GOOD!', '#ff4444');
-      this._missSplash(pNum === 1 ? this.hoop2 : this.hoop1);
-      this.time.delayedCall(350, () => this._rebound());
-    }
-  }
-
-  _scoreSplash(x, y, color) {
-    for (let i = 0; i < 10; i++) {
-      const angle = (i / 10) * Math.PI * 2;
-      const dist  = Phaser.Math.Between(28, 68);
-      const dot   = this.add.circle(x, y, Phaser.Math.Between(3, 7), color, 1).setDepth(35);
-      this.tweens.add({ targets: dot,
-        x: x + Math.cos(angle) * dist, y: y + Math.sin(angle) * dist,
-        scaleX: 0, scaleY: 0, alpha: 0, duration: 500, ease: 'Power2',
-        onComplete: () => dot.destroy() });
-    }
-    const ring = this.add.circle(x, y, 14, 0, 0).setStrokeStyle(3, color, 1).setDepth(35);
-    this.tweens.add({ targets: ring, scaleX: 4.2, scaleY: 4.2, alpha: 0,
-      duration: 430, onComplete: () => ring.destroy() });
-  }
-
-  _missSplash(hoop) {
-    const ring = this.add.circle(hoop.x, hoop.y, 16, 0, 0)
-      .setStrokeStyle(3, 0xff2200, 0.9).setDepth(35);
-    this.tweens.add({ targets: ring, scaleX: 2.4, scaleY: 2.4, alpha: 0,
-      duration: 360, onComplete: () => ring.destroy() });
-  }
-
-  _rebound() {
-    // Nearest player grabs it
-    let best = null, bestD = Infinity;
-    this._allPlayers().forEach(p => {
-      const d = Phaser.Math.Distance.Between(p.x, p.y, this.ball.x, this.ball.y);
-      if (d < bestD) { bestD = d; best = p; }
-    });
-    if (best) this._give(best);
-    else this._reset(this.possession === 1 ? 2 : 1);
-  }
-
-  // ── pass ───────────────────────────────────────────────────
-  _pass(from, teammates) {
-    if (!from.hasBall) return;
-    let best = null, bestD = Infinity;
-    teammates.forEach(p => {
-      if (p === from) return;
-      const d = Phaser.Math.Distance.Between(from.x, from.y, p.x, p.y);
-      if (d < bestD) { bestD = d; best = p; }
-    });
-    if (!best) return;
-    this._clearBall();
-    this.ball.flying = true;
-    this.tweens.add({
-      targets: this.ball,
-      x: best.x, y: best.y,
-      duration: 220, ease: 'Linear',
-      onComplete: () => { this.ball.flying = false; this._give(best); }
-    });
-  }
-
-  // ── ball state ─────────────────────────────────────────────
-  _clearBall() {
-    this._allPlayers().forEach(p => {
-      p.hasBall = false;
-      if (p.dot) p.dot.setVisible(false);
-    });
-    this.ball.holder = null;
-    if (this.ballHolderTxt) this.ballHolderTxt.setText('');
-    // Cancel floating meter if ball changes hands mid-charge
-    if (this.activeMeter) {
-      const { bgGfx, zoneGfx, fillBar, lbl } = this.activeMeter;
-      bgGfx.destroy(); zoneGfx.destroy(); fillBar.destroy(); lbl.destroy();
-      this.activeMeter = null;
-      this.meter.on = false;
-    }
-  }
-
-  _give(player) {
-    this._clearBall();
-    player.hasBall = true;
-    if (player.dot) player.dot.setVisible(true);
-    this.ball.holder = player;
-    this.possession  = player.team;
-    this.possTxt.setText(player.team === 1 ? '▶' : '◀');
-    this.shotClock = 24;
-    this.scTxt.setText('24').setColor('#FF4500');
-    if (this.ballHolderTxt) this.ballHolderTxt.setText(`🏀  ${player.pd.name}`);
-
-    // Auto-switch control to whoever gets the ball
-    if (player.team === 1) this._setCtrl1(player);
-    else if (GS.mode === '2player') this._setCtrl2(player);
-  }
-
-  // ── player control switching ────────────────────────────────
-  _setCtrl1(player) {
-    if (this.ctrl1) {
-      this.ctrl1.gndRing.setStrokeStyle(2, this.t1.color, 0.25);
-      this.ctrl1.gndRing.setAlpha(1);
-      if (this.ctrl1._ringTween) { this.ctrl1._ringTween.stop(); this.ctrl1._ringTween = null; }
-      this.ctrl1.keys = null;
-    }
-    this.ctrl1 = player;
-    this.ctrl1.gndRing.setStrokeStyle(2, 0xFFD700, 0.85);
-    this.ctrl1._ringTween = this.tweens.add({
-      targets: this.ctrl1.gndRing, alpha: 0.15,
-      duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
-    });
-    this.ctrl1.keys = this._p1keyMap;
-  }
-
-  _setCtrl2(player) {
-    if (!player || GS.mode !== '2player') return;
-    if (this.ctrl2) {
-      this.ctrl2.gndRing.setStrokeStyle(2, this.t2.color, 0.25);
-      this.ctrl2.gndRing.setAlpha(1);
-      if (this.ctrl2._ringTween) { this.ctrl2._ringTween.stop(); this.ctrl2._ringTween = null; }
-      this.ctrl2.keys = null;
-    }
-    this.ctrl2 = player;
-    this.ctrl2.gndRing.setStrokeStyle(2, 0x00DDFF, 0.85);
-    this.ctrl2._ringTween = this.tweens.add({
-      targets: this.ctrl2.gndRing, alpha: 0.15,
-      duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
-    });
-    this.ctrl2.keys = this._p2keyMap;
-  }
-
-  // Switch to the teammate closest to the ball (on defense)
-  _switchDefender(teamNum) {
-    const team = teamNum === 1 ? this.team1 : this.team2;
-    const ctrl = teamNum === 1 ? this.ctrl1 : this.ctrl2;
-    let best = null, bestD = Infinity;
-    team.forEach(p => {
-      if (p === ctrl || p.hasBall) return;
-      const d = Phaser.Math.Distance.Between(p.x, p.y, this.ball.x, this.ball.y);
-      if (d < bestD) { bestD = d; best = p; }
-    });
-    if (best) {
-      if (teamNum === 1) this._setCtrl1(best);
-      else               this._setCtrl2(best);
-    }
-  }
-
-  // ── reset / tip-off ────────────────────────────────────────
-  _tipOff() {
-    this._reset(1);
-  }
-
-  _reset(team) {
-    if (this.transitioning) return;
-    this._clearBall();
-    const mid = { x: CX + CW / 2, y: CY + CH / 2 };
-    this.ball.x = mid.x; this.ball.y = mid.y;
-    this.possession = team;
-    this.shotClock = 24;
-    this.scTxt.setText('24').setColor('#FF4500');
-
-    // Move controlled players toward mid
-    const cp = team === 1 ? this.ctrl1 : this.ctrl2;
-    cp.x = mid.x + (team === 1 ? -70 : 70);
-    cp.y = mid.y;
-
-    this.time.delayedCall(400, () => this._give(cp));
-  }
-
-  // ── timer ──────────────────────────────────────────────────
-  _tick() {
-    this.timeLeft--;
-    const m = Math.floor(this.timeLeft / 60);
-    const s = this.timeLeft % 60;
-    this.clockTxt.setText(`${m}:${s.toString().padStart(2, '0')}`);
-
-    this.shotClock--;
-    if (this.shotClock <= 0) {
-      this._toast(CX + CW / 2, CY - 10, 'SHOT CLOCK VIOLATION!', '#FF4500');
-      this._reset(this.possession === 1 ? 2 : 1);
-    } else {
-      this.scTxt.setText(this.shotClock);
-      this.scTxt.setColor(this.shotClock <= 5 ? '#ff2200' : '#FF4500');
-    }
-
-    if (this.timeLeft <= 0) this._endQuarter();
-  }
-
-  _endQuarter() {
-    if (this.transitioning) return;
-    this.transitioning = true;
-    this.active = false;
-    this.qtrTimer.remove(false);
-    this.aiTimer.remove(false);
-
-    if (GS.quarter < 4) {
-      GS.quarter++;
-      this._overlay(`END OF Q${GS.quarter - 1}`, () => {
-        this.timeLeft  = QTR_SECS;
-        this.shotClock = 24;
-        this.qtrTxt.setText(`Q${GS.quarter}`);
-        this.clockTxt.setText('2:00');
-        this.active = true;
-        this.transitioning = false;
-        this.qtrTimer = this.time.addEvent({ delay: 1000, repeat: QTR_SECS - 1, callback: this._tick, callbackScope: this });
-        this.aiTimer  = this.time.addEvent({ delay: 150, loop: true, callback: this._runAI, callbackScope: this });
-        this._reset(GS.quarter % 2 === 0 ? 2 : 1);
-      });
-    } else {
-      this.time.delayedCall(800, () => this.scene.start('GameOver'));
-    }
-  }
-
-  _overlay(msg, cb) {
-    const ov  = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.72).setDepth(50);
-    const t1  = this.add.text(W / 2, H / 2 - 40, msg, {
-      fontSize: '70px', fontFamily: 'Arial Black', color: '#FFD700',
-      stroke: '#000', strokeThickness: 8
-    }).setOrigin(0.5).setDepth(51);
-    const t2 = this.add.text(W / 2, H / 2 + 50,
-      `${this.t1.name}  ${GS.score[0]}  —  ${GS.score[1]}  ${this.t2.name}`, {
-        fontSize: '28px', color: '#fff'
-      }).setOrigin(0.5).setDepth(51);
-    this.time.delayedCall(2600, () => { ov.destroy(); t1.destroy(); t2.destroy(); if (cb) cb(); });
-  }
-
-  // ── AI ─────────────────────────────────────────────────────
-  _runAI() {
-    if (!this.active) return;
-    const dt = 0.15; // seconds per AI tick
-
-    this._allPlayers().forEach(p => {
-      if (p === this.ctrl1) return; // human-controlled
-      if (GS.mode === '2player' && p === this.ctrl2) return; // human-controlled
-      this._aiTick(p, dt);
-    });
-  }
-
-  _aiTick(p, dt) {
-    const oppHoop = p.team === 1 ? this.hoop2 : this.hoop1;
-    const myHoop  = p.team === 1 ? this.hoop1 : this.hoop2;
-    const ballX   = this.ball.x, ballY = this.ball.y;
-    const spd     = p.pd.spd * 24 * dt;
-    let tx, ty;
-
-    if (p.hasBall) {
-      const distToHoop = Phaser.Math.Distance.Between(p.x, p.y, oppHoop.x, oppHoop.y);
-      if (distToHoop < 240 && Math.random() < 0.025) {
-        const shotChance = (p.pd.sht / 10) * 0.72;
-        this._shoot(p, p.team, shotChance);
-        return;
-      }
-      // Pass to open teammate occasionally
-      const myTeam = p.team === 1 ? this.team1 : this.team2;
-      if (Math.random() < 0.008) {
-        this._pass(p, myTeam);
-        return;
-      }
-      tx = oppHoop.x + Phaser.Math.Between(-50, 50);
-      ty = oppHoop.y + Phaser.Math.Between(-50, 50);
-    } else if (this.possession === p.team) {
-      // Spread to open space
-      tx = CX + 50 + Math.random() * (CW - 100);
-      ty = CY + 30 + Math.random() * (CH - 60);
-    } else {
-      // Defend: position between ball and own hoop
-      tx = (ballX + myHoop.x) / 2 + Phaser.Math.Between(-30, 30);
-      ty = (ballY + myHoop.y) / 2 + Phaser.Math.Between(-30, 30);
-
-      // Steal if close
-      const holder = this.ball.holder;
-      if (holder && holder.team !== p.team) {
-        const d = Phaser.Math.Distance.Between(p.x, p.y, holder.x, holder.y);
-        if (d < 28 && Math.random() < p.pd.def / 160) {
-          this._give(p);
-          this._toast(p.x, p.y - 20, 'STEAL! 🔥', '#00ccff');
-          return;
-        }
-      }
-    }
-
-    // Move
-    const dx = tx - p.x, dy = ty - p.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist > 12) {
-      p.x += (dx / dist) * spd;
-      p.y += (dy / dist) * spd;
-      // Walking animation
-      p.walkPhase = (p.walkPhase || 0) + spd * 0.13;
-      const swing = Math.sin(p.walkPhase) * 30;
-      if (p.legL) p.legL.setAngle(swing);
-      if (p.legR) p.legR.setAngle(-swing);
-      if (p.armL) p.armL.setAngle(-swing * 0.5);
-      if (p.armR) p.armR.setAngle(swing * 0.5);
-    } else {
-      if (p.legL) { p.legL.setAngle(0); p.legR.setAngle(0); }
-      if (p.armL) { p.armL.setAngle(0); p.armR.setAngle(0); }
-    }
-
-    p.x = Phaser.Math.Clamp(p.x, CX + 18, CX + CW - 18);
-    p.y = Phaser.Math.Clamp(p.y, CY + 18, CY + CH - 18);
-  }
-
-  // ── camera ─────────────────────────────────────────────────
-  _updateCamera() {
-    const cam = this.cameras.main;
-    const mode = CAM_MODES[GS.camMode];
-
-    const courtCX = CX + CW / 2;
-    const courtCY = CY + CH / 2;
-
-    if (mode === '2K') {
-      // Slightly follow ball but keep most of court visible
-      const lerp = 0.06;
-      const tx = Phaser.Math.Linear(cam.scrollX + W / 2, Phaser.Math.Clamp(this.ball.x, CX + CW * 0.35, CX + CW * 0.65), lerp);
-      cam.centerOn(tx, courtCY);
-    } else if (mode === 'Broadcast' || mode === 'Overhead') {
-      cam.centerOn(courtCX, courtCY);
-    } else if (mode === 'Follow') {
-      cam.centerOn(this.ctrl1.x, this.ctrl1.y);
-    }
-
-    // Ensure camera stays within game world
-    cam.scrollX = Phaser.Math.Clamp(cam.scrollX, 0, 0);
-    cam.scrollY = Phaser.Math.Clamp(cam.scrollY, 0, 0);
-  }
-
-  // ── helpers ────────────────────────────────────────────────
-  _allPlayers() { return [...this.team1, ...this.team2]; }
-
-  _toast(x, y, msg, color = '#FFD700') {
-    const big = msg.includes('PERFECT') || msg.includes('BUCKET') || msg.includes('TRIPLE') || msg.includes('STEAL');
-    const t = this.add.text(x, y, msg, {
-      fontSize: big ? '28px' : '21px', fontFamily: 'Arial Black',
-      color, stroke: '#000000', strokeThickness: big ? 6 : 4
-    }).setOrigin(0.5).setDepth(35);
-    if (big) this.tweens.add({ targets: t, scaleX: 1.2, scaleY: 1.2, duration: 130, yoyo: true, ease: 'Sine.easeOut' });
-    this.tweens.add({ targets: t, y: y - 65, alpha: 0, duration: 1500, ease: 'Power2', onComplete: () => t.destroy() });
+    const g=new THREE.BufferGeometry().setFromPoints(pts);
+    scene.add(new THREE.Line(g,new THREE.LineBasicMaterial({color:netColor,transparent:true,opacity:0.5})));
   }
 }
 
-// ╔══════════════════════════════════════════════════════════╗
-// ║  GAME OVER SCENE                                         ║
-// ╚══════════════════════════════════════════════════════════╝
-class GameOverScene extends Phaser.Scene {
-  constructor() { super('GameOver'); }
+// ── Player model ─────────────────────────────────────────────────
+function makePlayerMesh(pd, teamColor, team){
+  const group = new THREE.Group();
+  const tc = teamColor;
 
-  create() {
-    const t1 = TEAMS[GS.team1], t2 = TEAMS[GS.team2];
-    const [s1, s2] = GS.score;
-    const winner = s1 > s2 ? t1 : s2 > s1 ? t2 : null;
+  // Ground shadow
+  const shadowGeo = new THREE.CircleGeometry(0.65,32);
+  const shadowMat = new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.35,depthWrite:false});
+  const shadow = new THREE.Mesh(shadowGeo,shadowMat);
+  shadow.rotation.x=-Math.PI/2;
+  shadow.position.y=0.01;
+  group.add(shadow);
 
-    const g = this.add.graphics();
-    g.fillStyle(0x0d0d1a); g.fillRect(0, 0, W, H);
+  // Ground ring (indicator)
+  const ringGeo = new THREE.RingGeometry(0.55,0.7,32);
+  const ringMat = new THREE.MeshBasicMaterial({color:0x888800,transparent:true,opacity:0.2,side:THREE.DoubleSide,depthWrite:false});
+  const ring = new THREE.Mesh(ringGeo,ringMat);
+  ring.rotation.x=-Math.PI/2;
+  ring.position.y=0.02;
+  group.add(ring);
+  group.ring=ring;
+  group.ringMat=ringMat;
 
-    // Confetti
-    for (let i = 0; i < 24; i++) {
-      const em = this.add.text(
-        Phaser.Math.Between(0, W), Phaser.Math.Between(-200, -20),
-        Phaser.Utils.Array.GetRandom(['🏀', '⭐', '🎉', '🏆', '🎊', '✨']),
-        { fontSize: '30px' }
-      );
-      this.tweens.add({
-        targets: em, y: H + 60, x: em.x + Phaser.Math.Between(-80, 80),
-        duration: Phaser.Math.Between(2000, 4500),
-        delay: Phaser.Math.Between(0, 2000),
-        repeat: -1,
-        onRepeat: () => em.setPosition(Phaser.Math.Between(0, W), -40)
-      });
-    }
+  // Legs
+  const legGeo = new THREE.BoxGeometry(0.28,0.7,0.28);
+  const legMat = new THREE.MeshLambertMaterial({color:0x222222});
+  const legL = new THREE.Mesh(legGeo,legMat);
+  legL.position.set(-0.22,0.35,0);
+  legL.castShadow=true;
+  group.add(legL);
+  const legR = new THREE.Mesh(legGeo,legMat);
+  legR.position.set(0.22,0.35,0);
+  legR.castShadow=true;
+  group.add(legR);
+  group.legL=legL; group.legR=legR;
 
-    // ROARBALL watermark
-    this.add.text(W / 2, 38, 'ROARBALL  •  AS SEEN IN THE G.O.A.T.', {
-      fontSize: '13px', fontFamily: 'Arial Black', color: '#ffffff33'
-    }).setOrigin(0.5);
+  // Body
+  const bodyGeo = new THREE.BoxGeometry(0.88,1.05,0.52);
+  const bodyMat = new THREE.MeshLambertMaterial({color:tc});
+  const body = new THREE.Mesh(bodyGeo,bodyMat);
+  body.position.set(0,1.2,0);
+  body.castShadow=true;
+  group.add(body);
+  group.body=body;
 
-    if (winner) {
-      this.add.text(W / 2, 100, '🏆  FINAL BUZZER  🏆', {
-        fontSize: '52px', fontFamily: 'Arial Black', color: '#FFD700',
-        stroke: '#000', strokeThickness: 7
-      }).setOrigin(0.5);
-      this.add.text(W / 2, 195, `${winner.name} WIN!`, {
-        fontSize: '64px', fontFamily: 'Arial Black',
-        color: winner.textColor, stroke: '#000', strokeThickness: 6
-      }).setOrigin(0.5);
-    } else {
-      this.add.text(W / 2, 140, '🤝  TIE GAME!  🤝', {
-        fontSize: '64px', fontFamily: 'Arial Black', color: '#fff',
-        stroke: '#000', strokeThickness: 6
-      }).setOrigin(0.5);
-    }
+  // Head
+  const headGeo = new THREE.SphereGeometry(0.42,10,8);
+  const headMat = new THREE.MeshLambertMaterial({color:0xFF8C00});
+  const head = new THREE.Mesh(headGeo,headMat);
+  head.position.set(0,2.0,0);
+  head.castShadow=true;
+  group.add(head);
+  group.head=head;
 
-    this.add.text(W / 2, 295,
-      `${t1.name}   ${s1}  —  ${s2}   ${t2.name}`, {
-        fontSize: '40px', fontFamily: 'Arial Black', color: '#fff'
-      }).setOrigin(0.5);
+  // Ball dot (shows who has ball)
+  const dotGeo = new THREE.SphereGeometry(0.15,8,6);
+  const dotMat = new THREE.MeshBasicMaterial({color:0xFFD700,visible:false});
+  const ballDot = new THREE.Mesh(dotGeo,dotMat);
+  ballDot.position.set(0,2.75,0);
+  group.add(ballDot);
+  group.ballDot=ballDot;
 
-    this.add.text(W / 2, 355, 'Full-Contact Animal Basketball  •  4 Quarters', {
-      fontSize: '16px', color: '#aaa'
-    }).setOrigin(0.5);
+  // Player data
+  group.pd=pd;
+  group.team=team;
+  group.hasBall=false;
+  group.vx=0; group.vz=0;
+  group.walkPhase=0;
+  group.keys=null;
+  group._ringTween=null;
+  group.spawnX=0; group.spawnZ=0;
 
-    // MVP flavour
-    const willWon = winner && winner.players.some(p => p.animal === 'Goat');
-    const flavour = willWon
-      ? '🐐  Will Harris — the G.O.A.T. — delivers again!'
-      : winner
-        ? `${winner.players[0].emoji}  ${winner.players[0].name} leads the way!`
-        : 'What a battle — both teams left it all on the court!';
-    this.add.text(W / 2, 400, flavour, {
-      fontSize: '20px', color: '#FFD700'
-    }).setOrigin(0.5);
+  return group;
+}
 
-    // Buttons
-    this._btn(W / 2 - 160, 490, '🔄  REMATCH',   0xFF6B35, () => {
-      GS.score = [0, 0]; GS.quarter = 1; this.scene.start('Game');
-    });
-    this._btn(W / 2 + 160, 490, '🏠  MAIN MENU', 0x1D6FA4, () => this.scene.start('Menu'));
+// ── Spawn players ────────────────────────────────────────────────
+const SPAWN1=[
+  {x:-5,z:0},{x:-8,z:-3},{x:-8,z:3},{x:-11,z:-2},{x:-11,z:2},{x:-6,z:-5}
+];
+const SPAWN2=[
+  {x:5,z:0},{x:8,z:3},{x:8,z:-3},{x:11,z:2},{x:11,z:-2},{x:6,z:5}
+];
+
+function spawnPlayers(){
+  // Remove old
+  team1Players.forEach(p=>scene.remove(p));
+  team2Players.forEach(p=>scene.remove(p));
+  team1Players=[];team2Players=[];
+
+  const t1=TEAMS[GS.team1], t2=TEAMS[GS.team2];
+
+  t1.players.forEach((pd,i)=>{
+    const p=makePlayerMesh(pd,t1.color,1);
+    const sp=SPAWN1[i]||{x:-5+i,z:i-2};
+    p.position.set(sp.x,0,sp.z);
+    p.spawnX=sp.x; p.spawnZ=sp.z;
+    scene.add(p);
+    team1Players.push(p);
+  });
+
+  t2.players.forEach((pd,i)=>{
+    const p=makePlayerMesh(pd,t2.color,2);
+    const sp=SPAWN2[i]||{x:5-i,z:i-2};
+    p.position.set(sp.x,0,sp.z);
+    p.spawnX=sp.x; p.spawnZ=sp.z;
+    scene.add(p);
+    team2Players.push(p);
+  });
+
+  setCtrl1(team1Players[GS.p1idx]||team1Players[0]);
+  ctrl2=team2Players[GS.p2idx]||team2Players[0];
+  if(GS.mode==='2player')setCtrl2(ctrl2);
+}
+
+// ── Ball ─────────────────────────────────────────────────────────
+let ballFly={active:false,t:0,dur:1,sx:0,sy:0,sz:0,tx:0,ty:0,tz:0,arcH:4,onDone:null};
+
+function spawnBall(){
+  if(ball3d)scene.remove(ball3d);
+  const geo=new THREE.SphereGeometry(BALL_R,12,10);
+  const mat=new THREE.MeshLambertMaterial({color:0xFF6600,emissive:0x221100});
+  ballMesh=new THREE.Mesh(geo,mat);
+  ball3d=new THREE.Group();
+  ball3d.add(ballMesh);
+  ball3d.position.set(0,1.0,0);
+  ball3d.holder=null;
+  ball3d.flying=false;
+  scene.add(ball3d);
+
+  // Reset fly state
+  ballFly={active:false,t:0,dur:1,sx:0,sy:0,sz:0,tx:0,ty:0,tz:0,arcH:4,onDone:null};
+}
+
+function ballFlyTo(sx,sy,sz,tx,ty,tz,arcH,dur,onDone){
+  ballFly={active:true,t:0,dur,sx,sy,sz,tx,ty,tz,arcH,onDone};
+  ball3d.flying=true;
+  ball3d.holder=null;
+}
+
+// ── Control assignment ────────────────────────────────────────────
+function setCtrl1(player){
+  if(ctrl1){
+    ctrl1.ringMat.color.setHex(0x886600);
+    ctrl1.ringMat.opacity=0.2;
+    ctrl1.keys=null;
   }
+  ctrl1=player;
+  ctrl1.ringMat.color.setHex(0xFFD700);
+  ctrl1.ringMat.opacity=0.9;
+  ctrl1.keys='p1';
+}
 
-  _btn(x, y, label, bg, cb) {
-    const t = this.add.text(x, y, label, {
-      fontSize: '28px', fontFamily: 'Arial Black', color: '#fff',
-      backgroundColor: '#' + bg.toString(16).padStart(6, '0'),
-      padding: { x: 32, y: 16 }
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-    t.on('pointerover', () => t.setScale(1.06));
-    t.on('pointerout',  () => t.setScale(1));
-    t.on('pointerdown', cb);
+function setCtrl2(player){
+  if(!player||GS.mode!=='2player')return;
+  if(ctrl2){
+    ctrl2.ringMat.color.setHex(0x006688);
+    ctrl2.ringMat.opacity=0.2;
+    ctrl2.keys=null;
+  }
+  ctrl2=player;
+  ctrl2.ringMat.color.setHex(0x00DDFF);
+  ctrl2.ringMat.opacity=0.9;
+  ctrl2.keys='p2';
+}
+
+// ── Give ball ─────────────────────────────────────────────────────
+function clearBall(){
+  allPlayers().forEach(p=>{
+    p.hasBall=false;
+    p.ballDot.material.visible=false;
+  });
+  ball3d.holder=null;
+  cancelMeter();
+}
+
+function giveBall(player){
+  clearBall();
+  player.hasBall=true;
+  player.ballDot.material.visible=true;
+  ball3d.holder=player;
+  ball3d.flying=false;
+  possession=player.team;
+  shotClock=24;
+  updateHUDPossession();
+  updateShotClockDisplay();
+
+  if(player.team===1)setCtrl1(player);
+  else if(GS.mode==='2player')setCtrl2(player);
+}
+
+// ── Reset / tip-off ───────────────────────────────────────────────
+function tipOff(){
+  resetPossession(1);
+}
+
+function resetPossession(team){
+  if(transitioning)return;
+  clearBall();
+  ball3d.position.set(0,1.0,0);
+  possession=team;
+  shotClock=24;
+  updateShotClockDisplay();
+
+  const cp=team===1?ctrl1:ctrl2;
+  cp.position.set(team===1?-2:2,0,0);
+  cp.vx=0;cp.vz=0;
+  setTimeout(()=>{if(gameActive)giveBall(cp);},400);
+}
+
+// ── Shooting ──────────────────────────────────────────────────────
+function shootBall(player, pNum, chance){
+  if(!player.hasBall)return;
+  const tpos = pNum===1?hoop2pos:hoop1pos;
+  const dx=tpos.x-player.position.x;
+  const dz=tpos.z-player.position.z;
+  const dist=Math.sqrt(dx*dx+dz*dz);
+  const is3 = dist>THREE_PT;
+  const pts  = is3?3:2;
+  const finalChance = Math.max(chance-dist/40,0.08);
+
+  const sx=player.position.x,sy=1.5,sz=player.position.z;
+  const tx=tpos.x,ty=RIM_Y,tz=tpos.z;
+  const arcH = 3+dist*0.25;
+  const dur   = 0.5+dist*0.04;
+
+  clearBall();
+  ball3d.position.set(sx,sy,sz);
+  ball3d.flying=true;
+
+  toast(is3?'3PT! 🏀':'2PT! 🏀','#FFD700');
+
+  ballFlyTo(sx,sy,sz,tx,ty,tz,arcH,dur,()=>{
+    ball3d.flying=false;
+    resolveShot(pNum,finalChance,pts);
+  });
+}
+
+function resolveShot(pNum,chance,pts){
+  if(Math.random()<chance){
+    GS.score[pNum-1]+=pts;
+    updateHUDScore();
+    toast(pts===3?'TRIPLE! +3 🎯':'BUCKET! +2 ✅',pts===3?'#00aaff':'#00ee55');
+    const next=pNum===1?2:1;
+    setTimeout(()=>resetPossession(next),700);
+  } else {
+    toast('NO GOOD!','#ff4444');
+    setTimeout(()=>rebound(),350);
   }
 }
 
-// ╔══════════════════════════════════════════════════════════╗
-// ║  BOOT                                                    ║
-// ╚══════════════════════════════════════════════════════════╝
-const config = {
-  type: Phaser.AUTO,
-  width: W, height: H,
-  parent: 'game-container',
-  backgroundColor: '#0d0d1a',
-  scene: [MenuScene, TeamSelectScene, GameScene, GameOverScene],
-  scale: {
-    mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH
-  },
-  fps: { target: 60 }
-};
+function rebound(){
+  let best=null,bestD=Infinity;
+  allPlayers().forEach(p=>{
+    const dx=p.position.x-ball3d.position.x;
+    const dz=p.position.z-ball3d.position.z;
+    const d=Math.sqrt(dx*dx+dz*dz);
+    if(d<bestD){bestD=d;best=p;}
+  });
+  if(best)giveBall(best);
+  else resetPossession(possession===1?2:1);
+}
 
-new Phaser.Game(config);
+// ── Passing ───────────────────────────────────────────────────────
+function passBall(from,teammates){
+  if(!from.hasBall)return;
+  let best=null,bestD=Infinity;
+  teammates.forEach(p=>{
+    if(p===from)return;
+    const dx=p.position.x-from.position.x;
+    const dz=p.position.z-from.position.z;
+    const d=Math.sqrt(dx*dx+dz*dz);
+    if(d<bestD){bestD=d;best=p;}
+  });
+  if(!best)return;
+  const sx=from.position.x,sy=1.2,sz=from.position.z;
+  const tx=best.position.x,ty=1.2,tz=best.position.z;
+  clearBall();
+  ball3d.position.set(sx,sy,sz);
+  ball3d.flying=true;
+  ballFlyTo(sx,sy,sz,tx,ty,tz,1.5,0.25,()=>{
+    ball3d.flying=false;
+    giveBall(best);
+  });
+}
+
+// ── Defender switch ───────────────────────────────────────────────
+function switchDefender(teamNum){
+  const team=teamNum===1?team1Players:team2Players;
+  const ctrl=teamNum===1?ctrl1:ctrl2;
+  let best=null,bestD=Infinity;
+  team.forEach(p=>{
+    if(p===ctrl||p.hasBall)return;
+    const dx=p.position.x-ball3d.position.x;
+    const dz=p.position.z-ball3d.position.z;
+    const d=Math.sqrt(dx*dx+dz*dz);
+    if(d<bestD){bestD=d;best=p;}
+  });
+  if(best){
+    if(teamNum===1)setCtrl1(best);
+    else setCtrl2(best);
+  }
+}
+
+// ── Shot meter ────────────────────────────────────────────────────
+function startMeter(pNum){
+  const shooter=pNum===1?ctrl1:ctrl2;
+  if(!shooter||!shooter.hasBall||meterState.on)return;
+  meterState={on:true,power:0,pNum};
+  const mw=document.getElementById('meter-wrap');
+  mw.style.display='flex';
+  updateMeterPos();
+  updateMeterGfx();
+}
+
+function cancelMeter(){
+  if(!meterState.on)return;
+  meterState.on=false;
+  document.getElementById('meter-wrap').style.display='none';
+}
+
+function updateMeterPos(){
+  const shooter=meterState.pNum===1?ctrl1:ctrl2;
+  if(!shooter)return;
+  const v=shooter.position.clone().add(new THREE.Vector3(0.8,2,0));
+  v.project(camera);
+  const x=(v.x*0.5+0.5)*window.innerWidth;
+  const y=(-v.y*0.5+0.5)*window.innerHeight;
+  const mw=document.getElementById('meter-wrap');
+  mw.style.left=(x+4)+'px';
+  mw.style.top =(y-50)+'px';
+}
+
+function updateMeterGfx(){
+  const p=meterState.power;
+  const fill=document.getElementById('meter-fill');
+  const h=Math.max((p/100)*80,2);
+  fill.style.height=h+'px';
+  fill.style.background=p<65?'#ff2200':p<=85?'#00ee44':'#ff6600';
+  // zone (65-85%)
+  const zone=document.getElementById('meter-zone');
+  zone.style.bottom=(65/100*80)+'px';
+  zone.style.height=(20/100*80)+'px';
+}
+
+function releaseMeter(pNum){
+  if(!meterState.on||meterState.pNum!==pNum)return;
+  const power=meterState.power;
+  cancelMeter();
+  const shooter=pNum===1?ctrl1:ctrl2;
+  if(!shooter||!shooter.hasBall)return;
+  const inGreen=power>=65&&power<=85;
+  const base=shooter.pd.sht/10;
+  const chance=inGreen?Math.min(base*1.35,0.97):base*(power/100)*0.75;
+  const timing=inGreen?'PERFECT RELEASE 🔥':power>=50?(power<65?'EARLY':'LATE'):'WAY EARLY';
+  const col=inGreen?'#00ff55':power>=50?'#ffbb00':'#ff3300';
+  toast(timing,col);
+  shootBall(shooter,pNum,chance);
+}
+
+// ── Key handlers ──────────────────────────────────────────────────
+function onKeyDown(e){
+  if(!gameActive||transitioning)return;
+  if(e.code==='Space'){e.preventDefault();if(ctrl1&&ctrl1.hasBall&&!meterState.on)startMeter(1);}
+  if(e.code==='Enter'){e.preventDefault();if(ctrl2&&ctrl2.hasBall&&!meterState.on)startMeter(2);}
+  if(e.code==='KeyE'){if(ctrl1&&ctrl1.hasBall)passBall(ctrl1,team1Players);}
+  if(e.code==='KeyQ'){
+    if(ctrl1&&ctrl1.hasBall)passBall(ctrl1,team1Players);
+    else switchDefender(1);
+  }
+  if(e.code==='Slash'){
+    if(ctrl2&&ctrl2.hasBall)passBall(ctrl2,team2Players);
+    else switchDefender(2);
+  }
+  if(e.code==='KeyC'){
+    GS.camMode=(GS.camMode+1)%CAM_MODES.length;
+    document.getElementById('cam-label').textContent='📷 '+CAM_MODES[GS.camMode];
+  }
+}
+
+function onKeyUp(e){
+  if(!gameActive)return;
+  if(e.code==='Space'&&meterState.on&&meterState.pNum===1)releaseMeter(1);
+  if(e.code==='Enter'&&meterState.on&&meterState.pNum===2)releaseMeter(2);
+}
+
+// ── Player movement ───────────────────────────────────────────────
+function moveHuman(player, keySet, pNum, dt){
+  if(!player||player.keys!==keySet)return;
+  const sprint = keySet==='p1'?KEYS['ShiftLeft']||KEYS['ShiftRight']:KEYS['ControlLeft']||KEYS['ControlRight'];
+  const topSpd = player.pd.spd*(sprint?0.55:0.38);
+  let dx=0,dz=0;
+
+  if(keySet==='p1'){
+    if(KEYS['KeyW'])dz-=1;
+    if(KEYS['KeyS'])dz+=1;
+    if(KEYS['KeyA'])dx-=1;
+    if(KEYS['KeyD'])dx+=1;
+  } else {
+    if(KEYS['ArrowUp'])   dz-=1;
+    if(KEYS['ArrowDown']) dz+=1;
+    if(KEYS['ArrowLeft']) dx-=1;
+    if(KEYS['ArrowRight'])dx+=1;
+  }
+
+  const moving=dx!==0||dz!==0;
+  if(moving){
+    const len=Math.sqrt(dx*dx+dz*dz);
+    player.vx+=(dx/len*topSpd-player.vx)*0.22;
+    player.vz+=(dz/len*topSpd-player.vz)*0.22;
+    // Face movement direction
+    const angle=Math.atan2(dx,dz);
+    player.rotation.y=angle;
+  } else {
+    player.vx*=0.72;
+    player.vz*=0.72;
+    if(Math.abs(player.vx)<0.01&&Math.abs(player.vz)<0.01){player.vx=0;player.vz=0;}
+  }
+
+  player.position.x+=player.vx*dt;
+  player.position.z+=player.vz*dt;
+  player.position.x=Math.max(-14.5,Math.min(14.5,player.position.x));
+  player.position.z=Math.max(-7,Math.min(7,player.position.z));
+
+  // Walk animation
+  const spd=Math.sqrt(player.vx*player.vx+player.vz*player.vz);
+  if(spd>0.05){
+    player.walkPhase+=spd*dt*6;
+    const swing=Math.sin(player.walkPhase)*0.6;
+    player.legL.rotation.x=swing;
+    player.legR.rotation.x=-swing;
+  } else {
+    player.legL.rotation.x*=0.8;
+    player.legR.rotation.x*=0.8;
+  }
+
+  // Steal
+  if(sprint&&!player.hasBall){
+    const opp=pNum===1?team2Players:team1Players;
+    opp.forEach(op=>{
+      if(!op.hasBall)return;
+      const dx2=player.position.x-op.position.x,dz2=player.position.z-op.position.z;
+      const d=Math.sqrt(dx2*dx2+dz2*dz2);
+      if(d<1.2&&Math.random()<player.pd.def/140){
+        giveBall(player);
+        toast('STEAL! 🔥','#00ccff');
+      }
+    });
+  }
+}
+
+// ── AI ────────────────────────────────────────────────────────────
+function startAI(){
+  if(_aiInterval)clearInterval(_aiInterval);
+  _aiInterval=setInterval(runAI,150);
+}
+
+function runAI(){
+  if(!gameActive)return;
+  allPlayers().forEach(p=>{
+    if(p===ctrl1)return;
+    if(GS.mode==='2player'&&p===ctrl2)return;
+    aiTick(p);
+  });
+}
+
+function aiTick(p){
+  const oppHoop=p.team===1?hoop2pos:hoop1pos;
+  const myHoop =p.team===1?hoop1pos:hoop2pos;
+  const spd=p.pd.spd*0.022;
+  let tx,tz;
+
+  if(p.hasBall){
+    const dx=oppHoop.x-p.position.x,dz=oppHoop.z-p.position.z;
+    const dist=Math.sqrt(dx*dx+dz*dz);
+    if(dist<8&&Math.random()<0.025){
+      const chance=(p.pd.sht/10)*0.72;
+      shootBall(p,p.team,chance);
+      return;
+    }
+    const myTeam=p.team===1?team1Players:team2Players;
+    if(Math.random()<0.008){passBall(p,myTeam);return;}
+    tx=oppHoop.x+(Math.random()-0.5)*3;
+    tz=oppHoop.z+(Math.random()-0.5)*3;
+  } else if(possession===p.team){
+    // spread
+    const side=p.team===1?-1:1;
+    tx=side*7+((Math.random()-0.5)*6);
+    tz=(Math.random()-0.5)*10;
+  } else {
+    // defend
+    const bx=ball3d.position.x,bz=ball3d.position.z;
+    tx=(bx+myHoop.x)/2+(Math.random()-0.5)*2;
+    tz=(bz+myHoop.z)/2+(Math.random()-0.5)*2;
+    // steal
+    const holder=ball3d.holder;
+    if(holder&&holder.team!==p.team){
+      const dx2=p.position.x-holder.position.x,dz2=p.position.z-holder.position.z;
+      const d=Math.sqrt(dx2*dx2+dz2*dz2);
+      if(d<1.2&&Math.random()<p.pd.def/160){
+        giveBall(p);
+        toast('STEAL! 🔥','#00ccff');
+        return;
+      }
+    }
+  }
+
+  tx=tx||0;tz=tz||0;
+  const dxm=tx-p.position.x,dzm=tz-p.position.z;
+  const dist2=Math.sqrt(dxm*dxm+dzm*dzm);
+  if(dist2>0.5){
+    p.position.x+=dxm/dist2*spd;
+    p.position.z+=dzm/dist2*spd;
+    p.position.x=Math.max(-14.5,Math.min(14.5,p.position.x));
+    p.position.z=Math.max(-7,Math.min(7,p.position.z));
+    p.rotation.y=Math.atan2(dxm,dzm);
+    p.walkPhase+=spd*6;
+    const swing=Math.sin(p.walkPhase)*0.6;
+    p.legL.rotation.x=swing;
+    p.legR.rotation.x=-swing;
+  } else {
+    p.legL.rotation.x*=0.8;
+    p.legR.rotation.x*=0.8;
+  }
+}
+
+// ── Clock ─────────────────────────────────────────────────────────
+function startClockTimer(){
+  if(_clockInterval)clearInterval(_clockInterval);
+  _clockInterval=setInterval(clockTick,1000);
+}
+
+function clockTick(){
+  if(!gameActive||transitioning)return;
+  timeLeft--;
+  shotClock--;
+
+  updateClockDisplay();
+
+  if(shotClock<=0){
+    toast('SHOT CLOCK VIOLATION!','#FF4500');
+    resetPossession(possession===1?2:1);
+  } else {
+    updateShotClockDisplay();
+  }
+
+  if(timeLeft<=0)endQuarter();
+}
+
+function endQuarter(){
+  if(transitioning)return;
+  transitioning=true;
+  gameActive=false;
+  clearInterval(_clockInterval);
+  clearInterval(_aiInterval);
+
+  if(GS.quarter<4){
+    GS.quarter++;
+    showQtrOverlay(`END OF Q${GS.quarter-1}`,()=>{
+      timeLeft=QTR_SECS;
+      shotClock=24;
+      gameActive=true;
+      transitioning=false;
+      updateHUD();
+      startClockTimer();
+      startAI();
+      resetPossession(GS.quarter%2===0?2:1);
+    });
+  } else {
+    setTimeout(showGameOver,800);
+  }
+}
+
+let _qtrOverlayTimeout=null;
+function showQtrOverlay(msg,cb){
+  const ov=document.getElementById('qtr-overlay');
+  const t1=TEAMS[GS.team1],t2=TEAMS[GS.team2];
+  document.getElementById('qo-title').textContent=msg;
+  document.getElementById('qo-score').textContent=`${t1.name}  ${GS.score[0]}  —  ${GS.score[1]}  ${t2.name}`;
+  ov.style.display='flex';
+  if(_qtrOverlayTimeout)clearTimeout(_qtrOverlayTimeout);
+  _qtrOverlayTimeout=setTimeout(()=>{
+    ov.style.display='none';
+    if(cb)cb();
+  },2600);
+}
+
+// ── Game Over ─────────────────────────────────────────────────────
+function showGameOver(){
+  document.getElementById('three-container').style.display='none';
+  document.getElementById('hud').style.display='none';
+  const t1=TEAMS[GS.team1],t2=TEAMS[GS.team2];
+  const [s1,s2]=GS.score;
+  const winner=s1>s2?t1:s2>s1?t2:null;
+
+  document.getElementById('go-title').textContent='🏆 FINAL BUZZER 🏆';
+  document.getElementById('go-winner').style.color=winner?winner.textColor:'#fff';
+  document.getElementById('go-winner').textContent=winner?`${winner.name} WIN!`:'🤝 TIE GAME! 🤝';
+  document.getElementById('go-score').textContent=`${t1.name}  ${s1}  —  ${s2}  ${t2.name}`;
+  const willWon=winner&&winner.players.some(p=>p.animal==='Goat');
+  document.getElementById('go-flavor').textContent=willWon
+    ?'🐐 Will Harris — the G.O.A.T. — delivers again!'
+    :winner?`${winner.players[0].emoji} ${winner.players[0].name} leads the way!`
+    :'What a battle — both teams left it all on the court!';
+
+  document.getElementById('go-rematch').onclick=()=>{
+    GS.score=[0,0];GS.quarter=1;startGame();
+  };
+  document.getElementById('go-menu').onclick=()=>show('menu-screen');
+  show('gameover-screen');
+}
+
+// ── HUD ───────────────────────────────────────────────────────────
+function updateHUD(){
+  updateHUDScore();
+  updateClockDisplay();
+  updateShotClockDisplay();
+  updateHUDPossession();
+  const t1=TEAMS[GS.team1],t2=TEAMS[GS.team2];
+  document.getElementById('sb-t1').textContent=t1.abbr;
+  document.getElementById('sb-t1').style.color=t1.textColor;
+  document.getElementById('sb-t2').textContent=t2.abbr;
+  document.getElementById('sb-t2').style.color=t2.textColor;
+  document.getElementById('sb-qtr').textContent=`Q${GS.quarter}`;
+}
+
+function updateHUDScore(){
+  document.getElementById('sb-s1').textContent=GS.score[0];
+  document.getElementById('sb-s2').textContent=GS.score[1];
+}
+
+function updateClockDisplay(){
+  const m=Math.floor(timeLeft/60),s=timeLeft%60;
+  document.getElementById('sb-clock').textContent=`${m}:${s.toString().padStart(2,'0')}`;
+  document.getElementById('sb-qtr').textContent=`Q${GS.quarter}`;
+}
+
+function updateShotClockDisplay(){
+  const el=document.getElementById('sb-sc');
+  el.textContent=shotClock;
+  el.style.color=shotClock<=5?'#ff2200':'#FF4500';
+}
+
+function updateHUDPossession(){
+  const p=document.getElementById('possession');
+  const t=possession===1?TEAMS[GS.team1]:TEAMS[GS.team2];
+  const holder=ball3d&&ball3d.holder;
+  const name=holder?holder.pd.name:t.name;
+  p.textContent=(possession===1?'▶ ':'◀ ')+name;
+  p.style.color=t.textColor;
+}
+
+// ── Toast ─────────────────────────────────────────────────────────
+function toast(msg,color='#FFD700'){
+  const area=document.getElementById('toast-area');
+  const el=document.createElement('div');
+  el.className='toast';
+  el.style.color=color;
+  el.style.top='0px';
+  el.style.left='50%';
+  el.textContent=msg;
+  area.appendChild(el);
+  setTimeout(()=>el.remove(),1600);
+}
+
+// ── Camera ────────────────────────────────────────────────────────
+const _camSmooth={x:0,y:16,z:20,lx:0,ly:0,lz:-1};
+function updateCamera(dt){
+  const mode=CAM_MODES[GS.camMode];
+  let tx,ty,tz,lx,ly,lz;
+
+  if(mode==='Broadcast'){
+    tx=0;ty=16;tz=20;lx=0;ly=0;lz=-1;
+  } else if(mode==='2K'){
+    const bx=ball3d?ball3d.position.x:0;
+    tx=bx*0.3;ty=14;tz=18;lx=bx*0.1;ly=0;lz=-2;
+  } else if(mode==='Follow'){
+    const p=ctrl1;
+    if(p){
+      tx=p.position.x;ty=6;tz=p.position.z+8;
+      lx=p.position.x;ly=1;lz=p.position.z;
+    } else {tx=0;ty=14;tz=18;lx=0;ly=0;lz=-1;}
+  } else { // Overhead
+    tx=0;ty=28;tz=0.1;lx=0;ly=0;lz=0;
+  }
+
+  const lr=0.06;
+  _camSmooth.x+=( tx-_camSmooth.x)*lr;
+  _camSmooth.y+=( ty-_camSmooth.y)*lr;
+  _camSmooth.z+=( tz-_camSmooth.z)*lr;
+  _camSmooth.lx+=(lx-_camSmooth.lx)*lr;
+  _camSmooth.ly+=(ly-_camSmooth.ly)*lr;
+  _camSmooth.lz+=(lz-_camSmooth.lz)*lr;
+
+  camera.position.set(_camSmooth.x,_camSmooth.y,_camSmooth.z);
+  camera.lookAt(_camSmooth.lx,_camSmooth.ly,_camSmooth.lz);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+function allPlayers(){return [...team1Players,...team2Players];}
+
+// ── Game loop ─────────────────────────────────────────────────────
+function gameLoop(){
+  _animFrame=requestAnimationFrame(gameLoop);
+  const now=performance.now();
+  const dt=Math.min((now-_lastTime)/1000,0.05);
+  _lastTime=now;
+
+  if(gameActive||transitioning){
+    update(dt);
+  }
+  renderer.render(scene,camera);
+}
+
+function update(dt){
+  if(!gameActive)return;
+
+  // Human input
+  moveHuman(ctrl1,'p1',1,dt);
+  if(GS.mode==='2player')moveHuman(ctrl2,'p2',2,dt);
+
+  // Shot meter fill
+  if(meterState.on){
+    meterState.power=Math.min(meterState.power+75*dt,100);
+    updateMeterGfx();
+    updateMeterPos();
+    if(meterState.power>=100)releaseMeter(meterState.pNum);
+  }
+
+  // Ball arc animation
+  if(ballFly.active){
+    ballFly.t+=dt;
+    const f=Math.min(ballFly.t/ballFly.dur,1);
+    const x=ballFly.sx+(ballFly.tx-ballFly.sx)*f;
+    const z=ballFly.sz+(ballFly.tz-ballFly.sz)*f;
+    const y=ballFly.sy+(ballFly.ty-ballFly.sy)*f+Math.sin(f*Math.PI)*ballFly.arcH;
+    ball3d.position.set(x,y,z);
+    // spin ball
+    ballMesh.rotation.x+=dt*8;
+    ballMesh.rotation.z+=dt*3;
+    if(f>=1){
+      ballFly.active=false;
+      ball3d.position.set(ballFly.tx,ballFly.ty,ballFly.tz);
+      if(ballFly.onDone)ballFly.onDone();
+    }
+  }
+
+  // Ball follows holder
+  if(ball3d.holder&&!ball3d.flying){
+    const h=ball3d.holder;
+    ball3d.position.set(h.position.x,1.2,h.position.z+0.4);
+  }
+
+  // Loose ball pickup
+  if(!ball3d.holder&&!ball3d.flying){
+    allPlayers().forEach(p=>{
+      const dx=p.position.x-ball3d.position.x;
+      const dz=p.position.z-ball3d.position.z;
+      const d=Math.sqrt(dx*dx+dz*dz);
+      if(d<1.2)giveBall(p);
+    });
+  }
+
+  // Ring pulse animation for controlled players
+  const t=performance.now()/1000;
+  [ctrl1,ctrl2].forEach((p,i)=>{
+    if(!p)return;
+    p.ringMat.opacity=0.6+Math.sin(t*3+i)*0.3;
+  });
+
+  updateCamera(dt);
+}
+
+// Initial state
+show('menu-screen');
 </script>
 </body>
 </html>
