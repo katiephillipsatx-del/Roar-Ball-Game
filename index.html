@@ -1217,6 +1217,7 @@ function updateParticles(dt){
 function makePlayerMesh(pd, teamColor, team){
   const group = new THREE.Group();
   const tc = teamColor;
+  const isPanther = pd && pd.animal === 'Panther';
 
   // Ground shadow
   const shadowGeo = new THREE.CircleGeometry(0.65,32);
@@ -1238,7 +1239,8 @@ function makePlayerMesh(pd, teamColor, team){
 
   // Legs
   const legGeo = new THREE.BoxGeometry(0.28,0.7,0.28);
-  const legMat = new THREE.MeshLambertMaterial({color:0x222222});
+  const legColor = isPanther ? 0x111A0A : 0x222222;
+  const legMat = new THREE.MeshLambertMaterial({color:legColor});
   const legL = new THREE.Mesh(legGeo,legMat);
   legL.position.set(-0.22,0.35,0);
   legL.castShadow=true;
@@ -1249,23 +1251,92 @@ function makePlayerMesh(pd, teamColor, team){
   group.add(legR);
   group.legL=legL; group.legR=legR;
 
+  // Feet (Panther only — amber/yellow clawed feet)
+  if(isPanther){
+    const footGeo = new THREE.BoxGeometry(0.32,0.18,0.38);
+    const footMat = new THREE.MeshLambertMaterial({color:0xCC8800});
+    const footL = new THREE.Mesh(footGeo,footMat);
+    footL.position.set(-0.22,0.09,0.06);
+    footL.castShadow=true;
+    group.add(footL);
+    const footR = new THREE.Mesh(footGeo,footMat);
+    footR.position.set(0.22,0.09,0.06);
+    footR.castShadow=true;
+    group.add(footR);
+  }
+
   // Body
   const bodyGeo = new THREE.BoxGeometry(0.88,1.05,0.52);
-  const bodyMat = new THREE.MeshLambertMaterial({color:tc});
+  const bodyColor = isPanther ? 0x2A4A14 : tc;
+  const bodyMat = new THREE.MeshLambertMaterial({color:bodyColor});
   const body = new THREE.Mesh(bodyGeo,bodyMat);
   body.position.set(0,1.2,0);
   body.castShadow=true;
   group.add(body);
   group.body=body;
 
+  // Panther chest emblem (orange diagonal stripe)
+  if(isPanther){
+    const chestGeo = new THREE.BoxGeometry(0.55,0.55,0.54);
+    const chestMat = new THREE.MeshLambertMaterial({color:0xFF5500});
+    const chest = new THREE.Mesh(chestGeo,chestMat);
+    chest.position.set(0,1.28,0);
+    chest.rotation.z = 0.42;
+    chest.castShadow=true;
+    group.add(chest);
+    // Dark green overlay to create stripe effect
+    const stripeGeo = new THREE.BoxGeometry(0.20,0.70,0.55);
+    const stripeMat = new THREE.MeshLambertMaterial({color:0x1E3A0E});
+    const stripe = new THREE.Mesh(stripeGeo,stripeMat);
+    stripe.position.set(0,1.28,0);
+    stripe.rotation.z = 0.42;
+    group.add(stripe);
+    // Arms — dark green muscular
+    const armGeo = new THREE.BoxGeometry(0.24,0.72,0.24);
+    const armMat = new THREE.MeshLambertMaterial({color:0x2A4A14});
+    const armL = new THREE.Mesh(armGeo,armMat);
+    armL.position.set(-0.62,1.22,0);
+    armL.castShadow=true;
+    group.add(armL);
+    const armR = new THREE.Mesh(armGeo,armMat);
+    armR.position.set(0.62,1.22,0);
+    armR.castShadow=true;
+    group.add(armR);
+  }
+
   // Head
+  const headColor = isPanther ? 0x2A4A14 : 0xFF8C00;
   const headGeo = new THREE.SphereGeometry(0.42,10,8);
-  const headMat = new THREE.MeshLambertMaterial({color:0xFF8C00});
+  const headMat = new THREE.MeshLambertMaterial({color:headColor});
   const head = new THREE.Mesh(headGeo,headMat);
   head.position.set(0,2.0,0);
   head.castShadow=true;
   group.add(head);
   group.head=head;
+
+  // Panther snout + orange face markings
+  if(isPanther){
+    const snoutGeo = new THREE.BoxGeometry(0.26,0.20,0.24);
+    const snoutMat = new THREE.MeshLambertMaterial({color:0x1A300A});
+    const snout = new THREE.Mesh(snoutGeo,snoutMat);
+    snout.position.set(0,1.92,0.36);
+    group.add(snout);
+    // Orange brow ridge
+    const browGeo = new THREE.BoxGeometry(0.50,0.10,0.20);
+    const browMat = new THREE.MeshLambertMaterial({color:0xFF5500});
+    const brow = new THREE.Mesh(browGeo,browMat);
+    brow.position.set(0,2.18,0.28);
+    group.add(brow);
+    // Ears
+    const earGeo = new THREE.ConeGeometry(0.12,0.22,4);
+    const earMat = new THREE.MeshLambertMaterial({color:0x1E3A0E});
+    const earL = new THREE.Mesh(earGeo,earMat);
+    earL.position.set(-0.28,2.42,0);
+    group.add(earL);
+    const earR = new THREE.Mesh(earGeo,earMat);
+    earR.position.set(0.28,2.42,0);
+    group.add(earR);
+  }
 
   // Ball dot (shows who has ball)
   const dotGeo = new THREE.SphereGeometry(0.15,8,6);
