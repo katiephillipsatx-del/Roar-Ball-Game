@@ -262,6 +262,7 @@ const BALL_R    = 0.28;
 const RIM_Y     = 3.05;
 const RIM_R     = 0.45;
 const THREE_PT  = 7.2;
+const DUNK_DIST = 2.8;
 
 // ── Team Select state ────────────────────────────────────────────
 let tsStep = 'team1';
@@ -1525,6 +1526,7 @@ function makePlayerMesh(pd, teamColor, team){
 
   // Shoot animation state
   group.shootAnim={active:false,t:0,dur:0.5};
+  group.dunkAnim={active:false,t:0,dur:0.7,pNum:0,ballReleased:false,tx:0,ty:0,tz:0};
 
   // Ball dot (shows who has ball)
   const dotGeo = new THREE.SphereGeometry(0.15,8,6);
@@ -1688,6 +1690,7 @@ function shootBall(player, pNum, chance){
   const dx=tpos.x-player.position.x;
   const dz=tpos.z-player.position.z;
   const dist=Math.sqrt(dx*dx+dz*dz);
+  if(dist<DUNK_DIST){dunkBall(player,pNum);return;}
   const is3 = dist>THREE_PT;
   const pts  = is3?3:2;
   const finalChance = Math.max(chance-dist/40,0.08);
@@ -1708,6 +1711,21 @@ function shootBall(player, pNum, chance){
     ball3d.flying=false;
     resolveShot(pNum,finalChance,pts);
   });
+}
+
+function dunkBall(player, pNum){
+  if(!player.hasBall) return;
+  const tpos = pNum===1 ? hoop2pos : hoop1pos;
+  cancelMeter();
+  clearBall();
+  ball3d.flying=true; // prevent loose-ball pickup during animation
+  ball3d.position.set(player.position.x, 2.6, player.position.z);
+  toast('DUNK! 💥','#FF4500');
+  player.dunkAnim={
+    active:true, t:0, dur:0.7, pNum,
+    ballReleased:false,
+    tx:tpos.x, ty:RIM_Y, tz:tpos.z
+  };
 }
 
 function resolveShot(pNum,chance,pts){
@@ -1812,6 +1830,9 @@ function switchDefender(teamNum){
 function startMeter(pNum){
   const shooter=pNum===1?ctrl1:ctrl2;
   if(!shooter||!shooter.hasBall||meterState.on)return;
+  const _tp=pNum===1?hoop2pos:hoop1pos;
+  const _dx=_tp.x-shooter.position.x, _dz=_tp.z-shooter.position.z;
+  if(Math.sqrt(_dx*_dx+_dz*_dz)<DUNK_DIST){dunkBall(shooter,pNum);return;}
   meterState={on:true,power:0,pNum};
   const mw=document.getElementById('meter-wrap');
   mw.style.display='flex';
@@ -2300,6 +2321,40 @@ function update(dt){
       p.shootAnim.active=false;
       if(p.armR) p.armR.rotation.x=0;
       if(p.body) p.body.rotation.x=0;
+    }
+  });
+
+  // Dunk animation
+  allPlayers().forEach(p=>{
+    if(!p.dunkAnim||!p.dunkAnim.active)return;
+    const da=p.dunkAnim;
+    da.t+=dt;
+    const f=Math.min(da.t/da.dur,1);
+    // Jump: player rises and falls
+    p.position.y=Math.sin(f*Math.PI)*1.8;
+    // Arm sweeps fully up (peaks at f=0.45)
+    const armF=Math.min(f/0.45,1);
+    const armDown=Math.max((f-0.45)/0.55,0);
+    if(p.armR) p.armR.rotation.x = -(armF-armDown)*Math.PI*0.9;
+    if(p.armL) p.armL.rotation.x = -(armF-armDown)*Math.PI*0.5;
+    // Ball rides above raised hand until release
+    if(!da.ballReleased){
+      ball3d.position.set(p.position.x, p.position.y+2.8, p.position.z+0.2);
+      ballMesh.rotation.x+=dt*12;
+      if(f>=0.42){
+        da.ballReleased=true;
+        const sx=ball3d.position.x,sy=ball3d.position.y,sz=ball3d.position.z;
+        ballFlyTo(sx,sy,sz,da.tx,da.ty,da.tz,0.4,0.25,()=>{
+          ball3d.flying=false;
+          resolveShot(da.pNum,1.0,2);
+        });
+      }
+    }
+    if(f>=1){
+      da.active=false;
+      p.position.y=0;
+      if(p.armR) p.armR.rotation.x=0;
+      if(p.armL) p.armL.rotation.x=0;
     }
   });
 
