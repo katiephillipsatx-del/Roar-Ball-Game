@@ -1876,10 +1876,6 @@ function makePlayerMesh(pd, teamColor, team){
       boot.position.set(xOff,0.11,0.06); boot.castShadow=true; group.add(boot);
     });
 
-    // Dark purple shorts
-    const shortsMat = new THREE.MeshLambertMaterial({color:RPURP});
-    const shorts = new THREE.Mesh(new THREE.BoxGeometry(1.12,0.52,0.80),shortsMat);
-    shorts.position.set(0, legH+0.10, 0); shorts.castShadow=true; group.add(shorts);
 
     // Jersey — green with red trim, Thorns #34 in orange
     const jCanvas = document.createElement('canvas');
