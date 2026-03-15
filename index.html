@@ -263,8 +263,7 @@ class TeamSelectScene extends Phaser.Scene {
       const selected = (this.step === 'team1' && this.sel.team1 === i) ||
                        (this.step === 'team2' && this.sel.team2 === i);
       const bg = this.add.rectangle(cx, cy, cardW, cardH, team.color, selected ? 1 : 0.7)
-        .setStrokeStyle(selected ? 4 : 2, 0xffffff, selected ? 1 : 0.5)
-        .setInteractive({ useHandCursor: true });
+        .setStrokeStyle(selected ? 4 : 2, 0xffffff, selected ? 1 : 0.5);
 
       const name    = this.add.text(cx, cy - cardH / 2 + 22, team.name, {
         fontSize: '15px', fontFamily: 'Arial Black', color: '#fff',
@@ -279,11 +278,15 @@ class TeamSelectScene extends Phaser.Scene {
         fontSize: '12px', color: '#ddd'
       }).setOrigin(0.5, 0);
 
-      this._track(sh, bg, name, locTxt, emoText, abbr);
+      // Zone added LAST so it is the topmost object and always receives input
+      const zone = this.add.zone(cx, cy, cardW, cardH)
+        .setInteractive({ useHandCursor: true });
 
-      bg.on('pointerover', () => bg.setScale(1.06));
-      bg.on('pointerout',  () => bg.setScale(1.0));
-      bg.on('pointerdown', () => {
+      this._track(sh, bg, name, locTxt, emoText, abbr, zone);
+
+      zone.on('pointerover', () => bg.setScale(1.06));
+      zone.on('pointerout',  () => bg.setScale(1.0));
+      zone.on('pointerdown', () => {
         if (this.step === 'team1') { this.sel.team1 = i; this.step = 'player1'; }
         else                       { this.sel.team2 = i; this.step = 'player2'; }
         this._refresh();
@@ -304,8 +307,7 @@ class TeamSelectScene extends Phaser.Scene {
 
       const shadow = this.add.rectangle(cx + 4, cy + 4, cardW, cardH, 0x000000, 0.4);
       const bg = this.add.rectangle(cx, cy, cardW, cardH, team.color, 0.85)
-        .setStrokeStyle(3, 0xffffff, 0.8)
-        .setInteractive({ useHandCursor: true });
+        .setStrokeStyle(3, 0xffffff, 0.8);
 
       const emoText = this.add.text(cx, cy - cardH / 2 + 44, player.emoji, { fontSize: '44px' }).setOrigin(0.5, 0);
       const nameT   = this.add.text(cx, cy - cardH / 2 + 94, player.name, {
@@ -315,8 +317,6 @@ class TeamSelectScene extends Phaser.Scene {
       const animalT = this.add.text(cx, cy - cardH / 2 + 118, player.animal, {
         fontSize: '11px', color: '#ffeeaa', fontStyle: 'italic'
       }).setOrigin(0.5, 0);
-
-      this._track(shadow, bg, emoText, nameT, animalT);
 
       const stats = [
         { label: 'SPD', val: player.spd },
@@ -331,9 +331,15 @@ class TeamSelectScene extends Phaser.Scene {
         this._track(lbl, bar);
       });
 
-      bg.on('pointerover', () => bg.setScale(1.06));
-      bg.on('pointerout',  () => bg.setScale(1.0));
-      bg.on('pointerdown', () => {
+      // Zone added LAST so it is the topmost object and always receives input
+      const zone = this.add.zone(cx, cy, cardW, cardH)
+        .setInteractive({ useHandCursor: true });
+
+      this._track(shadow, bg, emoText, nameT, animalT, zone);
+
+      zone.on('pointerover', () => bg.setScale(1.06));
+      zone.on('pointerout',  () => bg.setScale(1.0));
+      zone.on('pointerdown', () => {
         if (this.step === 'player1') {
           this.sel.p1 = i;
           if (GS.mode === 'cpu') {
