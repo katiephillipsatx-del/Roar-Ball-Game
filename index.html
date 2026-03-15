@@ -1479,7 +1479,6 @@ function bounceMiss(pNum){
     ballFlyTo(bx,by,bz, bbX,bbY,bbZ, 0.5,0.15, ()=>{
       ballFlyTo(bbX,bbY,bbZ, landX,0.28,landZ, 1.4,0.4, ()=>{
         ball3d.flying=false;
-        setTimeout(()=>{ if(!ball3d.holder)rebound(); },400);
       });
     });
   } else {
@@ -1491,7 +1490,6 @@ function bounceMiss(pNum){
     ballFlyTo(bx,by,bz, rattleX,RIM_Y+0.1,rattleZ, 0.4,0.13, ()=>{
       ballFlyTo(rattleX,RIM_Y+0.1,rattleZ, landX,0.28,landZ, 1.0,0.38, ()=>{
         ball3d.flying=false;
-        setTimeout(()=>{ if(!ball3d.holder)rebound(); },400);
       });
     });
   }
@@ -1718,6 +1716,26 @@ function aiTick(p){
   const spd=p.pd.spd*0.022;
   let tx,tz;
 
+  // Loose ball — everyone chases it
+  if(!ball3d.holder && !ball3d.flying){
+    tx=ball3d.position.x;
+    tz=ball3d.position.z;
+    const dxm=tx-p.position.x,dzm=tz-p.position.z;
+    const dist2=Math.sqrt(dxm*dxm+dzm*dzm);
+    if(dist2>0.5){
+      p.position.x+=dxm/dist2*spd*1.2;
+      p.position.z+=dzm/dist2*spd*1.2;
+      p.position.x=Math.max(-14.5,Math.min(14.5,p.position.x));
+      p.position.z=Math.max(-7,Math.min(7,p.position.z));
+      p.rotation.y=Math.atan2(dxm,dzm);
+      p.walkPhase+=spd*6;
+      const swing=Math.sin(p.walkPhase)*0.6;
+      p.legL.rotation.x=swing;
+      p.legR.rotation.x=-swing;
+    }
+    return;
+  }
+
   if(p.hasBall){
     const dx=oppHoop.x-p.position.x,dz=oppHoop.z-p.position.z;
     const dist=Math.sqrt(dx*dx+dz*dz);
@@ -1781,7 +1799,8 @@ function startClockTimer(){
 function clockTick(){
   if(!gameActive||transitioning)return;
   timeLeft--;
-  shotClock--;
+  // Don't burn shot clock while ball is loose on the floor
+  if(ball3d.holder)shotClock--;
 
   updateClockDisplay();
 
