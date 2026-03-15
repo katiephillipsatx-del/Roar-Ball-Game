@@ -40,17 +40,20 @@
     .stat-fill{height:6px;background:#00ff88;border-radius:3px;}
     /* HUD */
     #hud{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
-    #scoreboard{position:absolute;top:10px;left:10px;background:#080808ee;border-radius:10px;padding:6px 18px;display:flex;align-items:center;gap:14px;justify-content:center;}
-    #scoreboard .team-name-sb{font-size:13px;font-family:'Arial Black';font-weight:900;}
-    #scoreboard .score{font-size:38px;font-family:'Arial Black';color:#fff;}
-    #scoreboard .divider{font-size:22px;color:#555;}
-    #scoreboard .qtr-info{display:flex;flex-direction:column;align-items:center;gap:0px;}
-    #scoreboard .qtr{font-size:11px;font-family:'Arial Black';color:#FFD700;}
-    #scoreboard .clock{font-size:20px;font-family:'Courier New';color:#eee;}
-    #scoreboard .shotclock{font-size:16px;font-family:'Arial Black';color:#FF4500;}
-    #possession{position:absolute;top:90px;left:10px;font-size:13px;font-family:'Arial Black';color:#FFD700;background:#00000099;padding:3px 12px;border-radius:4px;}
+    #scoreboard{position:absolute;bottom:0;left:0;right:0;background:#111111ee;display:flex;align-items:stretch;height:60px;font-family:'Arial Black',sans-serif;z-index:10;}
+    #scoreboard .sb-team{display:flex;align-items:center;gap:12px;flex:1;padding:0 22px;}
+    #scoreboard .sb-team.left{justify-content:flex-start;}
+    #scoreboard .sb-team.right{justify-content:flex-end;}
+    #scoreboard .sb-bar{width:5px;align-self:stretch;border-radius:0;}
+    #scoreboard .team-name-sb{font-size:20px;font-weight:900;letter-spacing:2px;}
+    #scoreboard .score{font-size:36px;font-weight:900;color:#fff;}
+    #scoreboard .sb-center{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 28px;gap:0;border-left:1px solid #333;border-right:1px solid #333;min-width:130px;}
+    #scoreboard .clock{font-size:22px;color:#fff;font-family:'Courier New';line-height:1.1;}
+    #scoreboard .qtr{font-size:11px;color:#FFD700;font-weight:900;letter-spacing:1px;}
+    #scoreboard .shotclock{font-size:12px;font-weight:900;color:#FF6B35;line-height:1;}
+    #possession{position:absolute;bottom:66px;left:50%;transform:translateX(-50%);font-size:13px;font-family:'Arial Black';color:#FFD700;background:#00000099;padding:3px 14px;border-radius:4px;white-space:nowrap;}
     #cam-label{position:absolute;top:10px;left:10px;font-size:13px;color:#fff;background:#00000088;padding:4px 8px;border-radius:4px;}
-    #controls-hint{position:absolute;bottom:6px;right:6px;font-size:10px;color:#555;background:#00000033;padding:3px 6px;border-radius:3px;text-align:right;}
+    #controls-hint{position:absolute;bottom:66px;right:6px;font-size:10px;color:#555;background:#00000033;padding:3px 6px;border-radius:3px;text-align:right;}
     #meter-wrap{position:absolute;display:none;flex-direction:column;align-items:center;pointer-events:none;}
     #meter-label{font-size:9px;font-family:'Arial Black';color:#FFD700;margin-bottom:2px;}
     #meter-outer{width:14px;height:84px;background:#111;border:1.5px solid #555;border-radius:4px;position:relative;overflow:hidden;}
@@ -129,15 +132,21 @@ Broadcast  |  2K  |  Follow  |  Overhead
 <div id="hud" style="display:none;">
   <div id="cam-label">📺 Broadcast</div>
   <div id="scoreboard">
-    <span id="sb-t1" class="team-name-sb" style="color:#A855F7">VTH</span>
-    <span id="sb-s1" class="score">0</span>
-    <div class="qtr-info">
-      <span id="sb-qtr" class="qtr">Q1</span>
+    <div class="sb-team left">
+      <div id="sb-bar1" class="sb-bar" style="background:#A855F7"></div>
+      <span id="sb-t1" class="team-name-sb" style="color:#A855F7">VTH</span>
+      <span id="sb-s1" class="score">0</span>
+    </div>
+    <div class="sb-center">
       <span id="sb-clock" class="clock">2:00</span>
+      <span id="sb-qtr" class="qtr">Q1</span>
       <span id="sb-sc" class="shotclock">24</span>
     </div>
-    <span id="sb-s2" class="score">0</span>
-    <span id="sb-t2" class="team-name-sb" style="color:#FF5500">MAG</span>
+    <div class="sb-team right">
+      <span id="sb-s2" class="score">0</span>
+      <span id="sb-t2" class="team-name-sb" style="color:#FF5500">MAG</span>
+      <div id="sb-bar2" class="sb-bar" style="background:#FF5500"></div>
+    </div>
   </div>
   <div id="possession">▶ Team 1 Ball</div>
   <div id="controls-hint">WASD Move · SPACE Shoot · SHIFT Sprint · E Pass · Q Switch/Pass · C Cam</div>
@@ -2805,8 +2814,10 @@ function updateHUD(){
   const t1=TEAMS[GS.team1],t2=TEAMS[GS.team2];
   document.getElementById('sb-t1').textContent=t1.abbr;
   document.getElementById('sb-t1').style.color=t1.textColor;
+  document.getElementById('sb-bar1').style.background=t1.textColor;
   document.getElementById('sb-t2').textContent=t2.abbr;
   document.getElementById('sb-t2').style.color=t2.textColor;
+  document.getElementById('sb-bar2').style.background=t2.textColor;
   document.getElementById('sb-qtr').textContent=`Q${GS.quarter}`;
 }
 
