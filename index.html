@@ -1968,28 +1968,23 @@ function makePlayerMesh(pd, teamColor, team){
     belly.castShadow=true;
     group.add(belly);
 
-    // Worn gray jersey texture ("BASKET\nBALL")
+    // MAGMA jersey — red tank top, #32 (matches Mane's style)
     const jCanvas = document.createElement('canvas');
-    jCanvas.width=256; jCanvas.height=256;
+    jCanvas.width=128; jCanvas.height=128;
     const jCtx = jCanvas.getContext('2d');
-    // Base: dirty worn gray
-    jCtx.fillStyle='#9E9A94'; jCtx.fillRect(0,0,256,256);
-    // Subtle worn texture lines
-    jCtx.strokeStyle='#888480'; jCtx.lineWidth=1; jCtx.globalAlpha=0.4;
-    for(let i=0;i<256;i+=6){ jCtx.beginPath(); jCtx.moveTo(0,i); jCtx.lineTo(256,i); jCtx.stroke(); }
-    jCtx.globalAlpha=1.0;
-    // "BASKET" top
-    jCtx.fillStyle='#3A3530';
-    jCtx.font='bold 52px Arial Black';
-    jCtx.textAlign='center'; jCtx.textBaseline='middle';
-    jCtx.fillText('BASKET',128,72);
-    // "BALL" big
-    jCtx.font='bold 96px Arial Black';
-    jCtx.fillText('BALL',128,168);
+    jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,0,128,128);
+    // arm-hole cutouts for sleeveless look
+    jCtx.fillStyle='#1C1A2E';
+    jCtx.fillRect(0,0,26,54); jCtx.fillRect(102,0,26,54);
+    // red trim lines top + bottom
+    jCtx.fillStyle='#FF5500'; jCtx.fillRect(0,0,128,8); jCtx.fillRect(0,120,128,8);
+    jCtx.fillStyle='#FF6622'; jCtx.textAlign='center'; jCtx.textBaseline='middle';
+    jCtx.font='bold 20px Arial Black'; jCtx.fillText('MAGMA',64,24);
+    jCtx.font='bold 72px Arial Black'; jCtx.fillText('32',64,82);
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(0.88,0.90),
-      new THREE.MeshBasicMaterial({map:jTex,transparent:true,opacity:0.92})
+      new THREE.MeshBasicMaterial({map:jTex,transparent:true})
     );
     jPlane.position.set(0, bodyY+0.05, 0.36);
     group.add(jPlane);
