@@ -1224,6 +1224,7 @@ function makePlayerMesh(pd, teamColor, team){
   const isGiraffe  = pd && pd.animal === 'Giraffe';
   const isOstrich  = pd && pd.animal === 'Ostrich';
   const isRhino    = pd && pd.animal === 'Rhino';
+  const isRhino    = pd && pd.animal === 'Rhino';
 
   // Ground shadow
   const shadowGeo = new THREE.CircleGeometry(0.65,32);
@@ -1972,7 +1973,7 @@ function makePlayerMesh(pd, teamColor, team){
   const dotGeo = new THREE.SphereGeometry(0.15,8,6);
   const dotMat = new THREE.MeshBasicMaterial({color:0xFFD700,visible:false});
   const ballDot = new THREE.Mesh(dotGeo,dotMat);
-  ballDot.position.set(0, isPanther ? headBase+0.7 : (isKomodo ? headBase+0.6 : (isGoat ? 3.8 : (isGiraffe ? headBase+0.5 : (isOstrich ? headBase+0.5 : 2.75)))), 0);
+  ballDot.position.set(0, isPanther ? headBase+0.7 : (isKomodo ? headBase+0.6 : (isGoat ? 3.8 : (isGiraffe ? headBase+0.5 : (isOstrich ? headBase+0.5 : (isRhino ? headBase+0.6 : 2.75))))), 0);
   group.add(ballDot);
   group.ballDot=ballDot;
 
@@ -2002,6 +2003,10 @@ function makePlayerMesh(pd, teamColor, team){
   // Olivia Burke is 8'8" — head top 3.05u, scale = 104/(3.05×32.23) ≈ 1.058
   if(pd.name==='Olivia Burke'){
     group.scale.setScalar(1.058);
+  }
+  // Archie Everhardt is 9'6" — head top 3.04u, scale = 114/(3.04×32.23) ≈ 1.164
+  if(pd.name==='Archie Everhardt'){
+    group.scale.setScalar(1.164);
   }
 
   return group;
