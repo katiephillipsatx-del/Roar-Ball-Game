@@ -1244,7 +1244,7 @@ function makePlayerMesh(pd, teamColor, team){
   const legH = isPanther ? 1.05 : (isGoat ? 1.0 : 0.7);
   const legW = isGoat ? 0.22 : 0.28;
   const legGeo = new THREE.BoxGeometry(legW, legH, legW);
-  const legColor = isPanther ? 0x0A0A0A : (isGoat ? 0x1A6B1A : (isKomodo ? 0x3D8B6E : 0x222222));
+  const legColor = isPanther ? 0x0A0A0A : (isGoat ? 0x1A6B1A : (isKomodo ? 0x4A8C3F : 0x222222));
   const legMat = new THREE.MeshLambertMaterial({color:legColor});
   const legL = new THREE.Mesh(legGeo,legMat);
   legL.position.set(-0.22, legH/2, 0);
@@ -1289,7 +1289,7 @@ function makePlayerMesh(pd, teamColor, team){
   const bodyW = isPanther ? 1.05 : (isGoat ? 0.72 : 0.88);
   const bodyY = isPanther ? legH + bodyH/2 : (isGoat ? legH + 0.6 : 1.2);
   const bodyGeo = new THREE.BoxGeometry(bodyW, bodyH, 0.52);
-  const bodyColor = isPanther ? 0x1A7A1A : (isGoat ? 0x1A7A1A : (isKomodo ? 0x3D8B6E : tc));
+  const bodyColor = isPanther ? 0x1A7A1A : (isGoat ? 0x1A7A1A : (isKomodo ? 0x4A8C3F : tc));
   const bodyMat = new THREE.MeshLambertMaterial({color:bodyColor});
   const body = new THREE.Mesh(bodyGeo,bodyMat);
   body.position.set(0, bodyY, 0);
@@ -1514,8 +1514,8 @@ function makePlayerMesh(pd, teamColor, team){
 
   // ── KOMODO DRAGON (Modo Olachenko) ──────────────────────────────
   if(isKomodo){
-    const SKIN      = 0x3D8B6E; // teal-green scales
-    const SKIN_DARK = 0x2A6350; // darker accent
+    const SKIN      = 0x4A8C3F; // green scales
+    const SKIN_DARK = 0x2C5E25; // darker green accent
     const kBodyY    = bodyY;
     const kLegH     = legH;
     const hb        = headBase;
@@ -1677,6 +1677,10 @@ function makePlayerMesh(pd, teamColor, team){
   // Will Harris is 5'7" — scale down relative to 6'6" reference
   if(pd.name==='Will Harris'){
     group.scale.setScalar(67/78); // 67in / 78in ≈ 0.859
+  }
+  // Modo Olachenko is 11'10" — scale up relative to 6'6" reference
+  if(pd.name==='Modo Olachenko'){
+    group.scale.setScalar(142/78); // 142in / 78in ≈ 1.82
   }
 
   return group;
