@@ -172,7 +172,7 @@ class MenuScene extends Phaser.Scene {
       'Move ──────  W A S D           Move ──────  Arrow Keys',
       'Shoot ─────  SPACE (hold→release)  Shoot ─────  ENTER',
       'Sprint ────  SHIFT             Sprint ────  CTRL',
-      'Pass ──────  Q                 Pass ──────  / (slash)',
+      'Pass ──────  E or Q            Pass ──────  / (slash)',
       '',
       '──  SHOOTING  ──',
       'Hold the shoot button. A meter fills up.',
@@ -994,7 +994,7 @@ class GameScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(23).setVisible(false);
 
     // Controls hint
-    const hint1 = 'WASD: Move  |  SPACE: Shoot  |  SHIFT: Sprint/Steal  |  Q: Pass  |  C: Camera';
+    const hint1 = 'WASD: Move  |  SPACE: Shoot  |  SHIFT: Sprint/Steal  |  E or Q: Pass  |  C: Camera';
     const hint2 = 'P2:  Arrows: Move  |  ENTER: Shoot  |  CTRL: Sprint  |  /: Pass';
     this.add.text(10, H - 28, hint1, {
       fontSize: '11px', color: '#888', backgroundColor: '#00000055', padding: { x: 4, y: 2 }
@@ -1044,8 +1044,11 @@ class GameScene extends Phaser.Scene {
       if (this.meter.on && this.meter.pNum === 2) this._release(2);
     });
 
-    // Pass – P1
+    // Pass – P1 (Q or E)
     this.input.keyboard.on('keydown-Q', () => {
+      if (this.ctrl1.hasBall) this._pass(this.ctrl1, this.team1);
+    });
+    this.input.keyboard.on('keydown-E', () => {
       if (this.ctrl1.hasBall) this._pass(this.ctrl1, this.team1);
     });
     // Pass – P2
