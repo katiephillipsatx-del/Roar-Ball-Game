@@ -1147,7 +1147,7 @@ function makePlayerMesh(pd, teamColor, team){
   const legH = isPanther ? 1.05 : (isGoat ? 1.0 : (isGiraffe ? 1.25 : (isOstrich ? 0.85 : (isRhino ? 0.80 : (isBear ? 0.62 : (isGorilla ? 0.62 : 0.7))))));
   const legW = isGoat ? 0.22 : (isGiraffe ? 0.13 : (isOstrich ? 0.10 : (isRhino ? 0.38 : (isBear ? 0.36 : (isGorilla ? 0.38 : 0.28)))));
   const legGeo = new THREE.BoxGeometry(legW, legH, legW);
-  const legColor = isPanther ? 0x0A0A0A : (isGoat ? 0x1A6B1A : (isKomodo ? 0x4A8C3F : (isGiraffe ? 0xD4963C : (isOstrich ? 0xE8DFC8 : (isRhino ? 0x7A7A7A : (isHorse ? 0x888898 : (isBear ? 0x5C3015 : (isGorilla ? 0x161010 : 0x222222))))))));
+  const legColor = isPanther ? 0x0A0A0A : (isGoat ? 0x1A6B1A : (isKomodo ? 0x4A8C3F : (isGiraffe ? 0xD4963C : (isOstrich ? 0xE8DFC8 : (isRhino ? 0x7A7A7A : (isHorse ? 0x888898 : (isBear ? 0x5C3015 : (isGorilla ? 0x3A2828 : 0x222222))))))));
   const legMat = new THREE.MeshLambertMaterial({color:legColor});
   const legL = new THREE.Mesh(legGeo,legMat);
   legL.position.set(-0.22, legH/2, 0);
@@ -1192,7 +1192,7 @@ function makePlayerMesh(pd, teamColor, team){
   const bodyW = isPanther ? 1.05 : (isGoat ? 0.72 : (isGiraffe ? 0.82 : (isOstrich ? 0.76 : (isRhino ? 1.15 : (isBear ? 1.04 : (isGorilla ? 1.14 : 0.88))))));
   const bodyY = isPanther ? legH + bodyH/2 : (isGoat ? legH + 0.6 : (isGiraffe ? legH + bodyH/2 : (isOstrich ? legH + bodyH/2 : (isRhino ? legH + bodyH/2 : (isBear ? legH + bodyH/2 : (isGorilla ? legH + bodyH/2 : 1.2))))));
   const bodyGeo = new THREE.BoxGeometry(bodyW, bodyH, isGorilla ? 0.78 : (isBear ? 0.70 : 0.52));
-  const bodyColor = isPanther ? 0x1A7A1A : (isGoat ? 0x1A7A1A : (isKomodo ? 0x4A8C3F : (isGiraffe ? 0xF080A0 : (isOstrich ? 0xF5F5F5 : (isRhino ? 0x7A7A7A : (isBear ? 0xA8A49C : (isGorilla ? 0x0C0C12 : tc)))))));
+  const bodyColor = isPanther ? 0x1A7A1A : (isGoat ? 0x1A7A1A : (isKomodo ? 0x4A8C3F : (isGiraffe ? 0xF080A0 : (isOstrich ? 0xF5F5F5 : (isRhino ? 0x7A7A7A : (isBear ? 0xA8A49C : (isGorilla ? 0x1A1820 : tc)))))));
   const bodyMat = new THREE.MeshLambertMaterial({color:bodyColor});
   const body = new THREE.Mesh(bodyGeo,bodyMat);
   body.position.set(0, bodyY, 0);
@@ -1278,7 +1278,7 @@ function makePlayerMesh(pd, teamColor, team){
   // Head
   const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : (isGiraffe ? bodyY + bodyH/2 + 1.34 : (isOstrich ? bodyY + bodyH/2 + 1.06 : (isRhino ? bodyY + bodyH/2 + 0.63 : (isHorse ? bodyY + bodyH/2 + 0.48 : (isBear ? bodyY + bodyH/2 + 0.54 : (isGorilla ? bodyY + bodyH/2 + 0.38 : 2.0))))))));
   if(!isKomodo && !isGiraffe && !isHorse){
-    const headColor = isPanther ? 0x0D0D0D : (isGoat ? 0xC8A46E : (isBear ? 0x7A4A28 : (isGorilla ? 0x0F0A0A : 0xFF8C00)));
+    const headColor = isPanther ? 0x0D0D0D : (isGoat ? 0xC8A46E : (isBear ? 0x7A4A28 : (isGorilla ? 0x2E1E1E : 0xFF8C00)));
     const headGeo = new THREE.SphereGeometry(isGorilla ? 0.54 : (isBear ? 0.50 : 0.42),10,8);
     const headMat = new THREE.MeshLambertMaterial({color:headColor});
     const head = new THREE.Mesh(headGeo,headMat);
@@ -2061,8 +2061,8 @@ function makePlayerMesh(pd, teamColor, team){
 
   // ── GORILLA (Kong) ──────────────────────────────────────────────
   if(isGorilla){
-    const FUR     = 0x1A1010; // near-black gorilla fur
-    const FUR_MID = 0x231414; // slightly lighter for forearms
+    const FUR     = 0x3A2828; // dark brown gorilla fur
+    const FUR_MID = 0x4A3232; // slightly lighter for forearms
     const hb      = headBase;
     const bBodyTop= bodyY + bodyH/2;
 
@@ -2124,13 +2124,13 @@ function makePlayerMesh(pd, teamColor, team){
     });
 
     // Heavy brow ridge
-    const browMat = new THREE.MeshLambertMaterial({color:0x090606});
+    const browMat = new THREE.MeshLambertMaterial({color:0x241818});
     const browRidge = new THREE.Mesh(new THREE.BoxGeometry(0.98,0.18,0.28),browMat);
     browRidge.position.set(0, hb+0.22, 0.32);
     group.add(browRidge);
 
     // Flat wide gorilla nose
-    const noseMat = new THREE.MeshLambertMaterial({color:0x0C0808});
+    const noseMat = new THREE.MeshLambertMaterial({color:0x201414});
     const noseBox = new THREE.Mesh(new THREE.BoxGeometry(0.36,0.22,0.16),noseMat);
     noseBox.position.set(0, hb-0.06, 0.52);
     group.add(noseBox);
