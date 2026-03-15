@@ -1223,6 +1223,7 @@ function makePlayerMesh(pd, teamColor, team){
   const isKomodo   = pd && pd.animal === 'Komodo Dragon';
   const isGiraffe  = pd && pd.animal === 'Giraffe';
   const isOstrich  = pd && pd.animal === 'Ostrich';
+  const isRhino    = pd && pd.animal === 'Rhino';
 
   // Ground shadow
   const shadowGeo = new THREE.CircleGeometry(0.65,32);
@@ -1243,10 +1244,10 @@ function makePlayerMesh(pd, teamColor, team){
   group.ringMat=ringMat;
 
   // Legs — Goat has long lanky legs, Panther is tall (9'1")
-  const legH = isPanther ? 1.05 : (isGoat ? 1.0 : (isGiraffe ? 1.25 : (isOstrich ? 0.85 : 0.7)));
-  const legW = isGoat ? 0.22 : (isGiraffe ? 0.13 : (isOstrich ? 0.10 : 0.28));
+  const legH = isPanther ? 1.05 : (isGoat ? 1.0 : (isGiraffe ? 1.25 : (isOstrich ? 0.85 : (isRhino ? 0.80 : 0.7))));
+  const legW = isGoat ? 0.22 : (isGiraffe ? 0.13 : (isOstrich ? 0.10 : (isRhino ? 0.38 : 0.28)));
   const legGeo = new THREE.BoxGeometry(legW, legH, legW);
-  const legColor = isPanther ? 0x0A0A0A : (isGoat ? 0x1A6B1A : (isKomodo ? 0x4A8C3F : (isGiraffe ? 0xD4963C : (isOstrich ? 0xE8DFC8 : 0x222222))));
+  const legColor = isPanther ? 0x0A0A0A : (isGoat ? 0x1A6B1A : (isKomodo ? 0x4A8C3F : (isGiraffe ? 0xD4963C : (isOstrich ? 0xE8DFC8 : (isRhino ? 0x7A7A7A : 0x222222)))));
   const legMat = new THREE.MeshLambertMaterial({color:legColor});
   const legL = new THREE.Mesh(legGeo,legMat);
   legL.position.set(-0.22, legH/2, 0);
@@ -1287,11 +1288,11 @@ function makePlayerMesh(pd, teamColor, team){
   }
 
   // Body — Goat is taller/slimmer, Panther is big (9'1")
-  const bodyH = isPanther ? 1.575 : (isGoat ? 0.9 : (isGiraffe ? 0.78 : (isOstrich ? 0.88 : 1.05)));
-  const bodyW = isPanther ? 1.05 : (isGoat ? 0.72 : (isGiraffe ? 0.82 : (isOstrich ? 0.76 : 0.88)));
-  const bodyY = isPanther ? legH + bodyH/2 : (isGoat ? legH + 0.6 : (isGiraffe ? legH + bodyH/2 : (isOstrich ? legH + bodyH/2 : 1.2)));
+  const bodyH = isPanther ? 1.575 : (isGoat ? 0.9 : (isGiraffe ? 0.78 : (isOstrich ? 0.88 : (isRhino ? 1.30 : 1.05))));
+  const bodyW = isPanther ? 1.05 : (isGoat ? 0.72 : (isGiraffe ? 0.82 : (isOstrich ? 0.76 : (isRhino ? 1.15 : 0.88))));
+  const bodyY = isPanther ? legH + bodyH/2 : (isGoat ? legH + 0.6 : (isGiraffe ? legH + bodyH/2 : (isOstrich ? legH + bodyH/2 : (isRhino ? legH + bodyH/2 : 1.2))));
   const bodyGeo = new THREE.BoxGeometry(bodyW, bodyH, 0.52);
-  const bodyColor = isPanther ? 0x1A7A1A : (isGoat ? 0x1A7A1A : (isKomodo ? 0x4A8C3F : (isGiraffe ? 0xF080A0 : (isOstrich ? 0xF5F5F5 : tc))));
+  const bodyColor = isPanther ? 0x1A7A1A : (isGoat ? 0x1A7A1A : (isKomodo ? 0x4A8C3F : (isGiraffe ? 0xF080A0 : (isOstrich ? 0xF5F5F5 : (isRhino ? 0x7A7A7A : tc)))));
   const bodyMat = new THREE.MeshLambertMaterial({color:bodyColor});
   const body = new THREE.Mesh(bodyGeo,bodyMat);
   body.position.set(0, bodyY, 0);
@@ -1375,7 +1376,7 @@ function makePlayerMesh(pd, teamColor, team){
   }
 
   // Head
-  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : (isGiraffe ? bodyY + bodyH/2 + 1.34 : (isOstrich ? bodyY + bodyH/2 + 1.06 : 2.0))));
+  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : (isGiraffe ? bodyY + bodyH/2 + 1.34 : (isOstrich ? bodyY + bodyH/2 + 1.06 : (isRhino ? bodyY + bodyH/2 + 0.63 : 2.0)))));
   if(!isKomodo && !isGiraffe){
     const headColor = isPanther ? 0x0D0D0D : (isGoat ? 0xC8A46E : 0xFF8C00);
     const headGeo = new THREE.SphereGeometry(0.42,10,8);
@@ -1859,7 +1860,97 @@ function makePlayerMesh(pd, teamColor, team){
     beak.position.set(0, headBase-0.07, 0.42); group.add(beak);
   }
 
-  if(!isPanther && !isGoat && !isKomodo && !isGiraffe && !isOstrich){
+  // ── RHINO (Archie Everhardt) ──────────────────────────────────────
+  if(isRhino){
+    const RGRAY = 0x7A7A7A;
+    const RDARK = 0x4A4A4A;
+    const RHORN = 0xC8B878;
+    const RPURP = 0x28183A;
+    const RBOOT = 0x181828;
+    const rBodyTop = bodyY + bodyH/2;
+
+    // Dark near-black boots
+    const rBootMat = new THREE.MeshLambertMaterial({color:RBOOT});
+    [-0.28,0.28].forEach(xOff=>{
+      const boot = new THREE.Mesh(new THREE.BoxGeometry(0.46,0.22,0.52),rBootMat);
+      boot.position.set(xOff,0.11,0.06); boot.castShadow=true; group.add(boot);
+    });
+
+    // Dark purple shorts
+    const shortsMat = new THREE.MeshLambertMaterial({color:RPURP});
+    const shorts = new THREE.Mesh(new THREE.BoxGeometry(1.12,0.52,0.80),shortsMat);
+    shorts.position.set(0, legH+0.10, 0); shorts.castShadow=true; group.add(shorts);
+
+    // Jersey — green with red trim, Thorns #34 in orange
+    const jCanvas = document.createElement('canvas');
+    jCanvas.width=128; jCanvas.height=128;
+    const jCtx = jCanvas.getContext('2d');
+    jCtx.fillStyle='#1A7A1A'; jCtx.fillRect(0,0,128,128);
+    jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,0,128,12);
+    jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,116,128,12);
+    jCtx.fillStyle='#FF6B00'; jCtx.textAlign='center'; jCtx.textBaseline='middle';
+    jCtx.font='bold 20px Arial Black'; jCtx.fillText('Thorns',64,24);
+    jCtx.font='bold 72px Arial Black'; jCtx.fillText('34',64,82);
+    const jTex = new THREE.CanvasTexture(jCanvas);
+    const jPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.82,0.92),
+      new THREE.MeshBasicMaterial({map:jTex,transparent:true})
+    );
+    jPlane.position.set(0, bodyY+0.05, 0.58); group.add(jPlane);
+
+    // Massive muscular arms
+    const armMat = new THREE.MeshLambertMaterial({color:RGRAY});
+    [-1,1].forEach(side=>{
+      const upper = new THREE.Mesh(new THREE.BoxGeometry(0.38,0.58,0.38),armMat);
+      upper.position.set(side*0.84, bodyY+0.28, 0);
+      upper.castShadow=true; group.add(upper);
+      const fore = new THREE.Mesh(new THREE.BoxGeometry(0.32,0.50,0.32),armMat);
+      fore.position.set(side*0.82, bodyY-0.28, 0.06);
+      fore.rotation.x=0.25; fore.castShadow=true; group.add(fore);
+      if(side===-1) group.armL=upper; else group.armR=upper;
+    });
+
+    // Short thick neck
+    const neckMat = new THREE.MeshLambertMaterial({color:RGRAY});
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.34,0.32,8),neckMat);
+    neck.position.set(0, rBodyTop+0.16, 0); neck.castShadow=true; group.add(neck);
+
+    // Large boxy rhino head
+    const rHeadMat = new THREE.MeshLambertMaterial({color:RGRAY});
+    const rHead = new THREE.Mesh(new THREE.BoxGeometry(0.82,0.62,0.72),rHeadMat);
+    rHead.position.set(0, headBase, 0); rHead.castShadow=true; group.add(rHead);
+    group.head = rHead;
+
+    // Snout — protruding darker box
+    const snoutMat = new THREE.MeshLambertMaterial({color:RDARK});
+    const snout = new THREE.Mesh(new THREE.BoxGeometry(0.48,0.38,0.36),snoutMat);
+    snout.position.set(0, headBase-0.08, 0.52); snout.castShadow=true; group.add(snout);
+
+    // Rhino horn — angled slightly upward and forward
+    const hornMat = new THREE.MeshLambertMaterial({color:RHORN});
+    const horn = new THREE.Mesh(new THREE.ConeGeometry(0.08,0.44,6),hornMat);
+    horn.rotation.x = Math.PI/2 - 0.30;
+    horn.position.set(0, headBase+0.02, 0.66); group.add(horn);
+
+    // Small ears on top sides of head
+    const earMat = new THREE.MeshLambertMaterial({color:RGRAY});
+    [-0.42,0.42].forEach(xOff=>{
+      const ear = new THREE.Mesh(new THREE.BoxGeometry(0.16,0.20,0.12),earMat);
+      ear.position.set(xOff, headBase+0.34, 0); group.add(ear);
+    });
+
+    // Small dark eyes with white highlights
+    const rEyeMat = new THREE.MeshBasicMaterial({color:0x111111});
+    const rHlMat  = new THREE.MeshBasicMaterial({color:0xFFFFFF});
+    [-0.22,0.22].forEach(xOff=>{
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.07,8,8),rEyeMat);
+      eye.position.set(xOff, headBase+0.12, 0.37); group.add(eye);
+      const hl = new THREE.Mesh(new THREE.SphereGeometry(0.028,6,6),rHlMat);
+      hl.position.set(xOff+0.02, headBase+0.14, 0.42); group.add(hl);
+    });
+  }
+
+  if(!isPanther && !isGoat && !isKomodo && !isGiraffe && !isOstrich && !isRhino){
     const armGeo = new THREE.BoxGeometry(0.24,0.72,0.24);
     const armMat = new THREE.MeshLambertMaterial({color:tc});
     const armL = new THREE.Mesh(armGeo,armMat);
