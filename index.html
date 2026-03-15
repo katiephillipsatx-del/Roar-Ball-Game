@@ -1374,7 +1374,7 @@ function makePlayerMesh(pd, teamColor, team){
   }
 
   // Head
-  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : (isGiraffe ? bodyY + bodyH/2 + 2.44 : 2.0)));
+  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : (isGiraffe ? bodyY + bodyH/2 + 5.44 : 2.0)));
   if(!isKomodo && !isGiraffe){
     const headColor = isPanther ? 0x0D0D0D : (isGoat ? 0xC8A46E : 0xFF8C00);
     const headGeo = new THREE.SphereGeometry(0.42,10,8);
@@ -1692,16 +1692,19 @@ function makePlayerMesh(pd, teamColor, team){
     const neckMat = new THREE.MeshLambertMaterial({color:TAN});
     const neckSpMat = new THREE.MeshLambertMaterial({color:SPOT});
     const neckSegs = [
-      {rTop:0.15, rBot:0.20, h:0.80, y:gBodyTop+0.40, z:0.02},
-      {rTop:0.11, rBot:0.15, h:0.80, y:gBodyTop+1.20, z:0.06},
-      {rTop:0.09, rBot:0.11, h:0.70, y:gBodyTop+1.95, z:0.10},
+      {rTop:0.17, rBot:0.22, h:1.10, y:gBodyTop+0.55, z:0.01},
+      {rTop:0.14, rBot:0.17, h:1.10, y:gBodyTop+1.65, z:0.05},
+      {rTop:0.12, rBot:0.14, h:1.10, y:gBodyTop+2.75, z:0.10},
+      {rTop:0.10, rBot:0.12, h:1.10, y:gBodyTop+3.85, z:0.16},
+      {rTop:0.09, rBot:0.10, h:0.90, y:gBodyTop+4.85, z:0.22},
     ];
     neckSegs.forEach(s=>{
       const seg = new THREE.Mesh(new THREE.CylinderGeometry(s.rTop,s.rBot,s.h,8),neckMat);
       seg.position.set(0,s.y,s.z); seg.castShadow=true; group.add(seg);
     });
-    // Neck spots
-    [{y:gBodyTop+0.6,x:0.10},{y:gBodyTop+1.1,x:-0.09},{y:gBodyTop+1.6,x:0.07},{y:gBodyTop+1.95,x:-0.06}].forEach(s=>{
+    // Neck spots spread across the full impossible length
+    [{y:gBodyTop+0.6,x:0.10},{y:gBodyTop+1.3,x:-0.09},{y:gBodyTop+2.0,x:0.08},
+     {y:gBodyTop+2.7,x:-0.07},{y:gBodyTop+3.4,x:0.09},{y:gBodyTop+4.1,x:-0.06},{y:gBodyTop+4.7,x:0.07}].forEach(s=>{
       const sp = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.14,0.12),neckSpMat);
       sp.position.set(s.x,s.y,0.15); group.add(sp);
     });
@@ -1797,6 +1800,10 @@ function makePlayerMesh(pd, teamColor, team){
   // Modo Olachenko is 11'10" — scale up relative to 6'6" reference
   if(pd.name==='Modo Olachenko'){
     group.scale.setScalar(142/78); // 142in / 78in ≈ 1.82
+  }
+  // Lenny Williamson is 17'5" — impossibly tall giraffe
+  if(pd.name==='Lenny Williamson'){
+    group.scale.setScalar(209/78); // 209in / 78in ≈ 2.68
   }
 
   return group;
