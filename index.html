@@ -1542,6 +1542,23 @@ function makePlayerMesh(pd, teamColor, team){
     shorts.castShadow=true;
     group.add(shorts);
 
+    // --- THORNS JERSEY (#11) ---
+    const jerseyCanvas = document.createElement('canvas');
+    jerseyCanvas.width=128; jerseyCanvas.height=128;
+    const jCtx = jerseyCanvas.getContext('2d');
+    jCtx.fillStyle='#6B21A8'; jCtx.fillRect(0,0,128,128);
+    jCtx.fillStyle='#FF6B00';
+    jCtx.textAlign='center'; jCtx.textBaseline='middle';
+    jCtx.font='bold 24px Arial Black'; jCtx.fillText('THORNS',64,26);
+    jCtx.font='bold 68px Arial Black'; jCtx.fillText('#11',64,82);
+    const jerseyTex = new THREE.CanvasTexture(jerseyCanvas);
+    const jerseyPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.56,0.66),
+      new THREE.MeshBasicMaterial({map:jerseyTex,transparent:true})
+    );
+    jerseyPlane.position.set(0,kBodyY,0.27);
+    group.add(jerseyPlane);
+
     // --- PURPLE SNEAKERS ---
     const shoeMat = new THREE.MeshLambertMaterial({color:0xCC00CC});
     const soleMat = new THREE.MeshLambertMaterial({color:0xEEEEEE});
