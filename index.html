@@ -2098,6 +2098,10 @@ function makePlayerMesh(pd, teamColor, team){
   if(pd.name==='Will Harris'){
     group.scale.setScalar(67/78); // 67in / 78in ≈ 0.859
   }
+  // Grizz is 10'0" — scale up relative to 6'6" reference
+  if(pd.name==='Grizz'){
+    group.scale.setScalar(120/78); // 120in / 78in ≈ 1.538
+  }
   // Modo Olachenko is 11'10" — scale up relative to 6'6" reference
   if(pd.name==='Modo Olachenko'){
     group.scale.setScalar(142/78); // 142in / 78in ≈ 1.82
