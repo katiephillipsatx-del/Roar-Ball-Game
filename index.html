@@ -1830,18 +1830,18 @@ function makePlayerMesh(pd, teamColor, team){
     // Goggles — pink bar + lighter lens spheres
     const gogBarMat = new THREE.MeshBasicMaterial({color:0xFF44AA});
     const gogBar = new THREE.Mesh(new THREE.BoxGeometry(0.32,0.09,0.06),gogBarMat);
-    gogBar.position.set(0, headBase+0.05, 0.17); group.add(gogBar);
+    gogBar.position.set(0, headBase+0.05, 0.26); group.add(gogBar);
     const lensMat = new THREE.MeshBasicMaterial({color:0xFF88DD});
     [-0.09,0.09].forEach(xOff=>{
       const lens = new THREE.Mesh(new THREE.SphereGeometry(0.06,8,6),lensMat);
-      lens.position.set(xOff, headBase+0.05, 0.20); group.add(lens);
+      lens.position.set(xOff, headBase+0.05, 0.30); group.add(lens);
     });
 
     // Beak — orange cone pointing forward
     const beakMat = new THREE.MeshLambertMaterial({color:0xFF8C00});
     const beak = new THREE.Mesh(new THREE.ConeGeometry(0.06,0.22,6),beakMat);
     beak.rotation.x = Math.PI/2;
-    beak.position.set(0, headBase-0.04, 0.28); group.add(beak);
+    beak.position.set(0, headBase-0.04, 0.36); group.add(beak);
   }
 
   if(!isPanther && !isGoat && !isKomodo && !isGiraffe && !isOstrich){
