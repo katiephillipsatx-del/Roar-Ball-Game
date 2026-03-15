@@ -1224,6 +1224,7 @@ function makePlayerMesh(pd, teamColor, team){
   const isGiraffe  = pd && pd.animal === 'Giraffe';
   const isOstrich  = pd && pd.animal === 'Ostrich';
   const isRhino    = pd && pd.animal === 'Rhino';
+  const isHorse    = pd && pd.animal === 'Andalusian Horse';
 
   // Ground shadow
   const shadowGeo = new THREE.CircleGeometry(0.65,32);
@@ -1376,8 +1377,8 @@ function makePlayerMesh(pd, teamColor, team){
   }
 
   // Head
-  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : (isGiraffe ? bodyY + bodyH/2 + 1.34 : (isOstrich ? bodyY + bodyH/2 + 1.06 : (isRhino ? bodyY + bodyH/2 + 0.63 : 2.0)))));
-  if(!isKomodo && !isGiraffe){
+  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : (isGiraffe ? bodyY + bodyH/2 + 1.34 : (isOstrich ? bodyY + bodyH/2 + 1.06 : (isRhino ? bodyY + bodyH/2 + 0.63 : (isHorse ? bodyY + bodyH/2 + 0.48 : 2.0))))));
+  if(!isKomodo && !isGiraffe && !isHorse){
     const headColor = isPanther ? 0x0D0D0D : (isGoat ? 0xC8A46E : 0xFF8C00);
     const headGeo = new THREE.SphereGeometry(0.42,10,8);
     const headMat = new THREE.MeshLambertMaterial({color:headColor});
@@ -1946,7 +1947,114 @@ function makePlayerMesh(pd, teamColor, team){
     });
   }
 
-  if(!isPanther && !isGoat && !isKomodo && !isGiraffe && !isOstrich && !isRhino){
+  // ── ANDALUSIAN HORSE (Mane Attraction) ──────────────────────────────────────
+  if(isHorse){
+    const HSKIN  = 0x1C1A2E; // dark blue-gray skin
+    const HDARK  = 0x13111F; // deeper shadow skin
+    const hBodyTop = bodyY + bodyH/2;
+
+    // Dark near-black boots with a subtle sole
+    const hBootMat = new THREE.MeshLambertMaterial({color:0x0E0E18});
+    const hSoleMat = new THREE.MeshLambertMaterial({color:0x1A1A28});
+    [-0.24,0.24].forEach(xOff=>{
+      const boot = new THREE.Mesh(new THREE.BoxGeometry(0.34,0.24,0.40),hBootMat);
+      boot.position.set(xOff,0.12,0.05); boot.castShadow=true; group.add(boot);
+      const sole = new THREE.Mesh(new THREE.BoxGeometry(0.36,0.06,0.42),hSoleMat);
+      sole.position.set(xOff,0.03,0.05); group.add(sole);
+    });
+
+    // Red jersey — MAGMA tank top, #12
+    const jCanvas = document.createElement('canvas');
+    jCanvas.width=128; jCanvas.height=128;
+    const jCtx = jCanvas.getContext('2d');
+    jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,0,128,128);
+    // arm-hole cutouts for sleeveless look
+    jCtx.fillStyle='#1C1A2E';
+    jCtx.fillRect(0,0,26,54); jCtx.fillRect(102,0,26,54);
+    // red trim lines
+    jCtx.fillStyle='#FF5500'; jCtx.fillRect(0,0,128,8); jCtx.fillRect(0,120,128,8);
+    jCtx.fillStyle='#FF6622'; jCtx.textAlign='center'; jCtx.textBaseline='middle';
+    jCtx.font='bold 20px Arial Black'; jCtx.fillText('MAGMA',64,24);
+    jCtx.font='bold 72px Arial Black'; jCtx.fillText('12',64,82);
+    const jTex = new THREE.CanvasTexture(jCanvas);
+    const jPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.72,0.84),
+      new THREE.MeshBasicMaterial({map:jTex,transparent:true})
+    );
+    jPlane.position.set(0, bodyY+0.02, 0.27); group.add(jPlane);
+
+    // Massive muscular arms — dark skin
+    const armMat = new THREE.MeshLambertMaterial({color:HSKIN});
+    [-1,1].forEach(side=>{
+      const upper = new THREE.Mesh(new THREE.BoxGeometry(0.34,0.58,0.34),armMat);
+      upper.position.set(side*0.80, bodyY+0.24, 0);
+      upper.castShadow=true; group.add(upper);
+      const fore = new THREE.Mesh(new THREE.BoxGeometry(0.28,0.50,0.28),armMat);
+      fore.position.set(side*0.80, bodyY-0.26, 0.04);
+      fore.castShadow=true; group.add(fore);
+      const fist = new THREE.Mesh(new THREE.BoxGeometry(0.26,0.22,0.26),armMat);
+      fist.position.set(side*0.80, bodyY-0.58, 0.06); group.add(fist);
+      if(side===-1) group.armL=upper; else group.armR=upper;
+    });
+
+    // Neck — thick, dark
+    const neckMat = new THREE.MeshLambertMaterial({color:HSKIN});
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.25,0.30,8),neckMat);
+    neck.position.set(0, hBodyTop+0.15, 0); neck.castShadow=true; group.add(neck);
+
+    // Head — humanoid box, dark blue-gray
+    const hHeadMat = new THREE.MeshLambertMaterial({color:HSKIN});
+    const hHead = new THREE.Mesh(new THREE.BoxGeometry(0.50,0.54,0.48),hHeadMat);
+    hHead.position.set(0, headBase, 0); hHead.castShadow=true; group.add(hHead);
+    group.head = hHead;
+
+    // Elongated horse muzzle
+    const muzzleMat = new THREE.MeshLambertMaterial({color:HDARK});
+    const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.32,0.30,0.26),muzzleMat);
+    muzzle.position.set(0, headBase-0.13, 0.35); group.add(muzzle);
+
+    // Flared nostrils
+    const nostrilMat = new THREE.MeshBasicMaterial({color:0x080610});
+    [-0.09,0.09].forEach(xOff=>{
+      const n = new THREE.Mesh(new THREE.SphereGeometry(0.042,6,6),nostrilMat);
+      n.position.set(xOff, headBase-0.19, 0.48); group.add(n);
+    });
+
+    // Glowing red eyes
+    const eyeGlowMat  = new THREE.MeshBasicMaterial({color:0xFF1100});
+    const eyeCoreMat  = new THREE.MeshBasicMaterial({color:0xFF6600});
+    [-0.14,0.14].forEach(xOff=>{
+      const eyeOuter = new THREE.Mesh(new THREE.SphereGeometry(0.09,8,8),eyeGlowMat);
+      eyeOuter.position.set(xOff, headBase+0.10, 0.25); group.add(eyeOuter);
+      const eyeCore  = new THREE.Mesh(new THREE.SphereGeometry(0.055,8,8),eyeCoreMat);
+      eyeCore.position.set(xOff, headBase+0.10, 0.32); group.add(eyeCore);
+    });
+
+    // Dreadlocks — thick ropes hanging from top-back of head, with red beads
+    const dreadMat = new THREE.MeshLambertMaterial({color:0x0A0808});
+    const beadMat  = new THREE.MeshLambertMaterial({color:0xAA2200});
+    [
+      {x:-0.20, yTop:headBase+0.20, len:1.05, zb:-0.20},
+      {x:-0.10, yTop:headBase+0.24, len:1.22, zb:-0.24},
+      {x: 0.00, yTop:headBase+0.26, len:1.30, zb:-0.24},
+      {x: 0.10, yTop:headBase+0.22, len:1.10, zb:-0.22},
+      {x: 0.20, yTop:headBase+0.18, len:0.90, zb:-0.20},
+      {x:-0.26, yTop:headBase+0.12, len:0.75, zb:-0.16},
+      {x: 0.26, yTop:headBase+0.12, len:0.72, zb:-0.16},
+      {x:-0.14, yTop:headBase+0.28, len:1.15, zb:-0.26},
+      {x: 0.06, yTop:headBase+0.28, len:1.18, zb:-0.26},
+    ].forEach(d=>{
+      const dGeo  = new THREE.CylinderGeometry(0.045,0.022,d.len,6);
+      const dread = new THREE.Mesh(dGeo,dreadMat);
+      dread.position.set(d.x, d.yTop - d.len/2, d.zb);
+      group.add(dread);
+      const bead = new THREE.Mesh(new THREE.SphereGeometry(0.055,6,6),beadMat);
+      bead.position.set(d.x, d.yTop - d.len - 0.03, d.zb);
+      group.add(bead);
+    });
+  }
+
+  if(!isPanther && !isGoat && !isKomodo && !isGiraffe && !isOstrich && !isRhino && !isHorse){
     const armGeo = new THREE.BoxGeometry(0.24,0.72,0.24);
     const armMat = new THREE.MeshLambertMaterial({color:tc});
     const armL = new THREE.Mesh(armGeo,armMat);
@@ -1968,7 +2076,7 @@ function makePlayerMesh(pd, teamColor, team){
   const dotGeo = new THREE.SphereGeometry(0.15,8,6);
   const dotMat = new THREE.MeshBasicMaterial({color:0xFFD700,visible:false});
   const ballDot = new THREE.Mesh(dotGeo,dotMat);
-  ballDot.position.set(0, isPanther ? headBase+0.7 : (isKomodo ? headBase+0.6 : (isGoat ? 3.8 : (isGiraffe ? headBase+0.5 : (isOstrich ? headBase+0.5 : (isRhino ? headBase+0.6 : 2.75))))), 0);
+  ballDot.position.set(0, isPanther ? headBase+0.7 : (isKomodo ? headBase+0.6 : (isGoat ? 3.8 : (isGiraffe ? headBase+0.5 : (isOstrich ? headBase+0.5 : (isRhino ? headBase+0.6 : (isHorse ? headBase+0.6 : 2.75)))))), 0);
   group.add(ballDot);
   group.ballDot=ballDot;
 
