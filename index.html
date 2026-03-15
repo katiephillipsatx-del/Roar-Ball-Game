@@ -1220,6 +1220,7 @@ function makePlayerMesh(pd, teamColor, team){
   const tc = teamColor;
   const isPanther = pd && pd.animal === 'Panther';
   const isGoat = pd && pd.animal === 'Goat';
+  const isKomodo = pd && pd.animal === 'Komodo Dragon';
 
   // Ground shadow
   const shadowGeo = new THREE.CircleGeometry(0.65,32);
@@ -1243,7 +1244,7 @@ function makePlayerMesh(pd, teamColor, team){
   const legH = isPanther ? 1.05 : (isGoat ? 1.0 : 0.7);
   const legW = isGoat ? 0.22 : 0.28;
   const legGeo = new THREE.BoxGeometry(legW, legH, legW);
-  const legColor = isPanther ? 0x0A0A0A : (isGoat ? 0x1A6B1A : 0x222222);
+  const legColor = isPanther ? 0x0A0A0A : (isGoat ? 0x1A6B1A : (isKomodo ? 0x3D8B6E : 0x222222));
   const legMat = new THREE.MeshLambertMaterial({color:legColor});
   const legL = new THREE.Mesh(legGeo,legMat);
   legL.position.set(-0.22, legH/2, 0);
@@ -1288,7 +1289,7 @@ function makePlayerMesh(pd, teamColor, team){
   const bodyW = isPanther ? 1.05 : (isGoat ? 0.72 : 0.88);
   const bodyY = isPanther ? legH + bodyH/2 : (isGoat ? legH + 0.6 : 1.2);
   const bodyGeo = new THREE.BoxGeometry(bodyW, bodyH, 0.52);
-  const bodyColor = isPanther ? 0x1A7A1A : (isGoat ? 0x1A7A1A : tc);
+  const bodyColor = isPanther ? 0x1A7A1A : (isGoat ? 0x1A7A1A : (isKomodo ? 0x3D8B6E : tc));
   const bodyMat = new THREE.MeshLambertMaterial({color:bodyColor});
   const body = new THREE.Mesh(bodyGeo,bodyMat);
   body.position.set(0, bodyY, 0);
@@ -1372,15 +1373,17 @@ function makePlayerMesh(pd, teamColor, team){
   }
 
   // Head
-  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : 2.0);
-  const headColor = isPanther ? 0x0D0D0D : (isGoat ? 0xC8A46E : 0xFF8C00);
-  const headGeo = new THREE.SphereGeometry(0.42,10,8);
-  const headMat = new THREE.MeshLambertMaterial({color:headColor});
-  const head = new THREE.Mesh(headGeo,headMat);
-  head.position.set(0, headBase, 0);
-  head.castShadow=true;
-  group.add(head);
-  group.head=head;
+  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : 2.0));
+  if(!isKomodo){
+    const headColor = isPanther ? 0x0D0D0D : (isGoat ? 0xC8A46E : 0xFF8C00);
+    const headGeo = new THREE.SphereGeometry(0.42,10,8);
+    const headMat = new THREE.MeshLambertMaterial({color:headColor});
+    const head = new THREE.Mesh(headGeo,headMat);
+    head.position.set(0, headBase, 0);
+    head.castShadow=true;
+    group.add(head);
+    group.head=head;
+  }
 
   // Panther face features — all black with white eyes
   if(isPanther){
@@ -1509,8 +1512,133 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(earR);
   }
 
+  // ── KOMODO DRAGON (Modo Olachenko) ──────────────────────────────
+  if(isKomodo){
+    const SKIN      = 0x3D8B6E; // teal-green scales
+    const SKIN_DARK = 0x2A6350; // darker accent
+    const kBodyY    = bodyY;
+    const kLegH     = legH;
+    const hb        = headBase;
+
+    // --- CAMO SHORTS ---
+    const camoCanvas = document.createElement('canvas');
+    camoCanvas.width=64; camoCanvas.height=64;
+    const cCtx = camoCanvas.getContext('2d');
+    cCtx.fillStyle='#4a5c2a'; cCtx.fillRect(0,0,64,64);
+    [{x:5,y:8,w:18,h:12,c:'#2a3a12'},{x:28,y:4,w:22,h:14,c:'#6b7c3a'},
+     {x:10,y:28,w:14,h:16,c:'#7a6b3a'},{x:32,y:22,w:20,h:18,c:'#2a3a12'},
+     {x:0,y:42,w:16,h:14,c:'#6b7c3a'},{x:20,y:44,w:26,h:12,c:'#4a3a1a'},
+     {x:50,y:10,w:14,h:22,c:'#2a3a12'},{x:46,y:36,w:18,h:20,c:'#6b7c3a'}
+    ].forEach(p=>{
+      cCtx.fillStyle=p.c;
+      cCtx.beginPath();
+      cCtx.ellipse(p.x+p.w/2,p.y+p.h/2,p.w/2,p.h/2,0.4,0,Math.PI*2);
+      cCtx.fill();
+    });
+    const camoTex  = new THREE.CanvasTexture(camoCanvas);
+    const shortsH  = 0.58;
+    const shorts   = new THREE.Mesh(new THREE.BoxGeometry(0.96,shortsH,0.58),new THREE.MeshLambertMaterial({map:camoTex}));
+    shorts.position.set(0,kLegH+shortsH/2,0);
+    shorts.castShadow=true;
+    group.add(shorts);
+
+    // --- PURPLE SNEAKERS ---
+    const shoeMat = new THREE.MeshLambertMaterial({color:0xCC00CC});
+    const soleMat = new THREE.MeshLambertMaterial({color:0xEEEEEE});
+    [-0.22,0.22].forEach(xOff=>{
+      const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.34,0.22,0.44),shoeMat);
+      shoe.position.set(xOff,0.11,0.06); shoe.castShadow=true; group.add(shoe);
+      const sole = new THREE.Mesh(new THREE.BoxGeometry(0.36,0.06,0.46),soleMat);
+      sole.position.set(xOff,0.03,0.06); group.add(sole);
+    });
+
+    // --- ARMS + CLAWS ---
+    const armMat  = new THREE.MeshLambertMaterial({color:SKIN});
+    const foreMat = new THREE.MeshLambertMaterial({color:SKIN_DARK});
+    const clawMat = new THREE.MeshLambertMaterial({color:0xD4C890});
+    [-0.65,0.65].forEach((xOff,i)=>{
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.26,0.80,0.26),armMat);
+      arm.position.set(xOff,kBodyY+0.05,0); arm.castShadow=true; group.add(arm);
+      if(i===0) group.armL=arm; else group.armR=arm;
+      const fore = new THREE.Mesh(new THREE.BoxGeometry(0.22,0.50,0.22),foreMat);
+      fore.position.set(xOff,kBodyY-0.40,0); group.add(fore);
+      for(let c=-1;c<=1;c++){
+        const claw = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.13,0.06),clawMat);
+        claw.position.set(xOff+c*0.07,kBodyY-0.74,0.08);
+        claw.rotation.x=-0.4; group.add(claw);
+      }
+    });
+
+    // --- TAIL ---
+    const tailMat = new THREE.MeshLambertMaterial({color:SKIN});
+    [{r:0.18,zOff:-0.44},{r:0.14,zOff:-0.76},{r:0.10,zOff:-1.04},{r:0.06,zOff:-1.28}].forEach(s=>{
+      const seg = new THREE.Mesh(new THREE.CylinderGeometry(s.r*0.7,s.r,0.32,8),tailMat);
+      seg.rotation.x=Math.PI/2+0.3;
+      seg.position.set(0,kBodyY-0.22,s.zOff); seg.castShadow=true; group.add(seg);
+    });
+
+    // --- HEAD: box skull ---
+    const skullMat = new THREE.MeshLambertMaterial({color:SKIN});
+    const darkMat  = new THREE.MeshLambertMaterial({color:SKIN_DARK});
+    const skull = new THREE.Mesh(new THREE.BoxGeometry(0.72,0.52,0.68),skullMat);
+    skull.position.set(0,hb,0); skull.castShadow=true; group.add(skull);
+    group.head = skull;
+
+    // Upper jaw / snout
+    const upperJaw = new THREE.Mesh(new THREE.BoxGeometry(0.62,0.28,0.55),skullMat);
+    upperJaw.position.set(0,hb-0.06,0.50); group.add(upperJaw);
+
+    // Lower jaw (open)
+    const lowerJaw = new THREE.Mesh(new THREE.BoxGeometry(0.56,0.20,0.50),darkMat);
+    lowerJaw.position.set(0,hb-0.28,0.44); lowerJaw.rotation.x=0.35; group.add(lowerJaw);
+
+    // Mouth interior
+    const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.50,0.18,0.42),new THREE.MeshLambertMaterial({color:0x8B1A1A}));
+    mouth.position.set(0,hb-0.18,0.50); group.add(mouth);
+
+    // Forked tongue
+    const tongMat = new THREE.MeshLambertMaterial({color:0xEE3355});
+    const tongue  = new THREE.Mesh(new THREE.BoxGeometry(0.08,0.05,0.22),tongMat);
+    tongue.position.set(0,hb-0.25,0.70); group.add(tongue);
+    const tongL = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.04,0.14),tongMat);
+    tongL.position.set(-0.07,hb-0.26,0.81); tongL.rotation.y=0.32; group.add(tongL);
+    const tongR = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.04,0.14),tongMat);
+    tongR.position.set(0.07,hb-0.26,0.81); tongR.rotation.y=-0.32; group.add(tongR);
+
+    // Upper teeth
+    const toothMat = new THREE.MeshLambertMaterial({color:0xEEEECC});
+    for(let i=-2;i<=2;i++){
+      const tooth = new THREE.Mesh(new THREE.ConeGeometry(0.04,0.12,4),toothMat);
+      tooth.rotation.x=Math.PI; tooth.position.set(i*0.10,hb-0.16,0.72); group.add(tooth);
+    }
+    // Lower teeth
+    for(let i=-1;i<=1;i++){
+      const tooth = new THREE.Mesh(new THREE.ConeGeometry(0.04,0.10,4),toothMat);
+      tooth.position.set(i*0.12,hb-0.30,0.63); group.add(tooth);
+    }
+
+    // Yellow eyes with slit pupils
+    const eyeMat   = new THREE.MeshBasicMaterial({color:0xFFDD00});
+    const pupilMat = new THREE.MeshBasicMaterial({color:0x0A0A0A});
+    [-0.25,0.25].forEach(xOff=>{
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.10,8,8),eyeMat);
+      eye.position.set(xOff,hb+0.14,0.35); group.add(eye);
+      const pupil = new THREE.Mesh(new THREE.BoxGeometry(0.04,0.11,0.04),pupilMat);
+      pupil.position.set(xOff,hb+0.14,0.44); group.add(pupil);
+    });
+
+    // Head crest spikes
+    const spikeMat = new THREE.MeshLambertMaterial({color:0x1A5C45});
+    [{x:0,sz:0.24,y:0.36},{x:-0.15,sz:0.18,y:0.29},{x:0.15,sz:0.18,y:0.29},
+     {x:-0.27,sz:0.13,y:0.21},{x:0.27,sz:0.13,y:0.21},{x:-0.36,sz:0.08,y:0.14},{x:0.36,sz:0.08,y:0.14}
+    ].forEach(s=>{
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.05,s.sz,5),spikeMat);
+      spike.position.set(s.x,hb+s.y,0); group.add(spike);
+    });
+  }
+
   // Default arms for non-special players
-  if(!isPanther && !isGoat){
+  if(!isPanther && !isGoat && !isKomodo){
     const armGeo = new THREE.BoxGeometry(0.24,0.72,0.24);
     const armMat = new THREE.MeshLambertMaterial({color:tc});
     const armL = new THREE.Mesh(armGeo,armMat);
@@ -1532,7 +1660,7 @@ function makePlayerMesh(pd, teamColor, team){
   const dotGeo = new THREE.SphereGeometry(0.15,8,6);
   const dotMat = new THREE.MeshBasicMaterial({color:0xFFD700,visible:false});
   const ballDot = new THREE.Mesh(dotGeo,dotMat);
-  ballDot.position.set(0, isPanther ? headBase+0.7 : (isGoat ? 3.8 : 2.75), 0);
+  ballDot.position.set(0, isPanther ? headBase+0.7 : (isKomodo ? headBase+0.6 : (isGoat ? 3.8 : 2.75)), 0);
   group.add(ballDot);
   group.ballDot=ballDot;
 
