@@ -129,26 +129,36 @@ class MenuScene extends Phaser.Scene {
       g.strokeRect(50 + i * 150, 60 + i * 60, W - 100 - i * 300, H - 120 - i * 120);
     }
 
-    // Title
-    this.add.text(W / 2, 130, 'ROAR BALL', {
-      fontSize: '90px', fontFamily: 'Arial Black',
-      color: '#FF6B35', stroke: '#FFD700', strokeThickness: 8,
-      shadow: { offsetX: 6, offsetY: 6, color: '#000', blur: 10, fill: true }
+    // ROARBALL title
+    this.add.text(W / 2, 105, 'ROARBALL', {
+      fontSize: '104px', fontFamily: 'Arial Black',
+      color: '#FF6B35', stroke: '#FFD700', strokeThickness: 9,
+      shadow: { offsetX: 6, offsetY: 6, color: '#000', blur: 12, fill: true }
     }).setOrigin(0.5);
 
-    this.add.text(W / 2, 215, '🦁  5 TEAMS • 30 PLAYERS • ONE CHAMPION  🏀', {
-      fontSize: '20px', color: '#FFD700', fontFamily: 'Arial'
+    // Movie tie-in badge
+    this.add.text(W / 2, 193, '🐐  AS SEEN IN  THE G.O.A.T.  🐐', {
+      fontSize: '17px', fontFamily: 'Arial Black', color: '#FFD700',
+      backgroundColor: '#00000099', padding: { x: 14, y: 6 }
+    }).setOrigin(0.5);
+
+    // Sport tagline
+    this.add.text(W / 2, 244, 'FULL-CONTACT ANIMAL BASKETBALL  •  5 TEAMS  •  30 PLAYERS', {
+      fontSize: '14px', color: '#aaaaaa', fontFamily: 'Arial'
     }).setOrigin(0.5);
 
     // Buttons
-    this._btn(W / 2, 330, '🤖  VS CPU',       0xFF6B35, () => { GS.mode = 'cpu';      this.scene.start('TeamSelect'); });
-    this._btn(W / 2, 420, '👥  2 PLAYERS',    0x1D6FA4, () => { GS.mode = '2player';  this.scene.start('TeamSelect'); });
-    this._btn(W / 2, 510, '❓  HOW TO PLAY',  0x1A7A4A, () => this._howTo(), 22);
+    this._btn(W / 2, 340, '🤖  VS CPU',       0xFF6B35, () => { GS.mode = 'cpu';      this.scene.start('TeamSelect'); });
+    this._btn(W / 2, 428, '👥  2 PLAYERS',    0x1D6FA4, () => { GS.mode = '2player';  this.scene.start('TeamSelect'); });
+    this._btn(W / 2, 516, '❓  HOW TO PLAY',  0x1A7A4A, () => this._howTo(), 22);
 
-    // Bouncing basketball
-    const ball = this.add.text(80, 610, '🏀', { fontSize: '44px' });
+    // Bouncing ball + goat
+    const ball = this.add.text(80, 618, '🏀', { fontSize: '44px' });
     this.tweens.add({ targets: ball, x: W - 80, duration: 3200, yoyo: true, repeat: -1 });
-    this.tweens.add({ targets: ball, y: 580, duration: 380, yoyo: true, repeat: -1, ease: 'Bounce.easeOut' });
+    this.tweens.add({ targets: ball, y: 585, duration: 380, yoyo: true, repeat: -1, ease: 'Bounce.easeOut' });
+
+    const goat = this.add.text(W / 2, 618, '🐐', { fontSize: '36px' }).setOrigin(0.5);
+    this.tweens.add({ targets: goat, scaleX: 1.15, scaleY: 1.15, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 
   _btn(x, y, label, bg, cb, size = 30) {
@@ -166,22 +176,24 @@ class MenuScene extends Phaser.Scene {
   _howTo() {
     const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(20);
     const txt = [
-      '─────  HOW TO PLAY  ─────',
+      '🐐  ROARBALL  ─  AS SEEN IN THE G.O.A.T.  🏀',
+      'Full-contact animal basketball — no fouls, no mercy.',
       '',
-      'PLAYER 1                        PLAYER 2 (2-player mode)',
-      'Move ──────  W A S D           Move ──────  Arrow Keys',
-      'Shoot ─────  SPACE (hold→release)  Shoot ─────  ENTER',
-      'Sprint ────  SHIFT             Sprint ────  CTRL',
-      'Pass ──────  E or Q            Pass ──────  / (slash)',
+      'PLAYER 1                         PLAYER 2 (2-player)',
+      'Move ──────  W A S D            Move ──────  Arrow Keys',
+      'Shoot ─────  SPACE (hold→release)   Shoot ─────  ENTER',
+      'Sprint ────  SHIFT              Sprint ────  CTRL',
+      'Pass ──────  E   Switch def ──  Q   Pass/Switch ──  / ',
       '',
       '──  SHOOTING  ──',
-      'Hold the shoot button. A meter fills up.',
+      'Hold the shoot button — a power meter fills up.',
       'Release in the GREEN zone for the best shot!',
-      'Red = too weak / too strong → lower chance.',
+      'Red = too weak / too strong → lower chance to score.',
       '',
-      '──  SPECIAL MOVES  ──',
-      'Hold Sprint while moving for a speed boost.',
-      'Get close to the ball carrier + Sprint → Steal attempt!',
+      '──  FULL CONTACT  ──',
+      'Sprint into a ball carrier to attempt a body-check steal.',
+      'On defense, press Q to switch to the closest teammate.',
+      'Control auto-switches to whoever catches the ball.',
       '',
       '──  CAMERA  ──  Press C to cycle views',
       '2K  |  Broadcast  |  Overhead  |  Follow-Cam',
@@ -251,10 +263,10 @@ class TeamSelectScene extends Phaser.Scene {
     this.cards = [];
 
     const steps = {
-      team1:   ['PLAYER 1 — CHOOSE YOUR TEAM',    'Click a team to select it'],
-      player1: ['PLAYER 1 — CHOOSE YOUR PLAYER',  'Click a player to select them'],
-      team2:   ['PLAYER 2 — CHOOSE OPPOSING TEAM','Pick the team you\'ll face'],
-      player2: ['PLAYER 2 — CHOOSE YOUR PLAYER',  'Click a player to select them'],
+      team1:   ['PLAYER 1 — PICK YOUR SQUAD',          'Full-contact animal basketball — choose wisely'],
+      player1: ['PLAYER 1 — CHOOSE YOUR PLAYER',       '🐐 Will Harris is the G.O.A.T. — just saying'],
+      team2:   ['PLAYER 2 — PICK THE OPPOSITION',      'Who dares challenge you on the Roarball court?'],
+      player2: ['PLAYER 2 — CHOOSE YOUR PLAYER',       'Click a player to step onto the court'],
     };
     this.header.setText(steps[this.step][0]);
     this.subHeader.setText(steps[this.step][1]);
@@ -366,6 +378,18 @@ class TeamSelectScene extends Phaser.Scene {
         const bar = this.add.rectangle(startX + i * (cardW + gap) + 46 + (s.val * 6), sy + 7, s.val * 12, 9, 0x00ff88);
         this._track(lbl, bar);
       });
+
+      // Will Harris — the G.O.A.T. — gets a gold glow + badge
+      if (player.animal === 'Goat') {
+        const glow = this.add.rectangle(cx, cy, cardW + 10, cardH + 10, 0, 0)
+          .setStrokeStyle(3, 0xFFD700, 1);
+        this.tweens.add({ targets: glow, alpha: 0.2, duration: 600, yoyo: true, repeat: -1 });
+        const badge = this.add.text(cx, cy - cardH / 2 - 2, '⭐ THE G.O.A.T. ⭐', {
+          fontSize: '11px', fontFamily: 'Arial Black', color: '#FFD700',
+          backgroundColor: '#000000cc', padding: { x: 6, y: 3 }
+        }).setOrigin(0.5, 1);
+        this._track(glow, badge);
+      }
 
       // Zone added LAST so it is the topmost object and always receives input
       const zone = this.add.zone(cx, cy, cardW, cardH)
@@ -1100,11 +1124,11 @@ class GameScene extends Phaser.Scene {
     }).setDepth(21);
 
     // Controls hints (small, top-right)
-    this.add.text(W - 8, 10, 'WASD Move · SPACE Shoot · SHIFT Sprint/Steal · E/Q Pass · C Cam', {
+    this.add.text(W - 8, 10, 'WASD Move · SPACE Shoot · SHIFT Sprint/Body-Check · E Pass · Q Switch Def · C Cam', {
       fontSize: '10px', color: '#555', backgroundColor: '#00000033', padding: { x: 3, y: 2 }
     }).setOrigin(1, 0).setDepth(21);
     if (GS.mode === '2player') {
-      this.add.text(W - 8, 28, 'P2 → Arrows · ENTER Shoot · CTRL Sprint · / Pass', {
+      this.add.text(W - 8, 28, 'P2 → Arrows · ENTER Shoot · CTRL Sprint · / Pass or Switch', {
         fontSize: '10px', color: '#555', backgroundColor: '#00000033', padding: { x: 3, y: 2 }
       }).setOrigin(1, 0).setDepth(21);
     }
@@ -1721,6 +1745,11 @@ class GameOverScene extends Phaser.Scene {
       });
     }
 
+    // ROARBALL watermark
+    this.add.text(W / 2, 38, 'ROARBALL  •  AS SEEN IN THE G.O.A.T.', {
+      fontSize: '13px', fontFamily: 'Arial Black', color: '#ffffff33'
+    }).setOrigin(0.5);
+
     if (winner) {
       this.add.text(W / 2, 100, '🏆  FINAL BUZZER  🏆', {
         fontSize: '52px', fontFamily: 'Arial Black', color: '#FFD700',
@@ -1742,14 +1771,18 @@ class GameOverScene extends Phaser.Scene {
         fontSize: '40px', fontFamily: 'Arial Black', color: '#fff'
       }).setOrigin(0.5);
 
-    this.add.text(W / 2, 355, 'Final Score  •  4 Quarters', {
-      fontSize: '18px', color: '#aaa'
+    this.add.text(W / 2, 355, 'Full-Contact Animal Basketball  •  4 Quarters', {
+      fontSize: '16px', color: '#aaa'
     }).setOrigin(0.5);
 
-    // Quarter-by-quarter MVP placeholder
-    this.add.text(W / 2, 400, winner
-      ? `${winner.players[0].emoji} ${winner.players[0].name} leads the way!`
-      : 'What a battle — both teams left it all on the court!', {
+    // MVP flavour
+    const willWon = winner && winner.players.some(p => p.animal === 'Goat');
+    const flavour = willWon
+      ? '🐐  Will Harris — the G.O.A.T. — delivers again!'
+      : winner
+        ? `${winner.players[0].emoji}  ${winner.players[0].name} leads the way!`
+        : 'What a battle — both teams left it all on the court!';
+    this.add.text(W / 2, 400, flavour, {
       fontSize: '20px', color: '#FFD700'
     }).setOrigin(0.5);
 
