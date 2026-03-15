@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roar Ball 🏀</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d0d1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    #game-container canvas { display: block; }
+  </style>
+</head>
+<body>
+<div id="game-container"></div>
+<script>
+// ============================================================
+//  ROAR BALL  –  Animal Basketball Game
+//  Inspired by The G.O.A.T. animated movie
+// ============================================================
+
+const W = 1280, H = 720;
+
+// Court layout
+const CX = 170, CY = 110, CW = 940, CH = 500;
+
+// ── Team / Player data ──────────────────────────────────────
+const TEAMS = [
+  {
+    id: 0, name: 'WILDCATS', abbr: 'WLD',
+    color: 0xE85D04, textColor: '#E85D04', secondary: 0xFFD700,
+    players: [
+      { name: 'Leon',   emoji: '🦁', spd: 7, sht: 8, drb: 9, def: 7, str: 8 },
+      { name: 'Tigra',  emoji: '🐯', spd: 9, sht: 7, drb: 8, def: 6, str: 7 },
+      { name: 'Chaz',   emoji: '🐆', spd:10, sht: 6, drb: 9, def: 5, str: 6 },
+      { name: 'Lexi',   emoji: '🐱', spd: 8, sht: 9, drb: 7, def: 8, str: 6 },
+      { name: 'Puma',   emoji: '🐈', spd: 9, sht: 7, drb: 8, def: 7, str: 6 },
+    ]
+  },
+  {
+    id: 1, name: 'ROARERS', abbr: 'ROA',
+    color: 0x1D6FA4, textColor: '#1D6FA4', secondary: 0xF5F5F5,
+    players: [
+      { name: 'Grizz',  emoji: '🐻', spd: 5, sht: 7, drb: 6, def: 9, str:10 },
+      { name: 'Wolfe',  emoji: '🐺', spd: 8, sht: 8, drb: 8, def: 8, str: 7 },
+      { name: 'Foxy',   emoji: '🦊', spd: 9, sht: 8, drb: 9, def: 6, str: 5 },
+      { name: 'Kodi',   emoji: '🐼', spd: 6, sht: 9, drb: 7, def: 7, str: 8 },
+      { name: 'Polar',  emoji: '🐻‍❄️', spd: 6, sht: 8, drb: 6, def: 9, str:10 },
+    ]
+  },
+  {
+    id: 2, name: 'STAMPEDE', abbr: 'STP',
+    color: 0x6B2737, textColor: '#C0392B', secondary: 0xD4AF37,
+    players: [
+      { name: 'Elroy',  emoji: '🐘', spd: 4, sht: 6, drb: 5, def:10, str:10 },
+      { name: 'Rhino',  emoji: '🦏', spd: 5, sht: 7, drb: 6, def: 9, str:10 },
+      { name: 'Bull',   emoji: '🐂', spd: 7, sht: 8, drb: 7, def: 8, str: 9 },
+      { name: 'Hippo',  emoji: '🦛', spd: 4, sht: 6, drb: 5, def: 9, str:10 },
+      { name: 'Goril',  emoji: '🦍', spd: 6, sht: 8, drb: 7, def: 9, str:10 },
+    ]
+  },
+  {
+    id: 3, name: 'SKY HAWKS', abbr: 'SKY',
+    color: 0x1A7A4A, textColor: '#1A7A4A', secondary: 0xFF4500,
+    players: [
+      { name: 'Eagle',  emoji: '🦅', spd: 9, sht: 9, drb: 8, def: 7, str: 6 },
+      { name: 'Falcon', emoji: '🦆', spd:10, sht: 8, drb: 9, def: 6, str: 5 },
+      { name: 'Hawke',  emoji: '🦜', spd: 8, sht: 9, drb: 8, def: 7, str: 5 },
+      { name: 'Raven',  emoji: '🐦', spd: 9, sht:10, drb: 7, def: 6, str: 5 },
+      { name: 'Condor', emoji: '🦢', spd: 7, sht: 9, drb: 8, def: 8, str: 6 },
+    ]
+  }
+];
+
+// Shared game state
+const GS = {
+  mode: 'cpu',           // 'cpu' | '2player'
+  team1: 0, team2: 1,
+  p1idx: 0, p2idx: 0,
+  score: [0, 0],
+  quarter: 1,
+  camMode: 0,            // index into CAM_MODES
+};
+
+const CAM_MODES = ['2K', 'Broadcast', 'Overhead', 'Follow'];
+const QTR_SECS  = 120;
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  MENU SCENE                                              ║
+// ╚══════════════════════════════════════════════════════════╝
+class MenuScene extends Phaser.Scene {
+  constructor() { super('Menu'); }
+
+  create() {
+    // Dark court-pattern bg
+    const g = this.add.graphics();
+    g.fillStyle(0x0d0d1a); g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 8; i++) {
+      g.lineStyle(1, 0x1a2a4a, 0.5);
+      g.strokeRect(50 + i * 150, 60 + i * 60, W - 100 - i * 300, H - 120 - i * 120);
+    }
+
+    // Title
+    this.add.text(W / 2, 130, 'ROAR BALL', {
+      fontSize: '90px', fontFamily: 'Arial Black',
+      color: '#FF6B35', stroke: '#FFD700', strokeThickness: 8,
+      shadow: { offsetX: 6, offsetY: 6, color: '#000', blur: 10, fill: true }
+    }).setOrigin(0.5);
+
+    this.add.text(W / 2, 215, '🦁  THE G.O.A.T. ANIMAL BASKETBALL GAME  🏀', {
+      fontSize: '20px', color: '#FFD700', fontFamily: 'Arial'
+    }).setOrigin(0.5);
+
+    // Buttons
+    this._btn(W / 2, 330, '🤖  VS CPU',       0xFF6B35, () => { GS.mode = 'cpu';      this.scene.start('TeamSelect'); });
+    this._btn(W / 2, 420, '👥  2 PLAYERS',    0x1D6FA4, () => { GS.mode = '2player';  this.scene.start('TeamSelect'); });
+    this._btn(W / 2, 510, '❓  HOW TO PLAY',  0x1A7A4A, () => this._howTo(), 22);
+
+    // Bouncing basketball
+    const ball = this.add.text(80, 610, '🏀', { fontSize: '44px' });
+    this.tweens.add({ targets: ball, x: W - 80, duration: 3200, yoyo: true, repeat: -1 });
+    this.tweens.add({ targets: ball, y: 580, duration: 380, yoyo: true, repeat: -1, ease: 'Bounce.easeOut' });
+  }
+
+  _btn(x, y, label, bg, cb, size = 30) {
+    const t = this.add.text(x, y, label, {
+      fontSize: `${size}px`, fontFamily: 'Arial Black', color: '#fff',
+      backgroundColor: '#' + bg.toString(16).padStart(6, '0'),
+      padding: { x: 40, y: 18 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    t.on('pointerover', () => t.setScale(1.06));
+    t.on('pointerout',  () => t.setScale(1));
+    t.on('pointerdown', cb);
+    return t;
+  }
+
+  _howTo() {
+    const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(20);
+    const txt = [
+      '─────  HOW TO PLAY  ─────',
+      '',
+      'PLAYER 1                        PLAYER 2 (2-player mode)',
+      'Move ──────  W A S D           Move ──────  Arrow Keys',
+      'Shoot ─────  SPACE (hold→release)  Shoot ─────  ENTER',
+      'Sprint ────  SHIFT             Sprint ────  CTRL',
+      'Pass ──────  Q                 Pass ──────  / (slash)',
+      '',
+      '──  SHOOTING  ──',
+      'Hold the shoot button. A meter fills up.',
+      'Release in the GREEN zone for the best shot!',
+      'Red = too weak / too strong → lower chance.',
+      '',
+      '──  SPECIAL MOVES  ──',
+      'Hold Sprint while moving for a speed boost.',
+      'Get close to the ball carrier + Sprint → Steal attempt!',
+      '',
+      '──  CAMERA  ──  Press C to cycle views',
+      '2K  |  Broadcast  |  Overhead  |  Follow-Cam',
+    ].join('\n');
+
+    const t = this.add.text(W / 2, H / 2 - 10, txt, {
+      fontSize: '18px', fontFamily: 'Courier New', color: '#fff',
+      lineSpacing: 6, align: 'left'
+    }).setOrigin(0.5).setDepth(21);
+
+    const close = this.add.text(W / 2, H - 60, '[ CLOSE ]', {
+      fontSize: '28px', fontFamily: 'Arial Black', color: '#FF6B35'
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(21);
+    close.on('pointerdown', () => { ov.destroy(); t.destroy(); close.destroy(); });
+  }
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  TEAM SELECT SCENE                                       ║
+// ╚══════════════════════════════════════════════════════════╝
+class TeamSelectScene extends Phaser.Scene {
+  constructor() { super('TeamSelect'); }
+
+  create() {
+    this.step = 'team1';   // team1 → player1 → team2 → player2
+    this.sel = { team1: 0, team2: 1, p1: 0, p2: 0 };
+
+    const g = this.add.graphics();
+    g.fillStyle(0x0d0d1a); g.fillRect(0, 0, W, H);
+
+    this.header = this.add.text(W / 2, 38, '', {
+      fontSize: '32px', fontFamily: 'Arial Black', color: '#FFD700'
+    }).setOrigin(0.5);
+
+    this.subHeader = this.add.text(W / 2, 78, '', {
+      fontSize: '18px', color: '#aaa'
+    }).setOrigin(0.5);
+
+    this.cardContainer = this.add.container(0, 0);
+    this._refresh();
+  }
+
+  _refresh() {
+    this.cardContainer.removeAll(true);
+
+    const steps = {
+      team1:   ['PLAYER 1 — CHOOSE YOUR TEAM',   'Click a team to select it'],
+      player1: ['PLAYER 1 — CHOOSE YOUR PLAYER', 'Click a player to select them'],
+      team2:   ['PLAYER 2 — CHOOSE OPPOSING TEAM','Pick the team you\'ll face'],
+      player2: ['PLAYER 2 — CHOOSE YOUR PLAYER', 'Click a player to select them'],
+    };
+    this.header.setText(steps[this.step][0]);
+    this.subHeader.setText(steps[this.step][1]);
+
+    if (this.step === 'team1' || this.step === 'team2') {
+      this._drawTeams();
+    } else {
+      const teamIdx = this.step === 'player1' ? this.sel.team1 : this.sel.team2;
+      this._drawPlayers(TEAMS[teamIdx]);
+    }
+  }
+
+  _drawTeams() {
+    const cardW = 260, cardH = 190, gap = 20;
+    const totalW = TEAMS.length * (cardW + gap) - gap;
+    const startX = (W - totalW) / 2;
+
+    TEAMS.forEach((team, i) => {
+      const x = startX + i * (cardW + gap);
+      const y = 200;
+
+      // Shadow
+      const sh = this.add.rectangle(x + cardW / 2 + 4, y + cardH / 2 + 4, cardW, cardH, 0x000000, 0.5);
+
+      // BG
+      const selected = (this.step === 'team1' && this.sel.team1 === i) ||
+                       (this.step === 'team2' && this.sel.team2 === i);
+      const bg = this.add.rectangle(x + cardW / 2, y + cardH / 2, cardW, cardH, team.color, selected ? 1 : 0.7)
+        .setStrokeStyle(selected ? 4 : 2, 0xffffff, selected ? 1 : 0.5);
+
+      const name = this.add.text(x + cardW / 2, y + 28, team.name, {
+        fontSize: '22px', fontFamily: 'Arial Black', color: '#fff'
+      }).setOrigin(0.5);
+
+      const emojis = team.players.map(p => p.emoji).join(' ');
+      const emoText = this.add.text(x + cardW / 2, y + 80, emojis, { fontSize: '22px' }).setOrigin(0.5);
+
+      const abbr = this.add.text(x + cardW / 2, y + 145, `${team.players.length} players`, {
+        fontSize: '14px', color: '#ddd'
+      }).setOrigin(0.5);
+
+      [sh, bg, name, emoText, abbr].forEach(o => this.cardContainer.add(o));
+
+      // Hit zone
+      const hit = this.add.zone(x + cardW / 2, y + cardH / 2, cardW, cardH)
+        .setInteractive({ useHandCursor: true });
+      this.cardContainer.add(hit);
+
+      hit.on('pointerover', () => bg.setScale(1.04));
+      hit.on('pointerout',  () => bg.setScale(1));
+      hit.on('pointerdown', () => {
+        if (this.step === 'team1') { this.sel.team1 = i; this.step = 'player1'; }
+        else                       { this.sel.team2 = i; this.step = 'player2'; }
+        this._refresh();
+      });
+    });
+
+    // Back
+    this._backBtn();
+  }
+
+  _drawPlayers(team) {
+    const cardW = 200, cardH = 240, gap = 16;
+    const totalW = team.players.length * (cardW + gap) - gap;
+    const startX = (W - totalW) / 2;
+
+    team.players.forEach((player, i) => {
+      const x = startX + i * (cardW + gap);
+      const y = 160;
+
+      const bg = this.add.rectangle(x + cardW / 2, y + cardH / 2, cardW, cardH, team.color, 0.85)
+        .setStrokeStyle(3, 0xffffff, 0.8);
+      const shadow = this.add.rectangle(x + cardW / 2 + 4, y + cardH / 2 + 4, cardW, cardH, 0x000000, 0.4);
+
+      const emoText = this.add.text(x + cardW / 2, y + 50, player.emoji, { fontSize: '52px' }).setOrigin(0.5);
+      const nameT   = this.add.text(x + cardW / 2, y + 105, player.name, {
+        fontSize: '20px', fontFamily: 'Arial Black', color: '#fff'
+      }).setOrigin(0.5);
+
+      // Stats
+      const stats = [
+        { label: 'SPD', val: player.spd },
+        { label: 'SHT', val: player.sht },
+        { label: 'DRB', val: player.drb },
+        { label: 'DEF', val: player.def },
+      ];
+      stats.forEach((s, si) => {
+        const sy = y + 128 + si * 24;
+        const lbl = this.add.text(x + 14, sy, s.label, { fontSize: '13px', color: '#ddd' });
+        const bar = this.add.rectangle(x + 55 + (s.val * 6.5), sy + 8, s.val * 13, 10, 0x00ff88);
+        this.cardContainer.add(lbl);
+        this.cardContainer.add(bar);
+      });
+
+      [shadow, bg, emoText, nameT].forEach(o => this.cardContainer.add(o));
+
+      const hit = this.add.zone(x + cardW / 2, y + cardH / 2, cardW, cardH)
+        .setInteractive({ useHandCursor: true });
+      this.cardContainer.add(hit);
+
+      hit.on('pointerover', () => bg.setScale(1.04));
+      hit.on('pointerout',  () => bg.setScale(1));
+      hit.on('pointerdown', () => {
+        if (this.step === 'player1') {
+          this.sel.p1 = i;
+          if (GS.mode === 'cpu') {
+            // CPU picks a different team automatically
+            this.sel.team2 = (this.sel.team1 + 1) % TEAMS.length;
+            this.sel.p2 = Phaser.Math.Between(0, TEAMS[this.sel.team2].players.length - 1);
+            this._startGame();
+          } else {
+            this.step = 'team2';
+            this._refresh();
+          }
+        } else {
+          this.sel.p2 = i;
+          this._startGame();
+        }
+      });
+    });
+
+    this._backBtn();
+  }
+
+  _backBtn() {
+    const back = this.add.text(30, H - 50, '← BACK', {
+      fontSize: '22px', fontFamily: 'Arial Black', color: '#aaa'
+    }).setInteractive({ useHandCursor: true });
+    back.on('pointerdown', () => {
+      if (this.step === 'team1') this.scene.start('Menu');
+      else if (this.step === 'player1') { this.step = 'team1'; this._refresh(); }
+      else if (this.step === 'team2')   { this.step = 'player1'; this._refresh(); }
+      else                              { this.step = 'team2'; this._refresh(); }
+    });
+    this.cardContainer.add(back);
+  }
+
+  _startGame() {
+    GS.team1 = this.sel.team1; GS.team2 = this.sel.team2;
+    GS.p1idx = this.sel.p1;    GS.p2idx = this.sel.p2;
+    GS.score = [0, 0];         GS.quarter = 1;
+    this.scene.start('Game');
+  }
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  GAME SCENE                                              ║
+// ╚══════════════════════════════════════════════════════════╝
+class GameScene extends Phaser.Scene {
+  constructor() { super('Game'); }
+
+  // ── lifecycle ──────────────────────────────────────────────
+  create() {
+    this.t1 = TEAMS[GS.team1];
+    this.t2 = TEAMS[GS.team2];
+
+    this.timeLeft   = QTR_SECS;
+    this.shotClock  = 24;
+    this.possession = 1;      // 1 or 2
+    this.active     = true;
+    this.transitioning = false;
+
+    // Meter state
+    this.meter = { on: false, power: 0, pNum: 0 };
+
+    // Draw court
+    this._drawCourt();
+
+    // Basket positions (set during drawCourt)
+    // this.hoop1 / this.hoop2
+
+    // Players
+    this._spawnPlayers();
+
+    // Ball
+    this._spawnBall();
+
+    // HUD
+    this._buildHUD();
+
+    // Input
+    this._setupKeys();
+
+    // Timers
+    this.qtrTimer = this.time.addEvent({ delay: 1000, repeat: QTR_SECS - 1, callback: this._tick, callbackScope: this });
+    this.aiTimer  = this.time.addEvent({ delay: 150, loop: true, callback: this._runAI, callbackScope: this });
+
+    // Initial tip-off
+    this._tipOff();
+  }
+
+  update(_, delta) {
+    if (!this.active || this.transitioning) return;
+    const dt = delta / 1000;
+
+    this._moveHuman(this.ctrl1, this.ctrl1.keys, 1, dt);
+    if (GS.mode === '2player') this._moveHuman(this.ctrl2, this.ctrl2.keys, 2, dt);
+
+    // Shot meter fill
+    if (this.meter.on) {
+      this.meter.power = Math.min(this.meter.power + 75 * dt, 100);
+      this._updateMeterGfx();
+      if (this.meter.power >= 100) this._release(this.meter.pNum);
+    }
+
+    // Ball follows holder
+    if (this.ball.holder) {
+      this.ball.x = this.ball.holder.x;
+      this.ball.y = this.ball.holder.y - 2;
+    }
+
+    // Loose ball pickup
+    if (!this.ball.holder && !this.ball.flying) {
+      this._allPlayers().forEach(p => {
+        if (Phaser.Math.Distance.Between(p.x, p.y, this.ball.x, this.ball.y) < 28) {
+          this._give(p);
+        }
+      });
+    }
+
+    this._updateCamera();
+  }
+
+  // ── court ──────────────────────────────────────────────────
+  _drawCourt() {
+    const g = this.add.graphics();
+    const [x, y, w, h] = [CX, CY, CW, CH];
+    const mid = { x: x + w / 2, y: y + h / 2 };
+
+    // Floor
+    g.fillStyle(0xC8881E); g.fillRect(x, y, w, h);
+    // Lane lines (wood planks effect)
+    g.lineStyle(1, 0xA06010, 0.4);
+    for (let i = 0; i < h; i += 20) { g.moveTo(x, y + i); g.lineTo(x + w, y + i); }
+    g.strokePath();
+
+    // White lines
+    g.lineStyle(3, 0xffffff, 1);
+    g.strokeRect(x, y, w, h);
+    g.moveTo(mid.x, y); g.lineTo(mid.x, y + h); g.strokePath();
+
+    // Center circle
+    g.strokeCircle(mid.x, mid.y, 55);
+
+    const laneW = 155, laneH = 155;
+    // Left lane
+    g.strokeRect(x, mid.y - laneH / 2, laneW, laneH);
+    g.strokeCircle(x + laneW, mid.y, 55);
+    // Right lane
+    g.strokeRect(x + w - laneW, mid.y - laneH / 2, laneW, laneH);
+    g.strokeCircle(x + w - laneW, mid.y, 55);
+
+    // 3-point arcs
+    g.beginPath(); g.arc(x + 65, mid.y, 185, -1.35, 1.35); g.strokePath();
+    g.beginPath(); g.arc(x + w - 65, mid.y, 185, Math.PI - 1.35, Math.PI + 1.35); g.strokePath();
+
+    // Backboards
+    g.lineStyle(5, 0xcccccc);
+    g.moveTo(x + 20, mid.y - 30); g.lineTo(x + 20, mid.y + 30); g.strokePath();
+    g.moveTo(x + w - 20, mid.y - 30); g.lineTo(x + w - 20, mid.y + 30); g.strokePath();
+
+    // Hoops (orange circles)
+    g.fillStyle(0xFF4400);
+    g.fillCircle(x + 50, mid.y, 14); g.strokeCircle(x + 50, mid.y, 14);
+    g.fillCircle(x + w - 50, mid.y, 14); g.strokeCircle(x + w - 50, mid.y, 14);
+
+    // Net lines
+    g.lineStyle(2, 0xffffff, 0.6);
+    for (let i = -3; i <= 3; i++) {
+      g.moveTo(x + 50 + i * 3,  mid.y + 14);
+      g.lineTo(x + 50 + i * 4, mid.y + 30);
+    }
+    for (let i = -3; i <= 3; i++) {
+      g.moveTo(x + w - 50 + i * 3, mid.y + 14);
+      g.lineTo(x + w - 50 + i * 4, mid.y + 30);
+    }
+    g.strokePath();
+
+    // Store hoop positions
+    this.hoop1 = { x: x + 50,     y: CY + CH / 2 };
+    this.hoop2 = { x: x + w - 50, y: CY + CH / 2 };
+
+    this.courtBounds = new Phaser.Geom.Rectangle(x + 5, y + 5, w - 10, h - 10);
+  }
+
+  // ── players ────────────────────────────────────────────────
+  _spawnPlayers() {
+    const mid = { x: CX + CW / 2, y: CY + CH / 2 };
+
+    // Starting positions for 5 players on each side
+    const offsets1 = [
+      { x: -160, y:   0 }, { x: -260, y: -90 }, { x: -260, y:  90 },
+      { x: -90,  y:-140 }, { x:  -90, y: 140 }
+    ];
+    const offsets2 = offsets1.map(o => ({ x: -o.x, y: o.y }));
+
+    this.team1 = [];
+    this.team2 = [];
+
+    this.t1.players.forEach((pd, i) => {
+      const isHuman = i === GS.p1idx;
+      const o = offsets1[i];
+      const p = this._makePlayer(mid.x + o.x, mid.y + o.y, pd, this.t1.color, 1, !isHuman);
+      if (isHuman) this.ctrl1 = p;
+      this.team1.push(p);
+    });
+
+    this.t2.players.forEach((pd, i) => {
+      const isHuman = GS.mode === '2player' && i === GS.p2idx;
+      const o = offsets2[i];
+      const p = this._makePlayer(mid.x + o.x, mid.y + o.y, pd, this.t2.color, 2, !isHuman || GS.mode === 'cpu');
+      if (i === GS.p2idx) this.ctrl2 = p;
+      this.team2.push(p);
+    });
+
+    // Attach key maps
+    this.ctrl1.keys = this._p1keys();
+    if (this.ctrl2) this.ctrl2.keys = this._p2keys();
+  }
+
+  _makePlayer(x, y, pd, color, team, isAI) {
+    const c = this.add.container(x, y).setDepth(5);
+
+    // Shadow
+    c.add(this.add.ellipse(0, 20, 36, 12, 0x000000, 0.35));
+
+    // Body
+    const body = this.add.circle(0, 0, 20, color).setStrokeStyle(2, 0xffffff);
+    c.add(body);
+
+    // Emoji
+    c.add(this.add.text(0, 0, pd.emoji, { fontSize: '18px' }).setOrigin(0.5));
+
+    // Name tag
+    c.add(this.add.text(0, -34, pd.name, {
+      fontSize: '11px', color: '#fff',
+      backgroundColor: '#00000099', padding: { x: 4, y: 1 }
+    }).setOrigin(0.5));
+
+    // Ball dot indicator
+    const dot = this.add.circle(15, -15, 6, 0xFFD700).setVisible(false);
+    c.add(dot);
+
+    // Properties
+    c.pd     = pd;
+    c.team   = team;
+    c.isAI   = isAI;
+    c.hasBall = false;
+    c.dot    = dot;
+    c.vx = 0; c.vy = 0;
+    c.aiState  = 'idle';
+    c.aiCooldown = 0;
+    c.setSize(40, 40);   // for hit area
+    return c;
+  }
+
+  // ── ball ───────────────────────────────────────────────────
+  _spawnBall() {
+    const mid = { x: CX + CW / 2, y: CY + CH / 2 };
+    this.ball = this.add.text(mid.x, mid.y, '🏀', { fontSize: '26px' })
+      .setOrigin(0.5).setDepth(8);
+    this.ball.holder = null;
+    this.ball.flying = false;
+  }
+
+  // ── HUD ────────────────────────────────────────────────────
+  _buildHUD() {
+    // Scoreboard strip
+    const sb = this.add.graphics().setDepth(20);
+    sb.fillStyle(0x000000, 0.82); sb.fillRoundedRect(W / 2 - 320, 4, 640, 64, 12);
+
+    // Team names
+    this.add.text(W / 2 - 220, 14, this.t1.name, {
+      fontSize: '13px', fontFamily: 'Arial Black', color: this.t1.textColor
+    }).setOrigin(0.5, 0).setDepth(21);
+    this.add.text(W / 2 + 220, 14, this.t2.name, {
+      fontSize: '13px', fontFamily: 'Arial Black', color: this.t2.textColor
+    }).setOrigin(0.5, 0).setDepth(21);
+
+    // Score digits
+    this.scoreT1 = this.add.text(W / 2 - 110, 36, '0', {
+      fontSize: '38px', fontFamily: 'Arial Black', color: '#fff'
+    }).setOrigin(0.5).setDepth(21);
+    this.scoreT2 = this.add.text(W / 2 + 110, 36, '0', {
+      fontSize: '38px', fontFamily: 'Arial Black', color: '#fff'
+    }).setOrigin(0.5).setDepth(21);
+    this.add.text(W / 2, 36, '—', { fontSize: '28px', color: '#aaa' }).setOrigin(0.5).setDepth(21);
+
+    // Quarter
+    this.qtrTxt  = this.add.text(W / 2,  14, `Q${GS.quarter}`, {
+      fontSize: '14px', fontFamily: 'Arial Black', color: '#FFD700'
+    }).setOrigin(0.5, 0).setDepth(21);
+
+    // Game clock
+    this.clockTxt = this.add.text(W / 2, 36, '2:00', {
+      fontSize: '20px', fontFamily: 'Courier New', color: '#fff'
+    }).setOrigin(0.5).setDepth(21);
+
+    // Shot clock
+    const scBg = this.add.graphics().setDepth(20);
+    scBg.fillStyle(0x220000, 0.85); scBg.fillRoundedRect(W - 110, 4, 100, 64, 8);
+    this.add.text(W - 60, 14, 'SHOT', { fontSize: '11px', color: '#aaa' }).setOrigin(0.5, 0).setDepth(21);
+    this.scTxt = this.add.text(W - 60, 36, '24', {
+      fontSize: '30px', fontFamily: 'Arial Black', color: '#FF4500'
+    }).setOrigin(0.5).setDepth(21);
+
+    // Possession arrow
+    this.possTxt = this.add.text(W / 2 - 300, 36, '◀', {
+      fontSize: '22px', color: '#FFD700'
+    }).setOrigin(0.5).setDepth(21);
+
+    // Camera label
+    this.camTxt = this.add.text(10, 76, '📷 2K', {
+      fontSize: '13px', color: '#fff',
+      backgroundColor: '#00000088', padding: { x: 5, y: 3 }
+    }).setDepth(21);
+
+    // Shot meter
+    const mY = H - 50;
+    this.meterBg   = this.add.rectangle(W / 2, mY, 220, 26, 0x333333).setDepth(22).setVisible(false);
+    this.meterFill = this.add.rectangle(W / 2 - 110, mY, 2, 22, 0x00ff00)
+      .setDepth(23).setOrigin(0, 0.5).setVisible(false);
+    this.meterZone = this.add.rectangle(W / 2 + 10, mY, 44, 26, 0x00ff00, 0.25)
+      .setDepth(22).setVisible(false);
+    this.meterLbl  = this.add.text(W / 2, mY - 22, 'SHOT METER', {
+      fontSize: '12px', color: '#FFD700', fontFamily: 'Arial Black'
+    }).setOrigin(0.5).setDepth(23).setVisible(false);
+
+    // Controls hint
+    const hint1 = 'WASD: Move  |  SPACE: Shoot  |  SHIFT: Sprint/Steal  |  Q: Pass  |  C: Camera';
+    const hint2 = 'P2:  Arrows: Move  |  ENTER: Shoot  |  CTRL: Sprint  |  /: Pass';
+    this.add.text(10, H - 28, hint1, {
+      fontSize: '11px', color: '#888', backgroundColor: '#00000055', padding: { x: 4, y: 2 }
+    }).setDepth(21);
+    if (GS.mode === '2player') {
+      this.add.text(10, H - 48, hint2, {
+        fontSize: '11px', color: '#888', backgroundColor: '#00000055', padding: { x: 4, y: 2 }
+      }).setDepth(21);
+    }
+  }
+
+  // ── input ──────────────────────────────────────────────────
+  _p1keys() {
+    return this.input.keyboard.addKeys({
+      up: 'W', down: 'S', left: 'A', right: 'D',
+      sprint: Phaser.Input.Keyboard.KeyCodes.SHIFT,
+      pass: 'Q',
+    });
+  }
+  _p2keys() {
+    return this.input.keyboard.addKeys({
+      up: Phaser.Input.Keyboard.KeyCodes.UP,
+      down: Phaser.Input.Keyboard.KeyCodes.DOWN,
+      left: Phaser.Input.Keyboard.KeyCodes.LEFT,
+      right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
+      sprint: Phaser.Input.Keyboard.KeyCodes.CTRL,
+      pass: Phaser.Input.Keyboard.KeyCodes.FORWARD_SLASH,
+    });
+  }
+
+  _setupKeys() {
+    // Shoot – P1
+    this.input.keyboard.on('keydown-SPACE', () => {
+      if (!this.active || this.transitioning) return;
+      if (this.ctrl1.hasBall && !this.meter.on) this._startMeter(1);
+    });
+    this.input.keyboard.on('keyup-SPACE', () => {
+      if (this.meter.on && this.meter.pNum === 1) this._release(1);
+    });
+
+    // Shoot – P2
+    this.input.keyboard.on('keydown-ENTER', () => {
+      if (!this.active || this.transitioning) return;
+      if (this.ctrl2 && this.ctrl2.hasBall && !this.meter.on) this._startMeter(2);
+    });
+    this.input.keyboard.on('keyup-ENTER', () => {
+      if (this.meter.on && this.meter.pNum === 2) this._release(2);
+    });
+
+    // Pass – P1
+    this.input.keyboard.on('keydown-Q', () => {
+      if (this.ctrl1.hasBall) this._pass(this.ctrl1, this.team1);
+    });
+    // Pass – P2
+    this.input.keyboard.on('keydown-FORWARD_SLASH', () => {
+      if (this.ctrl2 && this.ctrl2.hasBall) this._pass(this.ctrl2, this.team2);
+    });
+
+    // Camera
+    this.input.keyboard.on('keydown-C', () => {
+      GS.camMode = (GS.camMode + 1) % CAM_MODES.length;
+      const labels = ['📷 2K', '📺 Broadcast', '🔭 Overhead', '👤 Follow'];
+      this.camTxt.setText(labels[GS.camMode]);
+    });
+  }
+
+  // ── movement ───────────────────────────────────────────────
+  _moveHuman(player, keys, pNum, dt) {
+    if (!player || !keys) return;
+    const spd = player.pd.spd * (keys.sprint.isDown ? 38 : 28);
+    let dx = 0, dy = 0;
+    if (keys.up.isDown)    dy -= 1;
+    if (keys.down.isDown)  dy += 1;
+    if (keys.left.isDown)  dx -= 1;
+    if (keys.right.isDown) dx += 1;
+
+    if (dx !== 0 || dy !== 0) {
+      const len = Math.sqrt(dx * dx + dy * dy);
+      player.x += (dx / len) * spd * dt;
+      player.y += (dy / len) * spd * dt;
+    }
+
+    // Clamp to court
+    player.x = Phaser.Math.Clamp(player.x, CX + 18, CX + CW - 18);
+    player.y = Phaser.Math.Clamp(player.y, CY + 18, CY + CH - 18);
+
+    // Steal attempt
+    if (keys.sprint.isDown && !player.hasBall) {
+      const opp = pNum === 1 ? this.team2 : this.team1;
+      opp.forEach(op => {
+        if (!op.hasBall) return;
+        const d = Phaser.Math.Distance.Between(player.x, player.y, op.x, op.y);
+        if (d < 30 && Math.random() < player.pd.def / 140) {
+          this._give(player);
+          this._toast(player.x, player.y - 20, 'STEAL! 🔥', '#00ccff');
+        }
+      });
+    }
+  }
+
+  // ── shot meter ─────────────────────────────────────────────
+  _startMeter(pNum) {
+    this.meter = { on: true, power: 0, pNum };
+    this.meterBg.setVisible(true);
+    this.meterFill.setVisible(true).setSize(2, 22);
+    this.meterZone.setVisible(true);
+    this.meterLbl.setVisible(true);
+  }
+
+  _updateMeterGfx() {
+    const p = this.meter.power;
+    const w = (p / 100) * 220;
+    this.meterFill.setSize(Math.max(w, 2), 22);
+
+    const col = p < 50 ? 0xff3300 : p < 70 ? 0xffaa00 : p <= 90 ? 0x00ee44 : 0xff3300;
+    this.meterFill.setFillStyle(col);
+  }
+
+  _release(pNum) {
+    if (!this.meter.on || this.meter.pNum !== pNum) return;
+    const power = this.meter.power;
+    this.meter.on = false;
+    this.meterBg.setVisible(false);
+    this.meterFill.setVisible(false);
+    this.meterZone.setVisible(false);
+    this.meterLbl.setVisible(false);
+
+    const shooter = pNum === 1 ? this.ctrl1 : this.ctrl2;
+    if (!shooter || !shooter.hasBall) return;
+
+    // Green zone 70-90 = bonus
+    const inGreen  = power >= 70 && power <= 90;
+    const base     = shooter.pd.sht / 10;
+    const chance   = inGreen ? Math.min(base * 1.35, 0.97) : base * (power / 100) * 0.75;
+
+    this._shoot(shooter, pNum, chance);
+  }
+
+  // ── shooting ───────────────────────────────────────────────
+  _shoot(player, pNum, chance) {
+    if (!player.hasBall) return;
+
+    const target = pNum === 1 ? this.hoop2 : this.hoop1;
+    const dist   = Phaser.Math.Distance.Between(player.x, player.y, target.x, target.y);
+    const is3    = dist > 200;
+    const pts    = is3 ? 3 : 2;
+
+    // Distance penalty
+    const finalChance = Math.max(chance - dist / 600, 0.08);
+
+    // Detach ball
+    this._clearBall();
+    this.ball.flying = true;
+    this.ball.x = player.x;
+    this.ball.y = player.y;
+
+    const dur = 550 + dist * 0.5;
+
+    // Arc tween
+    this.tweens.add({
+      targets: this.ball,
+      x: target.x, y: target.y,
+      duration: dur, ease: 'Power2',
+      onComplete: () => this._resolveShot(pNum, finalChance, pts)
+    });
+    this.tweens.add({
+      targets: this.ball,
+      y: player.y - 130,
+      duration: dur / 2, yoyo: true, ease: 'Sine.easeOut'
+    });
+
+    this._toast(player.x, player.y - 30, is3 ? '3PT! 🏀' : '2PT! 🏀', '#FFD700');
+  }
+
+  _resolveShot(pNum, chance, pts) {
+    this.ball.flying = false;
+    if (Math.random() < chance) {
+      GS.score[pNum - 1] += pts;
+      this.scoreT1.setText(GS.score[0]);
+      this.scoreT2.setText(GS.score[1]);
+      this._toast(this.ball.x, this.ball.y - 20, `+${pts} ✅`, '#00ee55');
+      const next = pNum === 1 ? 2 : 1;
+      this.time.delayedCall(700, () => this._reset(next));
+    } else {
+      this._toast(this.ball.x, this.ball.y - 20, 'MISS!', '#ff4444');
+      this.time.delayedCall(350, () => this._rebound());
+    }
+  }
+
+  _rebound() {
+    // Nearest player grabs it
+    let best = null, bestD = Infinity;
+    this._allPlayers().forEach(p => {
+      const d = Phaser.Math.Distance.Between(p.x, p.y, this.ball.x, this.ball.y);
+      if (d < bestD) { bestD = d; best = p; }
+    });
+    if (best) this._give(best);
+    else this._reset(this.possession === 1 ? 2 : 1);
+  }
+
+  // ── pass ───────────────────────────────────────────────────
+  _pass(from, teammates) {
+    if (!from.hasBall) return;
+    let best = null, bestD = Infinity;
+    teammates.forEach(p => {
+      if (p === from) return;
+      const d = Phaser.Math.Distance.Between(from.x, from.y, p.x, p.y);
+      if (d < bestD) { bestD = d; best = p; }
+    });
+    if (!best) return;
+    this._clearBall();
+    this.ball.flying = true;
+    this.tweens.add({
+      targets: this.ball,
+      x: best.x, y: best.y,
+      duration: 220, ease: 'Linear',
+      onComplete: () => { this.ball.flying = false; this._give(best); }
+    });
+  }
+
+  // ── ball state ─────────────────────────────────────────────
+  _clearBall() {
+    this._allPlayers().forEach(p => {
+      p.hasBall = false;
+      if (p.dot) p.dot.setVisible(false);
+    });
+    this.ball.holder = null;
+  }
+
+  _give(player) {
+    this._clearBall();
+    player.hasBall = true;
+    if (player.dot) player.dot.setVisible(true);
+    this.ball.holder = player;
+    this.possession = player.team;
+    this.possTxt.setText(player.team === 1 ? '▶' : '◀');
+    this.shotClock = 24;
+    this.scTxt.setText('24').setColor('#FF4500');
+  }
+
+  // ── reset / tip-off ────────────────────────────────────────
+  _tipOff() {
+    this._reset(1);
+  }
+
+  _reset(team) {
+    if (this.transitioning) return;
+    this._clearBall();
+    const mid = { x: CX + CW / 2, y: CY + CH / 2 };
+    this.ball.x = mid.x; this.ball.y = mid.y;
+    this.possession = team;
+    this.shotClock = 24;
+    this.scTxt.setText('24').setColor('#FF4500');
+
+    // Move controlled players toward mid
+    const cp = team === 1 ? this.ctrl1 : this.ctrl2;
+    cp.x = mid.x + (team === 1 ? -70 : 70);
+    cp.y = mid.y;
+
+    this.time.delayedCall(400, () => this._give(cp));
+  }
+
+  // ── timer ──────────────────────────────────────────────────
+  _tick() {
+    this.timeLeft--;
+    const m = Math.floor(this.timeLeft / 60);
+    const s = this.timeLeft % 60;
+    this.clockTxt.setText(`${m}:${s.toString().padStart(2, '0')}`);
+
+    this.shotClock--;
+    if (this.shotClock <= 0) {
+      this._toast(CX + CW / 2, CY - 10, 'SHOT CLOCK VIOLATION!', '#FF4500');
+      this._reset(this.possession === 1 ? 2 : 1);
+    } else {
+      this.scTxt.setText(this.shotClock);
+      this.scTxt.setColor(this.shotClock <= 5 ? '#ff2200' : '#FF4500');
+    }
+
+    if (this.timeLeft <= 0) this._endQuarter();
+  }
+
+  _endQuarter() {
+    if (this.transitioning) return;
+    this.transitioning = true;
+    this.active = false;
+    this.qtrTimer.remove(false);
+    this.aiTimer.remove(false);
+
+    if (GS.quarter < 4) {
+      GS.quarter++;
+      this._overlay(`END OF Q${GS.quarter - 1}`, () => {
+        this.timeLeft  = QTR_SECS;
+        this.shotClock = 24;
+        this.qtrTxt.setText(`Q${GS.quarter}`);
+        this.clockTxt.setText('2:00');
+        this.active = true;
+        this.transitioning = false;
+        this.qtrTimer = this.time.addEvent({ delay: 1000, repeat: QTR_SECS - 1, callback: this._tick, callbackScope: this });
+        this.aiTimer  = this.time.addEvent({ delay: 150, loop: true, callback: this._runAI, callbackScope: this });
+        this._reset(GS.quarter % 2 === 0 ? 2 : 1);
+      });
+    } else {
+      this.time.delayedCall(800, () => this.scene.start('GameOver'));
+    }
+  }
+
+  _overlay(msg, cb) {
+    const ov  = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.72).setDepth(50);
+    const t1  = this.add.text(W / 2, H / 2 - 40, msg, {
+      fontSize: '70px', fontFamily: 'Arial Black', color: '#FFD700',
+      stroke: '#000', strokeThickness: 8
+    }).setOrigin(0.5).setDepth(51);
+    const t2 = this.add.text(W / 2, H / 2 + 50,
+      `${this.t1.name}  ${GS.score[0]}  —  ${GS.score[1]}  ${this.t2.name}`, {
+        fontSize: '28px', color: '#fff'
+      }).setOrigin(0.5).setDepth(51);
+    this.time.delayedCall(2600, () => { ov.destroy(); t1.destroy(); t2.destroy(); if (cb) cb(); });
+  }
+
+  // ── AI ─────────────────────────────────────────────────────
+  _runAI() {
+    if (!this.active) return;
+    const dt = 0.15; // seconds per AI tick
+
+    // All AI teammates
+    this._allPlayers().forEach(p => {
+      if (!p.isAI) return;
+      if (GS.mode === 'cpu' && p === this.ctrl2) return; // handled below
+      this._aiTick(p, dt);
+    });
+
+    // CPU controls the opposing team's active player in single-player
+    if (GS.mode === 'cpu' && this.ctrl2) {
+      this._aiTick(this.ctrl2, dt);
+    }
+  }
+
+  _aiTick(p, dt) {
+    const oppHoop = p.team === 1 ? this.hoop2 : this.hoop1;
+    const myHoop  = p.team === 1 ? this.hoop1 : this.hoop2;
+    const ballX   = this.ball.x, ballY = this.ball.y;
+    const spd     = p.pd.spd * 24 * dt;
+    let tx, ty;
+
+    if (p.hasBall) {
+      const distToHoop = Phaser.Math.Distance.Between(p.x, p.y, oppHoop.x, oppHoop.y);
+      if (distToHoop < 240 && Math.random() < 0.025) {
+        const shotChance = (p.pd.sht / 10) * 0.72;
+        this._shoot(p, p.team, shotChance);
+        return;
+      }
+      // Pass to open teammate occasionally
+      const myTeam = p.team === 1 ? this.team1 : this.team2;
+      if (Math.random() < 0.008) {
+        this._pass(p, myTeam);
+        return;
+      }
+      tx = oppHoop.x + Phaser.Math.Between(-50, 50);
+      ty = oppHoop.y + Phaser.Math.Between(-50, 50);
+    } else if (this.possession === p.team) {
+      // Spread to open space
+      tx = CX + 50 + Math.random() * (CW - 100);
+      ty = CY + 30 + Math.random() * (CH - 60);
+    } else {
+      // Defend: position between ball and own hoop
+      tx = (ballX + myHoop.x) / 2 + Phaser.Math.Between(-30, 30);
+      ty = (ballY + myHoop.y) / 2 + Phaser.Math.Between(-30, 30);
+
+      // Steal if close
+      const holder = this.ball.holder;
+      if (holder && holder.team !== p.team) {
+        const d = Phaser.Math.Distance.Between(p.x, p.y, holder.x, holder.y);
+        if (d < 28 && Math.random() < p.pd.def / 160) {
+          this._give(p);
+          this._toast(p.x, p.y - 20, 'STEAL! 🔥', '#00ccff');
+          return;
+        }
+      }
+    }
+
+    // Move
+    const dx = tx - p.x, dy = ty - p.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 12) {
+      p.x += (dx / dist) * spd;
+      p.y += (dy / dist) * spd;
+    }
+
+    p.x = Phaser.Math.Clamp(p.x, CX + 18, CX + CW - 18);
+    p.y = Phaser.Math.Clamp(p.y, CY + 18, CY + CH - 18);
+  }
+
+  // ── camera ─────────────────────────────────────────────────
+  _updateCamera() {
+    const cam = this.cameras.main;
+    const mode = CAM_MODES[GS.camMode];
+
+    const courtCX = CX + CW / 2;
+    const courtCY = CY + CH / 2;
+
+    if (mode === '2K') {
+      // Slightly follow ball but keep most of court visible
+      const lerp = 0.06;
+      const tx = Phaser.Math.Linear(cam.scrollX + W / 2, Phaser.Math.Clamp(this.ball.x, CX + CW * 0.35, CX + CW * 0.65), lerp);
+      cam.centerOn(tx, courtCY);
+    } else if (mode === 'Broadcast' || mode === 'Overhead') {
+      cam.centerOn(courtCX, courtCY);
+    } else if (mode === 'Follow') {
+      cam.centerOn(this.ctrl1.x, this.ctrl1.y);
+    }
+
+    // Ensure camera stays within game world
+    cam.scrollX = Phaser.Math.Clamp(cam.scrollX, 0, 0);
+    cam.scrollY = Phaser.Math.Clamp(cam.scrollY, 0, 0);
+  }
+
+  // ── helpers ────────────────────────────────────────────────
+  _allPlayers() { return [...this.team1, ...this.team2]; }
+
+  _toast(x, y, msg, color = '#FFD700') {
+    const t = this.add.text(x, y, msg, {
+      fontSize: '22px', fontFamily: 'Arial Black',
+      color, stroke: '#000', strokeThickness: 4
+    }).setOrigin(0.5).setDepth(30);
+    this.tweens.add({ targets: t, y: y - 55, alpha: 0, duration: 1400, onComplete: () => t.destroy() });
+  }
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  GAME OVER SCENE                                         ║
+// ╚══════════════════════════════════════════════════════════╝
+class GameOverScene extends Phaser.Scene {
+  constructor() { super('GameOver'); }
+
+  create() {
+    const t1 = TEAMS[GS.team1], t2 = TEAMS[GS.team2];
+    const [s1, s2] = GS.score;
+    const winner = s1 > s2 ? t1 : s2 > s1 ? t2 : null;
+
+    const g = this.add.graphics();
+    g.fillStyle(0x0d0d1a); g.fillRect(0, 0, W, H);
+
+    // Confetti
+    for (let i = 0; i < 24; i++) {
+      const em = this.add.text(
+        Phaser.Math.Between(0, W), Phaser.Math.Between(-200, -20),
+        Phaser.Utils.Array.GetRandom(['🏀', '⭐', '🎉', '🏆', '🎊', '✨']),
+        { fontSize: '30px' }
+      );
+      this.tweens.add({
+        targets: em, y: H + 60, x: em.x + Phaser.Math.Between(-80, 80),
+        duration: Phaser.Math.Between(2000, 4500),
+        delay: Phaser.Math.Between(0, 2000),
+        repeat: -1,
+        onRepeat: () => em.setPosition(Phaser.Math.Between(0, W), -40)
+      });
+    }
+
+    if (winner) {
+      this.add.text(W / 2, 100, '🏆  FINAL BUZZER  🏆', {
+        fontSize: '52px', fontFamily: 'Arial Black', color: '#FFD700',
+        stroke: '#000', strokeThickness: 7
+      }).setOrigin(0.5);
+      this.add.text(W / 2, 195, `${winner.name} WIN!`, {
+        fontSize: '64px', fontFamily: 'Arial Black',
+        color: winner.textColor, stroke: '#000', strokeThickness: 6
+      }).setOrigin(0.5);
+    } else {
+      this.add.text(W / 2, 140, '🤝  TIE GAME!  🤝', {
+        fontSize: '64px', fontFamily: 'Arial Black', color: '#fff',
+        stroke: '#000', strokeThickness: 6
+      }).setOrigin(0.5);
+    }
+
+    this.add.text(W / 2, 295,
+      `${t1.name}   ${s1}  —  ${s2}   ${t2.name}`, {
+        fontSize: '40px', fontFamily: 'Arial Black', color: '#fff'
+      }).setOrigin(0.5);
+
+    this.add.text(W / 2, 355, 'Final Score  •  4 Quarters', {
+      fontSize: '18px', color: '#aaa'
+    }).setOrigin(0.5);
+
+    // Quarter-by-quarter MVP placeholder
+    this.add.text(W / 2, 400, winner
+      ? `${winner.players[0].emoji} ${winner.players[0].name} leads the way!`
+      : 'What a battle — both teams left it all on the court!', {
+      fontSize: '20px', color: '#FFD700'
+    }).setOrigin(0.5);
+
+    // Buttons
+    this._btn(W / 2 - 160, 490, '🔄  REMATCH',   0xFF6B35, () => {
+      GS.score = [0, 0]; GS.quarter = 1; this.scene.start('Game');
+    });
+    this._btn(W / 2 + 160, 490, '🏠  MAIN MENU', 0x1D6FA4, () => this.scene.start('Menu'));
+  }
+
+  _btn(x, y, label, bg, cb) {
+    const t = this.add.text(x, y, label, {
+      fontSize: '28px', fontFamily: 'Arial Black', color: '#fff',
+      backgroundColor: '#' + bg.toString(16).padStart(6, '0'),
+      padding: { x: 32, y: 16 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    t.on('pointerover', () => t.setScale(1.06));
+    t.on('pointerout',  () => t.setScale(1));
+    t.on('pointerdown', cb);
+  }
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  BOOT                                                    ║
+// ╚══════════════════════════════════════════════════════════╝
+const config = {
+  type: Phaser.AUTO,
+  width: W, height: H,
+  parent: 'game-container',
+  backgroundColor: '#0d0d1a',
+  scene: [MenuScene, TeamSelectScene, GameScene, GameOverScene],
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH
+  },
+  fps: { target: 60 }
+};
+
+new Phaser.Game(config);
+</script>
+</body>
+</html>
