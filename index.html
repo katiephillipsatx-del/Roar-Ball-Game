@@ -1695,7 +1695,7 @@ function shootBall(player, pNum, chance){
   const dx=tpos.x-player.position.x;
   const dz=tpos.z-player.position.z;
   const dist=Math.sqrt(dx*dx+dz*dz);
-  if(dist<DUNK_DIST){dunkBall(player,pNum);return;}
+  if(dist<DUNK_DIST&&player.pd.name!=='Will Harris'){dunkBall(player,pNum);return;}
   const is3 = dist>THREE_PT;
   const pts  = is3?3:2;
   const finalChance = Math.max(chance-dist/40,0.08);
@@ -1837,7 +1837,7 @@ function startMeter(pNum){
   if(!shooter||!shooter.hasBall||meterState.on)return;
   const _tp=pNum===1?hoop2pos:hoop1pos;
   const _dx=_tp.x-shooter.position.x, _dz=_tp.z-shooter.position.z;
-  if(Math.sqrt(_dx*_dx+_dz*_dz)<DUNK_DIST){dunkBall(shooter,pNum);return;}
+  if(Math.sqrt(_dx*_dx+_dz*_dz)<DUNK_DIST&&shooter.pd.name!=='Will Harris'){dunkBall(shooter,pNum);return;}
   meterState={on:true,power:0,pNum};
   const mw=document.getElementById('meter-wrap');
   mw.style.display='flex';
