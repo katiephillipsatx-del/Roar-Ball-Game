@@ -1714,7 +1714,7 @@ function shootBall(player, pNum, chance){
 
   ballFlyTo(sx,sy,sz,tx,ty,tz,arcH,dur,()=>{
     ball3d.flying=false;
-    resolveShot(pNum,finalChance,pts);
+    resolveShot(pNum,finalChance,pts,player);
   });
 }
 
@@ -1727,17 +1727,46 @@ function dunkBall(player, pNum){
   ball3d.position.set(player.position.x, 2.6, player.position.z);
   toast('DUNK! 💥','#FF4500');
   player.dunkAnim={
-    active:true, t:0, dur:0.7, pNum,
+    active:true, t:0, dur:0.7, pNum, player,
     ballReleased:false,
     tx:tpos.x, ty:RIM_Y, tz:tpos.z
   };
 }
 
-function resolveShot(pNum,chance,pts){
+// ── Floating scorer labels ────────────────────────────────────────
+const _floatLabels=[];
+function showScorerLabel(player,text,color){
+  const el=document.createElement('div');
+  el.textContent=text;
+  el.style.cssText=`position:fixed;pointer-events:none;z-index:99;font-family:'Arial Black',Arial,sans-serif;font-size:17px;font-weight:900;color:${color};text-shadow:0 0 8px #000,0 2px 4px #000;white-space:nowrap;transform:translateX(-50%);transition:opacity 0.4s;`;
+  document.body.appendChild(el);
+  const entry={el,player,expiry:performance.now()+3000};
+  _floatLabels.push(entry);
+  setTimeout(()=>{ el.style.opacity='0'; },2600);
+  setTimeout(()=>{ el.remove(); const i=_floatLabels.indexOf(entry); if(i>-1)_floatLabels.splice(i,1); },3000);
+}
+function _updateFloatLabels(){
+  if(!_floatLabels.length)return;
+  _floatLabels.forEach(({el,player})=>{
+    const headY=player.scale.y*4.2;
+    const v=new THREE.Vector3(player.position.x,headY,player.position.z);
+    v.project(camera);
+    const x=(v.x*0.5+0.5)*window.innerWidth;
+    const y=(-v.y*0.5+0.5)*window.innerHeight;
+    el.style.left=x+'px';
+    el.style.top=(y-18)+'px';
+  });
+}
+
+function resolveShot(pNum,chance,pts,scorer){
   if(Math.random()<chance){
     GS.score[pNum-1]+=pts;
     updateHUDScore();
     toast(pts===3?'TRIPLE! +3 🎯':'BUCKET! +2 ✅',pts===3?'#00aaff':'#00ee55');
+    if(scorer){
+      if(pts===3) showScorerLabel(scorer,'THREE POINTER!','#00aaff');
+      else        showScorerLabel(scorer,'TWO POINTER!','#00ee55');
+    }
     const next=pNum===1?2:1;
     setTimeout(()=>resetPossession(next),700);
   } else {
@@ -2351,7 +2380,7 @@ function update(dt){
         const sx=ball3d.position.x,sy=ball3d.position.y,sz=ball3d.position.z;
         ballFlyTo(sx,sy,sz,da.tx,da.ty,da.tz,0.4,0.25,()=>{
           ball3d.flying=false;
-          resolveShot(da.pNum,1.0,2);
+          resolveShot(da.pNum,1.0,2,da.player);
         });
       }
     }
@@ -2381,6 +2410,7 @@ function update(dt){
   });
 
   updateParticles(dt);
+  _updateFloatLabels();
   updateCamera(dt);
 }
 
