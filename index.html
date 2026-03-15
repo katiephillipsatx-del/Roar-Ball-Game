@@ -839,10 +839,10 @@ class GameScene extends Phaser.Scene {
   _spawnPlayers() {
     const mid = { x: CX + CW / 2, y: CY + CH / 2 };
 
-    // Starting positions for 5 players on each side
+    // Starting positions for up to 6 players on each side
     const offsets1 = [
       { x: -160, y:   0 }, { x: -260, y: -90 }, { x: -260, y:  90 },
-      { x: -90,  y:-140 }, { x:  -90, y: 140 }
+      { x: -90,  y:-140 }, { x:  -90, y: 140 }, { x: -190, y:   0 }
     ];
     const offsets2 = offsets1.map(o => ({ x: -o.x, y: o.y }));
 
@@ -851,7 +851,7 @@ class GameScene extends Phaser.Scene {
 
     this.t1.players.forEach((pd, i) => {
       const isHuman = i === GS.p1idx;
-      const o = offsets1[i];
+      const o = offsets1[i] || { x: -160 + i * 20, y: i * 30 };
       const p = this._makePlayer(mid.x + o.x, mid.y + o.y, pd, this.t1.color, 1, !isHuman);
       if (isHuman) this.ctrl1 = p;
       this.team1.push(p);
@@ -859,7 +859,7 @@ class GameScene extends Phaser.Scene {
 
     this.t2.players.forEach((pd, i) => {
       const isHuman = GS.mode === '2player' && i === GS.p2idx;
-      const o = offsets2[i];
+      const o = offsets2[i] || { x: 160 - i * 20, y: i * 30 };
       const p = this._makePlayer(mid.x + o.x, mid.y + o.y, pd, this.t2.color, 2, !isHuman || GS.mode === 'cpu');
       if (i === GS.p2idx) this.ctrl2 = p;
       this.team2.push(p);
