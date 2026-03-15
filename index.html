@@ -208,13 +208,34 @@ class TeamSelectScene extends Phaser.Scene {
   create() {
     this.step = 'team1';
     this.sel  = { team1: 0, team2: 1, p1: 0, p2: 0 };
-    this.cards = [];   // scene-level objects destroyed on each _refresh
+    this.cards = [];
 
     const g = this.add.graphics();
     g.fillStyle(0x0d0d1a); g.fillRect(0, 0, W, H);
 
+    // Subtle radial vignette
+    for (let r = 600; r > 0; r -= 80) {
+      g.fillStyle(0x000000, 0.04); g.fillCircle(W / 2, H / 2, r);
+    }
+
+    // Floating ambient particles
+    for (let i = 0; i < 24; i++) {
+      const px = Phaser.Math.Between(0, W);
+      const py = Phaser.Math.Between(0, H);
+      const r  = Phaser.Math.Between(2, 5);
+      const dot = this.add.circle(px, py, r, 0x9933cc, 0.25 + Math.random() * 0.3);
+      this.tweens.add({
+        targets: dot, y: py - Phaser.Math.Between(90, 260), alpha: 0,
+        duration: Phaser.Math.Between(3200, 6400),
+        delay:    Phaser.Math.Between(0, 3200),
+        repeat: -1,
+        onRepeat: () => { dot.setPosition(Phaser.Math.Between(0, W), H + 10); dot.setAlpha(0.25 + Math.random() * 0.3); }
+      });
+    }
+
     this.header = this.add.text(W / 2, 38, '', {
-      fontSize: '32px', fontFamily: 'Arial Black', color: '#FFD700'
+      fontSize: '32px', fontFamily: 'Arial Black', color: '#FFD700',
+      stroke: '#000', strokeThickness: 4
     }).setOrigin(0.5);
 
     this.subHeader = this.add.text(W / 2, 78, '', {
@@ -258,12 +279,24 @@ class TeamSelectScene extends Phaser.Scene {
       const cx = startX + i * (cardW + gap) + cardW / 2;
       const cy = 200 + cardH / 2;
 
-      const sh = this.add.rectangle(cx + 4, cy + 4, cardW, cardH, 0x000000, 0.5);
+      const sh = this.add.rectangle(cx + 5, cy + 5, cardW, cardH, 0x000000, 0.55);
 
       const selected = (this.step === 'team1' && this.sel.team1 === i) ||
                        (this.step === 'team2' && this.sel.team2 === i);
-      const bg = this.add.rectangle(cx, cy, cardW, cardH, team.color, selected ? 1 : 0.7)
-        .setStrokeStyle(selected ? 4 : 2, 0xffffff, selected ? 1 : 0.5);
+      const bg = this.add.rectangle(cx, cy, cardW, cardH, team.color, selected ? 1 : 0.72)
+        .setStrokeStyle(selected ? 3 : 2, selected ? 0xFFD700 : 0xffffff, selected ? 1 : 0.4);
+
+      // Glass effect: top shimmer stripe + bottom dark vignette
+      const shimmer = this.add.rectangle(cx, cy - cardH / 2 + 10, cardW - 4, 20, 0xffffff, 0.14);
+      const darkBot = this.add.rectangle(cx, cy + cardH / 4,       cardW - 4, cardH / 2, 0x000000, 0.24);
+
+      // Selected: pulsing gold outer ring
+      if (selected) {
+        const glow = this.add.rectangle(cx, cy, cardW + 8, cardH + 8, 0, 0)
+          .setStrokeStyle(3, 0xFFD700, 1);
+        this.tweens.add({ targets: glow, alpha: 0.25, duration: 550, yoyo: true, repeat: -1 });
+        this._track(glow);
+      }
 
       const name    = this.add.text(cx, cy - cardH / 2 + 22, team.name, {
         fontSize: '15px', fontFamily: 'Arial Black', color: '#fff',
@@ -282,10 +315,10 @@ class TeamSelectScene extends Phaser.Scene {
       const zone = this.add.zone(cx, cy, cardW, cardH)
         .setInteractive({ useHandCursor: true });
 
-      this._track(sh, bg, name, locTxt, emoText, abbr, zone);
+      this._track(sh, bg, shimmer, darkBot, name, locTxt, emoText, abbr, zone);
 
-      zone.on('pointerover', () => bg.setScale(1.06));
-      zone.on('pointerout',  () => bg.setScale(1.0));
+      zone.on('pointerover', () => { bg.setScale(1.06); shimmer.setScale(1.06); darkBot.setScale(1.06); });
+      zone.on('pointerout',  () => { bg.setScale(1.0);  shimmer.setScale(1.0);  darkBot.setScale(1.0);  });
       zone.on('pointerdown', () => {
         if (this.step === 'team1') { this.sel.team1 = i; this.step = 'player1'; }
         else                       { this.sel.team2 = i; this.step = 'player2'; }
@@ -305,9 +338,12 @@ class TeamSelectScene extends Phaser.Scene {
       const cx = startX + i * (cardW + gap) + cardW / 2;
       const cy = 148 + cardH / 2;
 
-      const shadow = this.add.rectangle(cx + 4, cy + 4, cardW, cardH, 0x000000, 0.4);
-      const bg = this.add.rectangle(cx, cy, cardW, cardH, team.color, 0.85)
-        .setStrokeStyle(3, 0xffffff, 0.8);
+      const shadow = this.add.rectangle(cx + 5, cy + 5, cardW, cardH, 0x000000, 0.55);
+      const bg = this.add.rectangle(cx, cy, cardW, cardH, team.color, 0.88)
+        .setStrokeStyle(2, 0xffffff, 0.45);
+      // Glass layers
+      const shimmer = this.add.rectangle(cx, cy - cardH / 2 + 10, cardW - 4, 20, 0xffffff, 0.13);
+      const darkBot = this.add.rectangle(cx, cy + cardH / 4,       cardW - 4, cardH / 2, 0x000000, 0.22);
 
       const emoText = this.add.text(cx, cy - cardH / 2 + 44, player.emoji, { fontSize: '44px' }).setOrigin(0.5, 0);
       const nameT   = this.add.text(cx, cy - cardH / 2 + 94, player.name, {
@@ -335,10 +371,10 @@ class TeamSelectScene extends Phaser.Scene {
       const zone = this.add.zone(cx, cy, cardW, cardH)
         .setInteractive({ useHandCursor: true });
 
-      this._track(shadow, bg, emoText, nameT, animalT, zone);
+      this._track(shadow, bg, shimmer, darkBot, emoText, nameT, animalT, zone);
 
-      zone.on('pointerover', () => bg.setScale(1.06));
-      zone.on('pointerout',  () => bg.setScale(1.0));
+      zone.on('pointerover', () => { bg.setScale(1.06); shimmer.setScale(1.06); darkBot.setScale(1.06); });
+      zone.on('pointerout',  () => { bg.setScale(1.0);  shimmer.setScale(1.0);  darkBot.setScale(1.0);  });
       zone.on('pointerdown', () => {
         if (this.step === 'player1') {
           this.sel.p1 = i;
@@ -441,6 +477,21 @@ class GameScene extends Phaser.Scene {
       if (this.meter.power >= 100) this._release(this.meter.pNum);
     }
 
+    // Ball glow + trail when flying
+    if (this.ball.flying) {
+      this.ballGlow.setPosition(this.ball.x, this.ball.y).setAlpha(0.55);
+      this._ballTrailTimer += delta;
+      if (this._ballTrailTimer > 42) {
+        this._ballTrailTimer = 0;
+        const dot = this.add.circle(this.ball.x, this.ball.y, 7, 0xFF8800, 0.65).setDepth(7);
+        this.tweens.add({ targets: dot, scaleX: 0.05, scaleY: 0.05, alpha: 0,
+          duration: 270, onComplete: () => dot.destroy() });
+      }
+    } else {
+      this.ballGlow.setAlpha(0);
+      this._ballTrailTimer = 0;
+    }
+
     // Ball follows holder
     if (this.ball.holder) {
       this.ball.x = this.ball.holder.x;
@@ -512,6 +563,19 @@ class GameScene extends Phaser.Scene {
     for (let i = 0; i < h; i += 20) { g.moveTo(x, y + i); g.lineTo(x + w, y + i); }
     g.strokePath();
 
+    // ── Arena spotlight (concentric soft glow over court) ────
+    g.fillStyle(0xffffff, 0.024); g.fillCircle(mid.x, mid.y, 360);
+    g.fillStyle(0xffffff, 0.020); g.fillCircle(mid.x, mid.y, 240);
+    g.fillStyle(0xffffff, 0.016); g.fillCircle(mid.x, mid.y, 140);
+
+    // ── Painted lane fills ───────────────────────────────────
+    const laneW = 155, laneH = 155;
+    g.fillStyle(t.hoop, 0.13);
+    g.fillRect(x, mid.y - laneH / 2, laneW, laneH);
+    g.fillRect(x + w - laneW, mid.y - laneH / 2, laneW, laneH);
+    // Centre circle fill
+    g.fillStyle(t.line, 0.07); g.fillCircle(mid.x, mid.y, 55);
+
     // ── Court lines ─────────────────────────────────────────
     g.lineStyle(3, t.line, 1);
     g.strokeRect(x, y, w, h);
@@ -519,16 +583,20 @@ class GameScene extends Phaser.Scene {
     g.strokeCircle(mid.x, mid.y, 55);
     g.fillStyle(t.line, 0.6); g.fillCircle(mid.x, mid.y, 6);
 
-    const laneW = 155, laneH = 155;
     g.lineStyle(3, t.line, 1);
     g.strokeRect(x, mid.y - laneH / 2, laneW, laneH);
     g.strokeCircle(x + laneW, mid.y, 55);
     g.strokeRect(x + w - laneW, mid.y - laneH / 2, laneW, laneH);
     g.strokeCircle(x + w - laneW, mid.y, 55);
 
-    // 3-point arcs
+    // 3-point arcs + corner straight lines
     g.beginPath(); g.arc(x + 65, mid.y, 185, -1.35, 1.35); g.strokePath();
     g.beginPath(); g.arc(x + w - 65, mid.y, 185, Math.PI - 1.35, Math.PI + 1.35); g.strokePath();
+    g.moveTo(x,       mid.y - 181); g.lineTo(x + 106, mid.y - 181);
+    g.moveTo(x,       mid.y + 181); g.lineTo(x + 106, mid.y + 181);
+    g.moveTo(x + w,   mid.y - 181); g.lineTo(x + w - 106, mid.y - 181);
+    g.moveTo(x + w,   mid.y + 181); g.lineTo(x + w - 106, mid.y + 181);
+    g.strokePath();
 
     // Restricted-area arcs
     g.beginPath(); g.arc(x + laneW, mid.y, 30, -Math.PI / 2, Math.PI / 2); g.strokePath();
@@ -876,6 +944,15 @@ class GameScene extends Phaser.Scene {
     // Shadow
     c.add(this.add.ellipse(0, 30, 42, 14, 0x000000, 0.35));
 
+    // Player indicator ring (gold + pulsing for human, dim team colour for AI)
+    const gndRing = this.add.circle(0, 30, 23, 0, 0)
+      .setStrokeStyle(2, isAI ? color : 0xFFD700, isAI ? 0.25 : 0.85);
+    c.add(gndRing);
+    if (!isAI) {
+      this.tweens.add({ targets: gndRing, alpha: 0.15, scaleX: 1.32, scaleY: 1.32,
+        duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
+
     // Legs (behind body) — origins at hip so they rotate like limbs
     const legL = this.add.rectangle(-6, 10, 8, 22, color);
     const legR = this.add.rectangle( 6, 10, 8, 22, color);
@@ -891,6 +968,10 @@ class GameScene extends Phaser.Scene {
     // Torso
     const torso = this.add.rectangle(0, -3, 18, 20, color).setStrokeStyle(1, 0xffffff, 0.5);
     c.add(torso);
+    // Jersey number
+    c.add(this.add.text(0, -2, String(((pd.spd + pd.sht) % 55) + 1), {
+      fontSize: '7px', fontFamily: 'Arial Black', color: '#ffffffbb'
+    }).setOrigin(0.5));
 
     // Arms — origins at shoulder
     const armL = this.add.rectangle(-14, -6, 7, 18, color);
@@ -936,10 +1017,13 @@ class GameScene extends Phaser.Scene {
   // ── ball ───────────────────────────────────────────────────
   _spawnBall() {
     const mid = { x: CX + CW / 2, y: CY + CH / 2 };
-    this.ball = this.add.text(mid.x, mid.y, '🏀', { fontSize: '26px' })
+    // Warm glow circle shown when the ball is in flight
+    this.ballGlow = this.add.circle(mid.x, mid.y, 22, 0xFF8800, 0).setDepth(7);
+    this.ball = this.add.text(mid.x, mid.y, '🏀', { fontSize: '28px' })
       .setOrigin(0.5).setDepth(8);
     this.ball.holder = null;
     this.ball.flying = false;
+    this._ballTrailTimer = 0;
   }
 
   // ── HUD ────────────────────────────────────────────────────
@@ -1264,12 +1348,36 @@ class GameScene extends Phaser.Scene {
       const msg = pts === 3 ? 'TRIPLE! +3 🎯' : 'BUCKET! +2 ✅';
       const col = pts === 3 ? '#00aaff' : '#00ee55';
       this._toast(this.ball.x, this.ball.y - 20, msg, col);
+      this._scoreSplash(this.ball.x, this.ball.y, pts === 3 ? 0x00aaff : 0x00ee55);
       const next = pNum === 1 ? 2 : 1;
       this.time.delayedCall(700, () => this._reset(next));
     } else {
       this._toast(this.ball.x, this.ball.y - 20, 'NO GOOD!', '#ff4444');
+      this._missSplash(pNum === 1 ? this.hoop2 : this.hoop1);
       this.time.delayedCall(350, () => this._rebound());
     }
+  }
+
+  _scoreSplash(x, y, color) {
+    for (let i = 0; i < 10; i++) {
+      const angle = (i / 10) * Math.PI * 2;
+      const dist  = Phaser.Math.Between(28, 68);
+      const dot   = this.add.circle(x, y, Phaser.Math.Between(3, 7), color, 1).setDepth(35);
+      this.tweens.add({ targets: dot,
+        x: x + Math.cos(angle) * dist, y: y + Math.sin(angle) * dist,
+        scaleX: 0, scaleY: 0, alpha: 0, duration: 500, ease: 'Power2',
+        onComplete: () => dot.destroy() });
+    }
+    const ring = this.add.circle(x, y, 14, 0, 0).setStrokeStyle(3, color, 1).setDepth(35);
+    this.tweens.add({ targets: ring, scaleX: 4.2, scaleY: 4.2, alpha: 0,
+      duration: 430, onComplete: () => ring.destroy() });
+  }
+
+  _missSplash(hoop) {
+    const ring = this.add.circle(hoop.x, hoop.y, 16, 0, 0)
+      .setStrokeStyle(3, 0xff2200, 0.9).setDepth(35);
+    this.tweens.add({ targets: ring, scaleX: 2.4, scaleY: 2.4, alpha: 0,
+      duration: 360, onComplete: () => ring.destroy() });
   }
 
   _rebound() {
