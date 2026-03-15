@@ -552,7 +552,6 @@ function buildScene(){
   // ── Stadium theme + crowd + scoreboard ──────────────────────
   buildStadiumTheme(GS.team1);
   buildCrowd(GS.team1);
-  buildScoreboard3D();
   // Stadium label
   const _sl=document.getElementById('stadium-label');
   if(_sl){const _si=STADIUM_INFO[GS.team1];_sl.textContent=_si.name.toUpperCase()+' \u2022 '+_si.city.toUpperCase();_sl.style.display='block';}
@@ -1038,117 +1037,6 @@ function buildCrowd(teamIdx){
   }
 }
 
-// ================================================================
-//  3D SCOREBOARD
-// ================================================================
-function buildScoreboard3D(){
-  // Clean up old scoreboard objects
-  if(_scoreboardMesh){scene.remove(_scoreboardMesh);_scoreboardMesh=null;}
-
-  // High-res canvas for crisp text
-  _scoreboardCanvas=document.createElement('canvas');
-  _scoreboardCanvas.width=1024;
-  _scoreboardCanvas.height=256;
-  _scoreboardCtx=_scoreboardCanvas.getContext('2d');
-
-  // Backing box (dark metallic frame)
-  const backMat=new THREE.MeshLambertMaterial({color:0x0A0A0A});
-  const back=new THREE.Mesh(new THREE.BoxGeometry(10.4,3.2,0.22),backMat);
-  back.position.set(0,8,4.05);
-  scene.add(back);
-  _stadiumObjs.push(back);
-
-  // Screen plane — positioned at z=4, y=8, facing camera (default +z normal)
-  const tex=new THREE.CanvasTexture(_scoreboardCanvas);
-  tex.anisotropy=4;
-  const geo=new THREE.PlaneGeometry(10,3);
-  const mat=new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide});
-  _scoreboardMesh=new THREE.Mesh(geo,mat);
-  _scoreboardMesh.position.set(0,8,4.18);
-  scene.add(_scoreboardMesh);
-
-  // Orange trim strips top + bottom
-  const trimMat=new THREE.MeshLambertMaterial({color:0xFF6B35});
-  [4.65,-4.65].forEach(dy=>{
-    const t=new THREE.Mesh(new THREE.BoxGeometry(10.4,0.18,0.25),trimMat);
-    t.position.set(0,8+dy,4.0);
-    scene.add(t);
-    _stadiumObjs.push(t);
-  });
-
-  refreshScoreboard3D();
-}
-
-function refreshScoreboard3D(){
-  if(!_scoreboardCtx||!_scoreboardMesh)return;
-  const ctx=_scoreboardCtx;
-  const W=1024,H=256;
-
-  // Background gradient
-  ctx.fillStyle='#050508';
-  ctx.fillRect(0,0,W,H);
-
-  // Dark panel separators
-  ctx.fillStyle='#0F0F18';
-  ctx.fillRect(0,0,W*0.35,H);
-  ctx.fillRect(W*0.65,0,W*0.35,H);
-
-  const t1=TEAMS[GS.team1]||TEAMS[0];
-  const t2=TEAMS[GS.team2]||TEAMS[1];
-  const s1=(GS.score&&GS.score[0]!=null)?GS.score[0]:0;
-  const s2=(GS.score&&GS.score[1]!=null)?GS.score[1]:0;
-
-  // ── Team 1 (left) ─────────────────────────────────────────
-  ctx.textAlign='left';
-  ctx.font='900 28px Arial, sans-serif';
-  ctx.fillStyle=t1.textColor||'#ffffff';
-  ctx.fillText(t1.abbr,24,52);
-
-  ctx.font='900 130px Arial, sans-serif';
-  ctx.fillStyle='#ffffff';
-  ctx.fillText(String(s1),24,210);
-
-  // ── Team 2 (right) ────────────────────────────────────────
-  ctx.textAlign='right';
-  ctx.font='900 28px Arial, sans-serif';
-  ctx.fillStyle=t2.textColor||'#ffffff';
-  ctx.fillText(t2.abbr,W-24,52);
-
-  ctx.font='900 130px Arial, sans-serif';
-  ctx.fillStyle='#ffffff';
-  ctx.fillText(String(s2),W-24,210);
-
-  // ── Center divider ────────────────────────────────────────
-  ctx.fillStyle='#333344';
-  ctx.fillRect(W/2-2,10,4,H-20);
-
-  // Quarter
-  ctx.textAlign='center';
-  ctx.font='900 30px Arial, sans-serif';
-  ctx.fillStyle='#FFD700';
-  ctx.fillText('Q'+(GS.quarter||1),W/2,48);
-
-  // Clock
-  const tSecs=typeof timeLeft==='number'?timeLeft:120;
-  const mm=Math.floor(tSecs/60);
-  const ss=tSecs%60;
-  ctx.font='900 72px monospace';
-  ctx.fillStyle='#ffffff';
-  ctx.fillText(`${mm}:${String(ss).padStart(2,'0')}`,W/2,152);
-
-  // Shot clock
-  const sc=typeof shotClock==='number'?shotClock:24;
-  ctx.font='900 36px Arial, sans-serif';
-  ctx.fillStyle=sc<=5?'#FF2200':'#FF6B35';
-  ctx.fillText(String(sc),W/2,210);
-
-  // Label "SHOT"
-  ctx.font='600 18px Arial, sans-serif';
-  ctx.fillStyle='#888888';
-  ctx.fillText('SHOT CLOCK',W/2,240);
-
-  _scoreboardMesh.material.map.needsUpdate=true;
-}
 
 // ================================================================
 //  PARTICLES
@@ -2824,14 +2712,12 @@ function updateHUD(){
 function updateHUDScore(){
   document.getElementById('sb-s1').textContent=GS.score[0];
   document.getElementById('sb-s2').textContent=GS.score[1];
-  refreshScoreboard3D();
 }
 
 function updateClockDisplay(){
   const m=Math.floor(timeLeft/60),s=timeLeft%60;
   document.getElementById('sb-clock').textContent=`${m}:${s.toString().padStart(2,'0')}`;
   document.getElementById('sb-qtr').textContent=`Q${GS.quarter}`;
-  refreshScoreboard3D();
 }
 
 function updateShotClockDisplay(){
