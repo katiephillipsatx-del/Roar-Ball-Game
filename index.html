@@ -1359,17 +1359,17 @@ function makePlayerMesh(pd, teamColor, team){
     armR.position.set(0.50, bodyY, 0);
     armR.castShadow=true;
     group.add(armR);
-    // Long neck
-    const neckGeo = new THREE.BoxGeometry(0.22,0.55,0.22);
+    // Short neck
+    const neckGeo = new THREE.BoxGeometry(0.22,0.28,0.22);
     const neckMat = new THREE.MeshLambertMaterial({color:0xC8A46E});
     const neck = new THREE.Mesh(neckGeo,neckMat);
-    neck.position.set(0, bodyY + bodyH/2 + 0.27, 0);
+    neck.position.set(0, bodyY + bodyH/2 + 0.14, 0);
     neck.castShadow=true;
     group.add(neck);
   }
 
   // Head
-  const headBase = isGoat ? bodyY + bodyH/2 + 0.55 + 0.38 : 2.0;
+  const headBase = isGoat ? bodyY + bodyH/2 + 0.28 + 0.38 : 2.0;
   const headColor = isPanther ? 0x0D0D0D : (isGoat ? 0xC8A46E : 0xFF8C00);
   const headGeo = new THREE.SphereGeometry(0.42,10,8);
   const headMat = new THREE.MeshLambertMaterial({color:headColor});
@@ -1463,22 +1463,27 @@ function makePlayerMesh(pd, teamColor, team){
     hornR.rotation.z = -0.4;
     hornR.position.set(0.28, hb+0.42, 0);
     group.add(hornR);
-    // Wild spiky hair — several cone spikes
+    // Curly hair — clusters of spheres
     const hairMat = new THREE.MeshLambertMaterial({color:0x4A2800});
-    const spikePositions = [
-      {x:0,    z:0,   rx:-0.3, rz:0},
-      {x:-0.15,z:0.05,rx:-0.2, rz:0.5},
-      {x:0.15, z:0.05,rx:-0.2, rz:-0.5},
-      {x:-0.25,z:0,   rx:-0.1, rz:0.8},
-      {x:0.25, z:0,   rx:-0.1, rz:-0.8},
+    const curlPositions = [
+      {x:0,    y:0.44, z:0.05},
+      {x:-0.18,y:0.38, z:0.05},
+      {x:0.18, y:0.38, z:0.05},
+      {x:-0.30,y:0.28, z:0.02},
+      {x:0.30, y:0.28, z:0.02},
+      {x:-0.10,y:0.52, z:0.00},
+      {x:0.10, y:0.52, z:0.00},
+      {x:0,    y:0.34, z:-0.10},
+      {x:-0.22,y:0.44, z:-0.08},
+      {x:0.22, y:0.44, z:-0.08},
+      {x:-0.32,y:0.18, z:0.05},
+      {x:0.32, y:0.18, z:0.05},
     ];
-    spikePositions.forEach(sp=>{
-      const spikeGeo = new THREE.ConeGeometry(0.07,0.32,5);
-      const spike = new THREE.Mesh(spikeGeo,hairMat);
-      spike.rotation.x = sp.rx;
-      spike.rotation.z = sp.rz;
-      spike.position.set(sp.x, hb+0.48, sp.z);
-      group.add(spike);
+    curlPositions.forEach(cp=>{
+      const curlGeo = new THREE.SphereGeometry(0.11,6,6);
+      const curl = new THREE.Mesh(curlGeo,hairMat);
+      curl.position.set(cp.x, hb+cp.y, cp.z);
+      group.add(curl);
     });
     // Goat beard
     const beardGeo = new THREE.ConeGeometry(0.07,0.22,6);
