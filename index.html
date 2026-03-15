@@ -1810,20 +1810,27 @@ function makePlayerMesh(pd, teamColor, team){
     neckHi.rotation.x=-0.12;
     neckHi.castShadow=true; group.add(neckHi);
 
-    // Head — sphere, larger so face features are clearly visible
-    const oHeadMat = new THREE.MeshLambertMaterial({color:OWHITE});
+    // Head — white sphere
+    const oHeadMat = new THREE.MeshLambertMaterial({color:0xFFFFFF});
     const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.26,10,8),oHeadMat);
     headMesh.position.set(0,headBase,0);
     headMesh.castShadow=true; group.add(headMesh);
     group.head = headMesh;
 
-    // Pink feather plume on top of head
-    const plumeMat = new THREE.MeshLambertMaterial({color:OPINK});
-    [-0.07,0,0.07].forEach((xOff,i)=>{
-      const f = new THREE.Mesh(new THREE.BoxGeometry(0.09,0.22,0.08),plumeMat);
-      f.position.set(xOff, headBase+0.32+i*0.02, 0);
-      f.rotation.z = xOff*2.0;
-      group.add(f);
+    // Blonde hair — short layer hugging the head
+    const hairMat = new THREE.MeshLambertMaterial({color:0xFFD700});
+    const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.27,10,8,0,Math.PI*2,0,Math.PI*0.55),hairMat);
+    hairCap.position.set(0,headBase,0); group.add(hairCap);
+
+    // Space buns — two round blonde spheres on top sides of head
+    const bunMat = new THREE.MeshLambertMaterial({color:0xFFD700});
+    [-0.22,0.22].forEach(xOff=>{
+      // Bun stalk connecting bun to head
+      const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.07,0.12,8),bunMat);
+      stalk.position.set(xOff, headBase+0.24, 0); group.add(stalk);
+      // Bun sphere
+      const bun = new THREE.Mesh(new THREE.SphereGeometry(0.13,10,8),bunMat);
+      bun.position.set(xOff, headBase+0.38, 0); group.add(bun);
     });
 
     // Eyes — white sclera + black pupils, MeshBasicMaterial so lighting can't hide them
