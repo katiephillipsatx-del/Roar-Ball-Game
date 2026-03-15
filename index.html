@@ -206,8 +206,9 @@ class TeamSelectScene extends Phaser.Scene {
   constructor() { super('TeamSelect'); }
 
   create() {
-    this.step = 'team1';   // team1 → player1 → team2 → player2
-    this.sel = { team1: 0, team2: 1, p1: 0, p2: 0 };
+    this.step = 'team1';
+    this.sel  = { team1: 0, team2: 1, p1: 0, p2: 0 };
+    this.cards = [];   // scene-level objects destroyed on each _refresh
 
     const g = this.add.graphics();
     g.fillStyle(0x0d0d1a); g.fillRect(0, 0, W, H);
@@ -220,18 +221,19 @@ class TeamSelectScene extends Phaser.Scene {
       fontSize: '18px', color: '#aaa'
     }).setOrigin(0.5);
 
-    this.cardContainer = this.add.container(0, 0);
     this._refresh();
   }
 
+  // Destroy all card objects then redraw
   _refresh() {
-    this.cardContainer.removeAll(true);
+    this.cards.forEach(o => { if (o && o.destroy) o.destroy(); });
+    this.cards = [];
 
     const steps = {
-      team1:   ['PLAYER 1 — CHOOSE YOUR TEAM',   'Click a team to select it'],
-      player1: ['PLAYER 1 — CHOOSE YOUR PLAYER', 'Click a player to select them'],
+      team1:   ['PLAYER 1 — CHOOSE YOUR TEAM',    'Click a team to select it'],
+      player1: ['PLAYER 1 — CHOOSE YOUR PLAYER',  'Click a player to select them'],
       team2:   ['PLAYER 2 — CHOOSE OPPOSING TEAM','Pick the team you\'ll face'],
-      player2: ['PLAYER 2 — CHOOSE YOUR PLAYER', 'Click a player to select them'],
+      player2: ['PLAYER 2 — CHOOSE YOUR PLAYER',  'Click a player to select them'],
     };
     this.header.setText(steps[this.step][0]);
     this.subHeader.setText(steps[this.step][1]);
@@ -244,46 +246,43 @@ class TeamSelectScene extends Phaser.Scene {
     }
   }
 
+  // Helper: add scene objects to the tracked list
+  _track(...objs) { objs.forEach(o => this.cards.push(o)); }
+
   _drawTeams() {
     const cardW = 218, cardH = 200, gap = 13;
     const totalW = TEAMS.length * (cardW + gap) - gap;
     const startX = (W - totalW) / 2;
 
     TEAMS.forEach((team, i) => {
-      const x = startX + i * (cardW + gap);
-      const y = 200;
+      const cx = startX + i * (cardW + gap) + cardW / 2;
+      const cy = 200 + cardH / 2;
 
-      // Shadow
-      const sh = this.add.rectangle(x + cardW / 2 + 4, y + cardH / 2 + 4, cardW, cardH, 0x000000, 0.5);
+      const sh = this.add.rectangle(cx + 4, cy + 4, cardW, cardH, 0x000000, 0.5);
 
-      // BG
       const selected = (this.step === 'team1' && this.sel.team1 === i) ||
                        (this.step === 'team2' && this.sel.team2 === i);
-      const bg = this.add.rectangle(x + cardW / 2, y + cardH / 2, cardW, cardH, team.color, selected ? 1 : 0.7)
-        .setStrokeStyle(selected ? 4 : 2, 0xffffff, selected ? 1 : 0.5);
+      const bg = this.add.rectangle(cx, cy, cardW, cardH, team.color, selected ? 1 : 0.7)
+        .setStrokeStyle(selected ? 4 : 2, 0xffffff, selected ? 1 : 0.5)
+        .setInteractive({ useHandCursor: true });
 
-      const name = this.add.text(x + cardW / 2, y + 22, team.name, {
+      const name    = this.add.text(cx, cy - cardH / 2 + 22, team.name, {
         fontSize: '15px', fontFamily: 'Arial Black', color: '#fff',
         wordWrap: { width: cardW - 10 }, align: 'center'
-      }).setOrigin(0.5);
-
-      const locTxt = this.add.text(x + cardW / 2, y + 56, team.location, {
+      }).setOrigin(0.5, 0);
+      const locTxt  = this.add.text(cx, cy - cardH / 2 + 54, team.location, {
         fontSize: '11px', color: '#ddd', fontStyle: 'italic'
-      }).setOrigin(0.5);
-
-      const emojis = team.players.map(p => p.emoji).join('');
-      const emoText = this.add.text(x + cardW / 2, y + 100, emojis, { fontSize: '18px' }).setOrigin(0.5);
-
-      const abbr = this.add.text(x + cardW / 2, y + 156, `${team.players.length} players`, {
+      }).setOrigin(0.5, 0);
+      const emojis  = team.players.map(p => p.emoji).join('');
+      const emoText = this.add.text(cx, cy - cardH / 2 + 98, emojis, { fontSize: '18px' }).setOrigin(0.5, 0);
+      const abbr    = this.add.text(cx, cy - cardH / 2 + 154, `${team.players.length} players`, {
         fontSize: '12px', color: '#ddd'
-      }).setOrigin(0.5);
+      }).setOrigin(0.5, 0);
 
-      [sh, bg, name, locTxt, emoText, abbr].forEach(o => this.cardContainer.add(o));
+      this._track(sh, bg, name, locTxt, emoText, abbr);
 
-      // Make bg directly interactive (more reliable than Zone inside container)
-      bg.setInteractive({ useHandCursor: true });
-      bg.on('pointerover', () => bg.setScale(1.04));
-      bg.on('pointerout',  () => bg.setScale(1));
+      bg.on('pointerover', () => bg.setScale(1.06));
+      bg.on('pointerout',  () => bg.setScale(1.0));
       bg.on('pointerdown', () => {
         if (this.step === 'team1') { this.sel.team1 = i; this.step = 'player1'; }
         else                       { this.sel.team2 = i; this.step = 'player2'; }
@@ -291,7 +290,6 @@ class TeamSelectScene extends Phaser.Scene {
       });
     });
 
-    // Back
     this._backBtn();
   }
 
@@ -301,23 +299,25 @@ class TeamSelectScene extends Phaser.Scene {
     const startX = (W - totalW) / 2;
 
     team.players.forEach((player, i) => {
-      const x = startX + i * (cardW + gap);
-      const y = 148;
+      const cx = startX + i * (cardW + gap) + cardW / 2;
+      const cy = 148 + cardH / 2;
 
-      const bg = this.add.rectangle(x + cardW / 2, y + cardH / 2, cardW, cardH, team.color, 0.85)
-        .setStrokeStyle(3, 0xffffff, 0.8);
-      const shadow = this.add.rectangle(x + cardW / 2 + 4, y + cardH / 2 + 4, cardW, cardH, 0x000000, 0.4);
+      const shadow = this.add.rectangle(cx + 4, cy + 4, cardW, cardH, 0x000000, 0.4);
+      const bg = this.add.rectangle(cx, cy, cardW, cardH, team.color, 0.85)
+        .setStrokeStyle(3, 0xffffff, 0.8)
+        .setInteractive({ useHandCursor: true });
 
-      const emoText = this.add.text(x + cardW / 2, y + 44, player.emoji, { fontSize: '44px' }).setOrigin(0.5);
-      const nameT   = this.add.text(x + cardW / 2, y + 94, player.name, {
+      const emoText = this.add.text(cx, cy - cardH / 2 + 44, player.emoji, { fontSize: '44px' }).setOrigin(0.5, 0);
+      const nameT   = this.add.text(cx, cy - cardH / 2 + 94, player.name, {
         fontSize: '15px', fontFamily: 'Arial Black', color: '#fff',
         wordWrap: { width: cardW - 8 }, align: 'center'
-      }).setOrigin(0.5);
-      const animalT = this.add.text(x + cardW / 2, y + 118, player.animal, {
+      }).setOrigin(0.5, 0);
+      const animalT = this.add.text(cx, cy - cardH / 2 + 118, player.animal, {
         fontSize: '11px', color: '#ffeeaa', fontStyle: 'italic'
-      }).setOrigin(0.5);
+      }).setOrigin(0.5, 0);
 
-      // Stats
+      this._track(shadow, bg, emoText, nameT, animalT);
+
       const stats = [
         { label: 'SPD', val: player.spd },
         { label: 'SHT', val: player.sht },
@@ -325,23 +325,18 @@ class TeamSelectScene extends Phaser.Scene {
         { label: 'DEF', val: player.def },
       ];
       stats.forEach((s, si) => {
-        const sy = y + 136 + si * 24;
-        const lbl = this.add.text(x + 10, sy, s.label, { fontSize: '11px', color: '#ddd' });
-        const bar = this.add.rectangle(x + 46 + (s.val * 6), sy + 7, s.val * 12, 9, 0x00ff88);
-        this.cardContainer.add(lbl);
-        this.cardContainer.add(bar);
+        const sy = cy - cardH / 2 + 136 + si * 24;
+        const lbl = this.add.text(startX + i * (cardW + gap) + 10, sy, s.label, { fontSize: '11px', color: '#ddd' });
+        const bar = this.add.rectangle(startX + i * (cardW + gap) + 46 + (s.val * 6), sy + 7, s.val * 12, 9, 0x00ff88);
+        this._track(lbl, bar);
       });
 
-      [shadow, bg, emoText, nameT, animalT].forEach(o => this.cardContainer.add(o));
-
-      bg.setInteractive({ useHandCursor: true });
-      bg.on('pointerover', () => bg.setScale(1.04));
-      bg.on('pointerout',  () => bg.setScale(1));
+      bg.on('pointerover', () => bg.setScale(1.06));
+      bg.on('pointerout',  () => bg.setScale(1.0));
       bg.on('pointerdown', () => {
         if (this.step === 'player1') {
           this.sel.p1 = i;
           if (GS.mode === 'cpu') {
-            // CPU picks a different team automatically
             this.sel.team2 = (this.sel.team1 + 1) % TEAMS.length;
             this.sel.p2 = Phaser.Math.Between(0, TEAMS[this.sel.team2].players.length - 1);
             this._startGame();
@@ -364,12 +359,12 @@ class TeamSelectScene extends Phaser.Scene {
       fontSize: '22px', fontFamily: 'Arial Black', color: '#aaa'
     }).setInteractive({ useHandCursor: true });
     back.on('pointerdown', () => {
-      if (this.step === 'team1') this.scene.start('Menu');
-      else if (this.step === 'player1') { this.step = 'team1'; this._refresh(); }
+      if      (this.step === 'team1')   this.scene.start('Menu');
+      else if (this.step === 'player1') { this.step = 'team1';   this._refresh(); }
       else if (this.step === 'team2')   { this.step = 'player1'; this._refresh(); }
-      else                              { this.step = 'team2'; this._refresh(); }
+      else                              { this.step = 'team2';   this._refresh(); }
     });
-    this.cardContainer.add(back);
+    this._track(back);
   }
 
   _startGame() {
