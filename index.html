@@ -917,25 +917,28 @@ class GameScene extends Phaser.Scene {
     this.team1 = [];
     this.team2 = [];
 
+    // Build shared key maps (created once, re-assigned on ctrl switch)
+    this._p1keyMap = this._p1keys();
+    this._p2keyMap = this._p2keys();
+
     this.t1.players.forEach((pd, i) => {
-      const isHuman = i === GS.p1idx;
       const o = offsets1[i] || { x: -160 + i * 20, y: i * 30 };
-      const p = this._makePlayer(mid.x + o.x, mid.y + o.y, pd, this.t1.color, 1, !isHuman);
-      if (isHuman) this.ctrl1 = p;
-      this.team1.push(p);
+      this.team1.push(this._makePlayer(mid.x + o.x, mid.y + o.y, pd, this.t1.color, 1, true));
     });
 
     this.t2.players.forEach((pd, i) => {
-      const isHuman = GS.mode === '2player' && i === GS.p2idx;
       const o = offsets2[i] || { x: 160 - i * 20, y: i * 30 };
-      const p = this._makePlayer(mid.x + o.x, mid.y + o.y, pd, this.t2.color, 2, !isHuman || GS.mode === 'cpu');
-      if (i === GS.p2idx) this.ctrl2 = p;
-      this.team2.push(p);
+      this.team2.push(this._makePlayer(mid.x + o.x, mid.y + o.y, pd, this.t2.color, 2, true));
     });
 
-    // Attach key maps
-    this.ctrl1.keys = this._p1keys();
-    if (this.ctrl2) this.ctrl2.keys = this._p2keys();
+    // Activate initial controlled players (gold ring + keys)
+    this._setCtrl1(this.team1[GS.p1idx] || this.team1[0]);
+    if (GS.mode === '2player') {
+      this.ctrl2 = this.team2[GS.p2idx] || this.team2[0];
+      this._setCtrl2(this.ctrl2);
+    } else {
+      this.ctrl2 = this.team2[GS.p2idx] || this.team2[0];
+    }
   }
 
   _makePlayer(x, y, pd, color, team, isAI) {
@@ -944,14 +947,11 @@ class GameScene extends Phaser.Scene {
     // Shadow
     c.add(this.add.ellipse(0, 30, 42, 14, 0x000000, 0.35));
 
-    // Player indicator ring (gold + pulsing for human, dim team colour for AI)
+    // Player indicator ring — all start dim; _setCtrl activates gold pulse
     const gndRing = this.add.circle(0, 30, 23, 0, 0)
-      .setStrokeStyle(2, isAI ? color : 0xFFD700, isAI ? 0.25 : 0.85);
+      .setStrokeStyle(2, color, 0.25);
     c.add(gndRing);
-    if (!isAI) {
-      this.tweens.add({ targets: gndRing, alpha: 0.15,
-        duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    }
+    c.gndRing = gndRing;
 
     // Legs (behind body) — origins at hip so they rotate like limbs
     const legL = this.add.rectangle(-6, 10, 8, 22, color);
@@ -1151,16 +1151,21 @@ class GameScene extends Phaser.Scene {
       if (this.meter.on && this.meter.pNum === 2) this._release(2);
     });
 
-    // Pass – P1 (Q or E)
-    this.input.keyboard.on('keydown-Q', () => {
-      if (this.ctrl1.hasBall) this._pass(this.ctrl1, this.team1);
-    });
+    // Pass (E) – P1
     this.input.keyboard.on('keydown-E', () => {
       if (this.ctrl1.hasBall) this._pass(this.ctrl1, this.team1);
     });
-    // Pass – P2
+    // Q – pass on offense, switch defender on defense
+    this.input.keyboard.on('keydown-Q', () => {
+      if (!this.active || this.transitioning) return;
+      if (this.ctrl1.hasBall) this._pass(this.ctrl1, this.team1);
+      else this._switchDefender(1);
+    });
+    // Pass / switch defender – P2 (2player mode)
     this.input.keyboard.on('keydown-FORWARD_SLASH', () => {
-      if (this.ctrl2 && this.ctrl2.hasBall) this._pass(this.ctrl2, this.team2);
+      if (!this.ctrl2) return;
+      if (this.ctrl2.hasBall) this._pass(this.ctrl2, this.team2);
+      else this._switchDefender(2);
     });
 
     // Camera
@@ -1436,6 +1441,60 @@ class GameScene extends Phaser.Scene {
     this.shotClock = 24;
     this.scTxt.setText('24').setColor('#FF4500');
     if (this.ballHolderTxt) this.ballHolderTxt.setText(`🏀  ${player.pd.name}`);
+
+    // Auto-switch control to whoever gets the ball
+    if (player.team === 1) this._setCtrl1(player);
+    else if (GS.mode === '2player') this._setCtrl2(player);
+  }
+
+  // ── player control switching ────────────────────────────────
+  _setCtrl1(player) {
+    if (this.ctrl1) {
+      this.ctrl1.gndRing.setStrokeStyle(2, this.t1.color, 0.25);
+      this.ctrl1.gndRing.setAlpha(1);
+      if (this.ctrl1._ringTween) { this.ctrl1._ringTween.stop(); this.ctrl1._ringTween = null; }
+      this.ctrl1.keys = null;
+    }
+    this.ctrl1 = player;
+    this.ctrl1.gndRing.setStrokeStyle(2, 0xFFD700, 0.85);
+    this.ctrl1._ringTween = this.tweens.add({
+      targets: this.ctrl1.gndRing, alpha: 0.15,
+      duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+    });
+    this.ctrl1.keys = this._p1keyMap;
+  }
+
+  _setCtrl2(player) {
+    if (!player || GS.mode !== '2player') return;
+    if (this.ctrl2) {
+      this.ctrl2.gndRing.setStrokeStyle(2, this.t2.color, 0.25);
+      this.ctrl2.gndRing.setAlpha(1);
+      if (this.ctrl2._ringTween) { this.ctrl2._ringTween.stop(); this.ctrl2._ringTween = null; }
+      this.ctrl2.keys = null;
+    }
+    this.ctrl2 = player;
+    this.ctrl2.gndRing.setStrokeStyle(2, 0x00DDFF, 0.85);
+    this.ctrl2._ringTween = this.tweens.add({
+      targets: this.ctrl2.gndRing, alpha: 0.15,
+      duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+    });
+    this.ctrl2.keys = this._p2keyMap;
+  }
+
+  // Switch to the teammate closest to the ball (on defense)
+  _switchDefender(teamNum) {
+    const team = teamNum === 1 ? this.team1 : this.team2;
+    const ctrl = teamNum === 1 ? this.ctrl1 : this.ctrl2;
+    let best = null, bestD = Infinity;
+    team.forEach(p => {
+      if (p === ctrl || p.hasBall) return;
+      const d = Phaser.Math.Distance.Between(p.x, p.y, this.ball.x, this.ball.y);
+      if (d < bestD) { bestD = d; best = p; }
+    });
+    if (best) {
+      if (teamNum === 1) this._setCtrl1(best);
+      else               this._setCtrl2(best);
+    }
   }
 
   // ── reset / tip-off ────────────────────────────────────────
@@ -1522,17 +1581,11 @@ class GameScene extends Phaser.Scene {
     if (!this.active) return;
     const dt = 0.15; // seconds per AI tick
 
-    // All AI teammates
     this._allPlayers().forEach(p => {
-      if (!p.isAI) return;
-      if (GS.mode === 'cpu' && p === this.ctrl2) return; // handled below
+      if (p === this.ctrl1) return; // human-controlled
+      if (GS.mode === '2player' && p === this.ctrl2) return; // human-controlled
       this._aiTick(p, dt);
     });
-
-    // CPU controls the opposing team's active player in single-player
-    if (GS.mode === 'cpu' && this.ctrl2) {
-      this._aiTick(this.ctrl2, dt);
-    }
   }
 
   _aiTick(p, dt) {
