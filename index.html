@@ -2152,14 +2152,39 @@ function runAI(){
   });
 }
 
+// Offensive 5-out formation slots (x is toward attacking basket, z is width)
+// Team 1 attacks right (+x toward hoop2 at x=13), Team 2 attacks left (-x toward hoop1 at x=-13)
+const OFF_SLOTS=[
+  {x:5,  z:0  }, // top of key
+  {x:8,  z:-4 }, // left wing
+  {x:8,  z:4  }, // right wing
+  {x:11, z:-5 }, // left corner
+  {x:11, z:5  }, // right corner
+  {x:7,  z:-2 }, // left elbow
+];
+// Defensive slots (x is toward own basket, defending half)
+const DEF_SLOTS=[
+  {x:3,  z:0  }, // paint protector
+  {x:5,  z:-3 }, // left wing deny
+  {x:5,  z:3  }, // right wing deny
+  {x:8,  z:-5 }, // left corner deny
+  {x:8,  z:5  }, // right corner deny
+  {x:4,  z:-2 }, // left elbow help
+];
+
 function aiTick(p){
   const oppHoop=p.team===1?hoop2pos:hoop1pos;
   const myHoop =p.team===1?hoop1pos:hoop2pos;
   const spd=p.pd.spd*0.022;
+  // Team 1 attacks toward +x, Team 2 toward -x
+  const atkSign=p.team===1?1:-1;
+  const myTeam=p.team===1?team1Players:team2Players;
+  const pIdx=myTeam.indexOf(p);
   let tx,tz;
 
   // Loose ball — everyone chases it
   if(!ball3d.holder && !ball3d.flying){
+    p._aiTarget=null;
     tx=ball3d.position.x;
     tz=ball3d.position.z;
     const dxm=tx-p.position.x,dzm=tz-p.position.z;
@@ -2186,21 +2211,41 @@ function aiTick(p){
       shootBall(p,p.team,chance);
       return;
     }
-    const myTeam=p.team===1?team1Players:team2Players;
     if(Math.random()<0.008){passBall(p,myTeam);return;}
     tx=oppHoop.x+(Math.random()-0.5)*3;
     tz=oppHoop.z+(Math.random()-0.5)*3;
   } else if(possession===p.team){
-    // spread
-    const side=p.team===1?-1:1;
-    tx=side*7+((Math.random()-0.5)*6);
-    tz=(Math.random()-0.5)*10;
+    // Offensive formation — each player holds their slot, only re-targets on arrival
+    const mode='off';
+    if(p._aiMode!==mode){ p._aiMode=mode; p._aiTarget=null; }
+    const slot=OFF_SLOTS[pIdx%OFF_SLOTS.length];
+    const goalX=atkSign*slot.x, goalZ=slot.z;
+    const atTarget=p._aiTarget &&
+      Math.abs(p.position.x-p._aiTarget.x)<0.9 &&
+      Math.abs(p.position.z-p._aiTarget.z)<0.9;
+    if(!p._aiTarget||atTarget){
+      // Small drift when arrived so player stays lively
+      p._aiTarget={x:goalX+(Math.random()-0.5)*1.2, z:goalZ+(Math.random()-0.5)*1.2};
+    }
+    tx=p._aiTarget.x; tz=p._aiTarget.z;
   } else {
-    // defend
+    // Defensive formation — hold slot, blend toward ball side
+    const mode='def';
+    if(p._aiMode!==mode){ p._aiMode=mode; p._aiTarget=null; }
+    const slot=DEF_SLOTS[pIdx%DEF_SLOTS.length];
+    const goalX=-atkSign*slot.x, goalZ=slot.z;
     const bx=ball3d.position.x,bz=ball3d.position.z;
-    tx=(bx+myHoop.x)/2+(Math.random()-0.5)*2;
-    tz=(bz+myHoop.z)/2+(Math.random()-0.5)*2;
-    // steal
+    // Blend formation spot with ball-to-hoop midpoint so defenders shade toward ball
+    const midX=(bx+myHoop.x)*0.5, midZ=(bz+myHoop.z)*0.5;
+    const blendX=goalX*0.65+midX*0.35, blendZ=goalZ*0.65+midZ*0.35;
+    const atTarget=p._aiTarget &&
+      Math.abs(p.position.x-p._aiTarget.x)<0.9 &&
+      Math.abs(p.position.z-p._aiTarget.z)<0.9;
+    if(!p._aiTarget||atTarget){
+      p._aiTarget={x:blendX+(Math.random()-0.5)*0.8, z:Math.max(-6.5,Math.min(6.5,blendZ+(Math.random()-0.5)*0.8))};
+    }
+    tx=p._aiTarget.x; tz=p._aiTarget.z;
+    // steal attempt
     const holder=ball3d.holder;
     if(holder&&holder.team!==p.team){
       const dx2=p.position.x-holder.position.x,dz2=p.position.z-holder.position.z;
