@@ -1360,16 +1360,16 @@ function makePlayerMesh(pd, teamColor, team){
     armR.castShadow=true;
     group.add(armR);
     // Short neck
-    const neckGeo = new THREE.BoxGeometry(0.22,0.28,0.22);
+    const neckGeo = new THREE.BoxGeometry(0.22,0.12,0.22);
     const neckMat = new THREE.MeshLambertMaterial({color:0xC8A46E});
     const neck = new THREE.Mesh(neckGeo,neckMat);
-    neck.position.set(0, bodyY + bodyH/2 + 0.14, 0);
+    neck.position.set(0, bodyY + bodyH/2 + 0.06, 0);
     neck.castShadow=true;
     group.add(neck);
   }
 
   // Head
-  const headBase = isGoat ? bodyY + bodyH/2 + 0.28 + 0.38 : 2.0;
+  const headBase = isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : 2.0;
   const headColor = isPanther ? 0x0D0D0D : (isGoat ? 0xC8A46E : 0xFF8C00);
   const headGeo = new THREE.SphereGeometry(0.42,10,8);
   const headMat = new THREE.MeshLambertMaterial({color:headColor});
