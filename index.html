@@ -180,7 +180,7 @@ const TEAMS = [
     floorColor:0x1A3A0A, lineColor:0xffffff,
     players:[
       {name:'Jett Fillmore',    animal:'Panther',       emoji:'🐈\u200D⬛',spd:9,sht:10,drb:9,def:6,str:5, ht:"9'1\""},
-      {name:'Lenny Williamson', animal:'Giraffe',        emoji:'🦒', spd:4,sht:8,drb:5,def:7,str:9, ht:"17'5\""},
+      {name:'Lenny Williamson', animal:'Flamingo',       emoji:'🦩', spd:4,sht:8,drb:5,def:7,str:9, ht:"17'5\""},
       {name:'Olivia Burke',     animal:'Ostrich',        emoji:'🦃', spd:10,sht:6,drb:8,def:5,str:5, ht:"8'8\""},
       {name:'Modo Olachenko',   animal:'Komodo Dragon',  emoji:'🦎', spd:10,sht:6,drb:6,def:9,str:9, ht:"11'10\""},
       {name:'Archie Everhardt', animal:'Rhino',          emoji:'🦏', spd:5,sht:7,drb:5,def:9,str:10, ht:"9'6\""},
@@ -1218,9 +1218,10 @@ function updateParticles(dt){
 function makePlayerMesh(pd, teamColor, team){
   const group = new THREE.Group();
   const tc = teamColor;
-  const isPanther = pd && pd.animal === 'Panther';
-  const isGoat = pd && pd.animal === 'Goat';
-  const isKomodo = pd && pd.animal === 'Komodo Dragon';
+  const isPanther  = pd && pd.animal === 'Panther';
+  const isGoat     = pd && pd.animal === 'Goat';
+  const isKomodo   = pd && pd.animal === 'Komodo Dragon';
+  const isFlamingo = pd && pd.animal === 'Flamingo';
 
   // Ground shadow
   const shadowGeo = new THREE.CircleGeometry(0.65,32);
@@ -1241,10 +1242,10 @@ function makePlayerMesh(pd, teamColor, team){
   group.ringMat=ringMat;
 
   // Legs — Goat has long lanky legs, Panther is tall (9'1")
-  const legH = isPanther ? 1.05 : (isGoat ? 1.0 : 0.7);
-  const legW = isGoat ? 0.22 : 0.28;
+  const legH = isPanther ? 1.05 : (isGoat ? 1.0 : (isFlamingo ? 1.25 : 0.7));
+  const legW = isGoat ? 0.22 : (isFlamingo ? 0.13 : 0.28);
   const legGeo = new THREE.BoxGeometry(legW, legH, legW);
-  const legColor = isPanther ? 0x0A0A0A : (isGoat ? 0x1A6B1A : (isKomodo ? 0x4A8C3F : 0x222222));
+  const legColor = isPanther ? 0x0A0A0A : (isGoat ? 0x1A6B1A : (isKomodo ? 0x4A8C3F : (isFlamingo ? 0xF080A0 : 0x222222)));
   const legMat = new THREE.MeshLambertMaterial({color:legColor});
   const legL = new THREE.Mesh(legGeo,legMat);
   legL.position.set(-0.22, legH/2, 0);
@@ -1285,11 +1286,11 @@ function makePlayerMesh(pd, teamColor, team){
   }
 
   // Body — Goat is taller/slimmer, Panther is big (9'1")
-  const bodyH = isPanther ? 1.575 : (isGoat ? 0.9 : 1.05);
-  const bodyW = isPanther ? 1.05 : (isGoat ? 0.72 : 0.88);
-  const bodyY = isPanther ? legH + bodyH/2 : (isGoat ? legH + 0.6 : 1.2);
+  const bodyH = isPanther ? 1.575 : (isGoat ? 0.9 : (isFlamingo ? 0.78 : 1.05));
+  const bodyW = isPanther ? 1.05 : (isGoat ? 0.72 : (isFlamingo ? 0.82 : 0.88));
+  const bodyY = isPanther ? legH + bodyH/2 : (isGoat ? legH + 0.6 : (isFlamingo ? legH + bodyH/2 : 1.2));
   const bodyGeo = new THREE.BoxGeometry(bodyW, bodyH, 0.52);
-  const bodyColor = isPanther ? 0x1A7A1A : (isGoat ? 0x1A7A1A : (isKomodo ? 0x4A8C3F : tc));
+  const bodyColor = isPanther ? 0x1A7A1A : (isGoat ? 0x1A7A1A : (isKomodo ? 0x4A8C3F : (isFlamingo ? 0xF080A0 : tc)));
   const bodyMat = new THREE.MeshLambertMaterial({color:bodyColor});
   const body = new THREE.Mesh(bodyGeo,bodyMat);
   body.position.set(0, bodyY, 0);
@@ -1373,8 +1374,8 @@ function makePlayerMesh(pd, teamColor, team){
   }
 
   // Head
-  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : 2.0));
-  if(!isKomodo){
+  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : (isFlamingo ? bodyY + bodyH/2 + 1.32 : 2.0)));
+  if(!isKomodo && !isFlamingo){
     const headColor = isPanther ? 0x0D0D0D : (isGoat ? 0xC8A46E : 0xFF8C00);
     const headGeo = new THREE.SphereGeometry(0.42,10,8);
     const headMat = new THREE.MeshLambertMaterial({color:headColor});
@@ -1632,8 +1633,113 @@ function makePlayerMesh(pd, teamColor, team){
     });
   }
 
+  // ── FLAMINGO (Lenny Williamson) ─────────────────────────────────
+  if(isFlamingo){
+    const PINK    = 0xF080A0; // flamingo pink
+    const PINK_LT = 0xFFBBCC; // lighter pink wing tips
+    const ORANGE  = 0xFFAA00; // beak
+    const fBodyTop = bodyY + bodyH/2; // top of torso
+
+    // Knee knobs — flamingo's distinctive ankle joints
+    const knobMat = new THREE.MeshLambertMaterial({color:PINK});
+    [-0.18,0.18].forEach(xOff=>{
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.10,8,8),knobMat);
+      knob.position.set(xOff, legH*0.42, 0.04);
+      group.add(knob);
+    });
+
+    // Flamingo feet — 3 thin forward toes each foot
+    const toeMat = new THREE.MeshLambertMaterial({color:ORANGE});
+    [-0.18,0.18].forEach(xOff=>{
+      [-0.06,0,0.06].forEach((toeX,ti)=>{
+        const toe = new THREE.Mesh(new THREE.BoxGeometry(0.05,0.05,0.26),toeMat);
+        toe.position.set(xOff+toeX*(ti===1?0:1), 0.025, 0.14);
+        toe.rotation.y = toeX*(ti===1?0:0.35);
+        group.add(toe);
+      });
+    });
+
+    // Jersey texture — green THORNS with red trim and #7
+    const jCanvas = document.createElement('canvas');
+    jCanvas.width=128; jCanvas.height=128;
+    const jCtx = jCanvas.getContext('2d');
+    jCtx.fillStyle='#1A7A1A'; jCtx.fillRect(0,0,128,128);
+    jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,0,128,13);   // red collar
+    jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,115,128,13); // red hem
+    jCtx.fillStyle='#FF6B00'; jCtx.textAlign='center'; jCtx.textBaseline='middle';
+    jCtx.font='bold 22px Arial Black'; jCtx.fillText('THORNS',64,26);
+    jCtx.fillStyle='#FFFFFF';
+    jCtx.font='bold 72px Arial Black'; jCtx.fillText('#7',64,82);
+    const jTex = new THREE.CanvasTexture(jCanvas);
+    const jPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.52,0.50),
+      new THREE.MeshBasicMaterial({map:jTex,transparent:true})
+    );
+    jPlane.position.set(0, bodyY, 0.28);
+    group.add(jPlane);
+
+    // Wings (flat, wide — stored as armL/armR for animation)
+    const wingMat = new THREE.MeshLambertMaterial({color:PINK});
+    const tipMat  = new THREE.MeshLambertMaterial({color:PINK_LT});
+    [-1,1].forEach(side=>{
+      const wing = new THREE.Mesh(new THREE.BoxGeometry(0.60,0.14,0.36),wingMat);
+      wing.position.set(side*0.72, bodyY+0.08, -0.05);
+      wing.rotation.z = side*0.18;
+      wing.castShadow=true; group.add(wing);
+      const tip = new THREE.Mesh(new THREE.BoxGeometry(0.22,0.10,0.26),tipMat);
+      tip.position.set(side*1.09, bodyY+0.14, -0.04);
+      tip.rotation.z = side*0.30;
+      group.add(tip);
+      if(side===-1) group.armL=wing; else group.armR=wing;
+    });
+
+    // Neck — two tapered cylinder segments for a slight S-curve
+    const neckMat = new THREE.MeshLambertMaterial({color:PINK});
+    const neckLo = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.17,0.58,8),neckMat);
+    neckLo.position.set(0, fBodyTop+0.29, 0.04);
+    neckLo.castShadow=true; group.add(neckLo);
+    const neckHi = new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.12,0.58,8),neckMat);
+    neckHi.position.set(0, fBodyTop+0.87, 0.11);
+    neckHi.rotation.x = -0.14;
+    neckHi.castShadow=true; group.add(neckHi);
+
+    // Head — small sphere
+    const headMat = new THREE.MeshLambertMaterial({color:PINK});
+    const headSph = new THREE.Mesh(new THREE.SphereGeometry(0.22,10,8),headMat);
+    headSph.position.set(0, headBase, 0.08);
+    headSph.castShadow=true; group.add(headSph);
+    group.head = headSph;
+
+    // Eyes — yellow ring, white, black pupil
+    const eyeYMat = new THREE.MeshBasicMaterial({color:0xFFDD00});
+    const eyeWMat = new THREE.MeshBasicMaterial({color:0xFFFFFF});
+    const pupMat  = new THREE.MeshBasicMaterial({color:0x111111});
+    [-0.10,0.10].forEach(xOff=>{
+      const ring = new THREE.Mesh(new THREE.SphereGeometry(0.075,8,8),eyeYMat);
+      ring.position.set(xOff, headBase+0.07, 0.22); group.add(ring);
+      const white = new THREE.Mesh(new THREE.SphereGeometry(0.055,8,8),eyeWMat);
+      white.position.set(xOff, headBase+0.07, 0.26); group.add(white);
+      const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.032,6,6),pupMat);
+      pupil.position.set(xOff, headBase+0.07, 0.29); group.add(pupil);
+    });
+
+    // Beak — orange, hooked downward like a flamingo
+    const beakMat  = new THREE.MeshLambertMaterial({color:ORANGE});
+    const beakDark = new THREE.MeshLambertMaterial({color:0x222222});
+    // Upper bill
+    const billUp = new THREE.Mesh(new THREE.BoxGeometry(0.09,0.09,0.28),beakMat);
+    billUp.position.set(0, headBase-0.04, 0.34); group.add(billUp);
+    // Hooked lower tip
+    const hook = new THREE.Mesh(new THREE.BoxGeometry(0.08,0.13,0.14),beakMat);
+    hook.position.set(0, headBase-0.15, 0.50);
+    hook.rotation.x = 0.5; group.add(hook);
+    // Dark tip
+    const darkTip = new THREE.Mesh(new THREE.BoxGeometry(0.07,0.06,0.08),beakDark);
+    darkTip.position.set(0, headBase-0.23, 0.56); group.add(darkTip);
+  }
+
   // Default arms for non-special players
-  if(!isPanther && !isGoat && !isKomodo){
+  if(!isPanther && !isGoat && !isKomodo && !isFlamingo){
     const armGeo = new THREE.BoxGeometry(0.24,0.72,0.24);
     const armMat = new THREE.MeshLambertMaterial({color:tc});
     const armL = new THREE.Mesh(armGeo,armMat);
@@ -1655,7 +1761,7 @@ function makePlayerMesh(pd, teamColor, team){
   const dotGeo = new THREE.SphereGeometry(0.15,8,6);
   const dotMat = new THREE.MeshBasicMaterial({color:0xFFD700,visible:false});
   const ballDot = new THREE.Mesh(dotGeo,dotMat);
-  ballDot.position.set(0, isPanther ? headBase+0.7 : (isKomodo ? headBase+0.6 : (isGoat ? 3.8 : 2.75)), 0);
+  ballDot.position.set(0, isPanther ? headBase+0.7 : (isKomodo ? headBase+0.6 : (isGoat ? 3.8 : (isFlamingo ? headBase+0.4 : 2.75))), 0);
   group.add(ballDot);
   group.ballDot=ballDot;
 
