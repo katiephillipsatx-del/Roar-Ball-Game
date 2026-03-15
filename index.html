@@ -1327,6 +1327,7 @@ function makePlayerMesh(pd, teamColor, team){
     armR.position.set(0.72, bodyY, 0);
     armR.castShadow=true;
     group.add(armR);
+    group.armL=armL; group.armR=armR;
   }
 
   // Goat: jersey number 0, tan arms, long neck
@@ -1359,6 +1360,7 @@ function makePlayerMesh(pd, teamColor, team){
     armR.position.set(0.50, bodyY, 0);
     armR.castShadow=true;
     group.add(armR);
+    group.armL=armL; group.armR=armR;
     // Short neck
     const neckGeo = new THREE.BoxGeometry(0.22,0.12,0.22);
     const neckMat = new THREE.MeshLambertMaterial({color:0xC8A46E});
@@ -1505,6 +1507,24 @@ function makePlayerMesh(pd, teamColor, team){
     earR.position.set(0.45, hb+0.05, 0);
     group.add(earR);
   }
+
+  // Default arms for non-special players
+  if(!isPanther && !isGoat){
+    const armGeo = new THREE.BoxGeometry(0.24,0.72,0.24);
+    const armMat = new THREE.MeshLambertMaterial({color:tc});
+    const armL = new THREE.Mesh(armGeo,armMat);
+    armL.position.set(-0.62,1.22,0);
+    armL.castShadow=true;
+    group.add(armL);
+    const armR = new THREE.Mesh(armGeo,armMat);
+    armR.position.set(0.62,1.22,0);
+    armR.castShadow=true;
+    group.add(armR);
+    group.armL=armL; group.armR=armR;
+  }
+
+  // Shoot animation state
+  group.shootAnim={active:false,t:0,dur:0.5};
 
   // Ball dot (shows who has ball)
   const dotGeo = new THREE.SphereGeometry(0.15,8,6);
@@ -1677,6 +1697,7 @@ function shootBall(player, pNum, chance){
   const arcH = 3+dist*0.25;
   const dur   = 0.5+dist*0.04;
 
+  player.shootAnim={active:true,t:0,dur:0.5};
   clearBall();
   ball3d.position.set(sx,sy,sz);
   ball3d.flying=true;
@@ -2253,11 +2274,34 @@ function update(dt){
     }
   }
 
-  // Ball follows holder
+  // Ball dribble when held
   if(ball3d.holder&&!ball3d.flying){
     const h=ball3d.holder;
-    ball3d.position.set(h.position.x,1.2,h.position.z+0.4);
+    const dribT=performance.now()/1000*3.5;
+    const bounce=Math.abs(Math.sin(dribT*Math.PI));
+    const dribY=0.28+bounce*0.9;
+    ball3d.position.set(h.position.x,dribY,h.position.z+0.4);
+    ballMesh.rotation.x+=dt*6;
+    // Dribble arm follows ball
+    if(h.armR) h.armR.rotation.x = -0.2+bounce*0.5;
   }
+
+  // Shoot animation
+  allPlayers().forEach(p=>{
+    if(!p.shootAnim||!p.shootAnim.active)return;
+    p.shootAnim.t+=dt;
+    const f=Math.min(p.shootAnim.t/p.shootAnim.dur,1);
+    // Arc: arm raises forward in first half, returns in second half
+    const angle=f<0.5 ? -(f*2)*Math.PI*0.75 : -((1-f)*2)*Math.PI*0.75;
+    if(p.armR) p.armR.rotation.x=angle;
+    // Slight body lean into shot
+    if(p.body) p.body.rotation.x=f<0.5 ? -(f*2)*0.25 : -((1-f)*2)*0.25;
+    if(f>=1){
+      p.shootAnim.active=false;
+      if(p.armR) p.armR.rotation.x=0;
+      if(p.body) p.body.rotation.x=0;
+    }
+  });
 
   // Loose ball pickup
   if(!ball3d.holder&&!ball3d.flying){
