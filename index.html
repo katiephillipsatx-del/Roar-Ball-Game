@@ -1218,6 +1218,7 @@ function makePlayerMesh(pd, teamColor, team){
   const group = new THREE.Group();
   const tc = teamColor;
   const isPanther = pd && pd.animal === 'Panther';
+  const isGoat = pd && pd.animal === 'Goat';
 
   // Ground shadow
   const shadowGeo = new THREE.CircleGeometry(0.65,32);
@@ -1237,19 +1238,35 @@ function makePlayerMesh(pd, teamColor, team){
   group.ring=ring;
   group.ringMat=ringMat;
 
-  // Legs
-  const legGeo = new THREE.BoxGeometry(0.28,0.7,0.28);
-  const legColor = isPanther ? 0x0A0A0A : 0x222222;
+  // Legs — Goat has long lanky legs
+  const legH = isGoat ? 1.0 : 0.7;
+  const legW = isGoat ? 0.22 : 0.28;
+  const legGeo = new THREE.BoxGeometry(legW, legH, legW);
+  const legColor = isPanther ? 0x0A0A0A : (isGoat ? 0x1A6B1A : 0x222222);
   const legMat = new THREE.MeshLambertMaterial({color:legColor});
   const legL = new THREE.Mesh(legGeo,legMat);
-  legL.position.set(-0.22,0.35,0);
+  legL.position.set(-0.22, legH/2, 0);
   legL.castShadow=true;
   group.add(legL);
   const legR = new THREE.Mesh(legGeo,legMat);
-  legR.position.set(0.22,0.35,0);
+  legR.position.set(0.22, legH/2, 0);
   legR.castShadow=true;
   group.add(legR);
   group.legL=legL; group.legR=legR;
+
+  // Goat shoes — white sneakers
+  if(isGoat){
+    const shoeGeo = new THREE.BoxGeometry(0.30,0.20,0.40);
+    const shoeMat = new THREE.MeshLambertMaterial({color:0xF0F0F0});
+    const shoeL = new THREE.Mesh(shoeGeo,shoeMat);
+    shoeL.position.set(-0.22,0.10,0.06);
+    shoeL.castShadow=true;
+    group.add(shoeL);
+    const shoeR = new THREE.Mesh(shoeGeo,shoeMat);
+    shoeR.position.set(0.22,0.10,0.06);
+    shoeR.castShadow=true;
+    group.add(shoeR);
+  }
 
   // Feet (Panther only — dark clawed feet)
   if(isPanther){
@@ -1265,12 +1282,15 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(footR);
   }
 
-  // Body
-  const bodyGeo = new THREE.BoxGeometry(0.88,1.05,0.52);
-  const bodyColor = isPanther ? 0x1A7A1A : tc;
+  // Body — Goat is taller/slimmer
+  const bodyY = isGoat ? legH + 0.6 : 1.2;
+  const bodyW = isGoat ? 0.72 : 0.88;
+  const bodyH = isGoat ? 0.9 : 1.05;
+  const bodyGeo = new THREE.BoxGeometry(bodyW, bodyH, 0.52);
+  const bodyColor = isPanther ? 0x1A7A1A : (isGoat ? 0x1A7A1A : tc);
   const bodyMat = new THREE.MeshLambertMaterial({color:bodyColor});
   const body = new THREE.Mesh(bodyGeo,bodyMat);
-  body.position.set(0,1.2,0);
+  body.position.set(0, bodyY, 0);
   body.castShadow=true;
   group.add(body);
   group.body=body;
@@ -1309,12 +1329,52 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(armR);
   }
 
+  // Goat: jersey number 0, tan arms, long neck
+  if(isGoat){
+    // Jersey number canvas
+    const numCanvas = document.createElement('canvas');
+    numCanvas.width=128; numCanvas.height=128;
+    const numCtx = numCanvas.getContext('2d');
+    numCtx.fillStyle='#1A7A1A';
+    numCtx.fillRect(0,0,128,128);
+    numCtx.fillStyle='#FFFFFF';
+    numCtx.font='bold 90px Arial Black';
+    numCtx.textAlign='center';
+    numCtx.textBaseline='middle';
+    numCtx.fillText('0',64,68);
+    const numTex = new THREE.CanvasTexture(numCanvas);
+    const numGeo = new THREE.PlaneGeometry(0.38,0.46);
+    const numMat = new THREE.MeshBasicMaterial({map:numTex,transparent:true});
+    const numPlane = new THREE.Mesh(numGeo,numMat);
+    numPlane.position.set(0, bodyY, 0.27);
+    group.add(numPlane);
+    // Tan arms — long and lanky
+    const armGeo = new THREE.BoxGeometry(0.20,0.85,0.20);
+    const armMat = new THREE.MeshLambertMaterial({color:0xC8A46E});
+    const armL = new THREE.Mesh(armGeo,armMat);
+    armL.position.set(-0.50, bodyY, 0);
+    armL.castShadow=true;
+    group.add(armL);
+    const armR = new THREE.Mesh(armGeo,armMat);
+    armR.position.set(0.50, bodyY, 0);
+    armR.castShadow=true;
+    group.add(armR);
+    // Long neck
+    const neckGeo = new THREE.BoxGeometry(0.22,0.55,0.22);
+    const neckMat = new THREE.MeshLambertMaterial({color:0xC8A46E});
+    const neck = new THREE.Mesh(neckGeo,neckMat);
+    neck.position.set(0, bodyY + bodyH/2 + 0.27, 0);
+    neck.castShadow=true;
+    group.add(neck);
+  }
+
   // Head
-  const headColor = isPanther ? 0x0D0D0D : 0xFF8C00;
+  const headBase = isGoat ? bodyY + bodyH/2 + 0.55 + 0.38 : 2.0;
+  const headColor = isPanther ? 0x0D0D0D : (isGoat ? 0xC8A46E : 0xFF8C00);
   const headGeo = new THREE.SphereGeometry(0.42,10,8);
   const headMat = new THREE.MeshLambertMaterial({color:headColor});
   const head = new THREE.Mesh(headGeo,headMat);
-  head.position.set(0,2.0,0);
+  head.position.set(0, headBase, 0);
   head.castShadow=true;
   group.add(head);
   group.head=head;
@@ -1356,11 +1416,95 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(earR);
   }
 
+  // Goat face features — tan muzzle, wild hair, horns, beard
+  if(isGoat){
+    const hb = headBase;
+    // Long muzzle / snout
+    const snoutGeo = new THREE.BoxGeometry(0.30,0.22,0.34);
+    const snoutMat = new THREE.MeshLambertMaterial({color:0xD4B483});
+    const snout = new THREE.Mesh(snoutGeo,snoutMat);
+    snout.position.set(0, hb-0.08, 0.38);
+    group.add(snout);
+    // Nostrils
+    const nostrilGeo = new THREE.SphereGeometry(0.045,6,6);
+    const nostrilMat = new THREE.MeshBasicMaterial({color:0x8B5A2B});
+    const nostrilL = new THREE.Mesh(nostrilGeo,nostrilMat);
+    nostrilL.position.set(-0.09, hb-0.12, 0.54);
+    group.add(nostrilL);
+    const nostrilR = new THREE.Mesh(nostrilGeo,nostrilMat);
+    nostrilR.position.set(0.09, hb-0.12, 0.54);
+    group.add(nostrilR);
+    // White eyes (large)
+    const eyeGeo = new THREE.SphereGeometry(0.08,8,8);
+    const eyeMat = new THREE.MeshBasicMaterial({color:0xFFFFFF});
+    const eyeL = new THREE.Mesh(eyeGeo,eyeMat);
+    eyeL.position.set(-0.17, hb+0.08, 0.36);
+    group.add(eyeL);
+    const eyeR = new THREE.Mesh(eyeGeo,eyeMat);
+    eyeR.position.set(0.17, hb+0.08, 0.36);
+    group.add(eyeR);
+    // Dark pupils
+    const pupilGeo = new THREE.SphereGeometry(0.05,6,6);
+    const pupilMat = new THREE.MeshBasicMaterial({color:0x1A0A00});
+    const pupilL = new THREE.Mesh(pupilGeo,pupilMat);
+    pupilL.position.set(-0.17, hb+0.08, 0.43);
+    group.add(pupilL);
+    const pupilR = new THREE.Mesh(pupilGeo,pupilMat);
+    pupilR.position.set(0.17, hb+0.08, 0.43);
+    group.add(pupilR);
+    // Goat horns
+    const hornGeo = new THREE.CylinderGeometry(0.04,0.07,0.30,6);
+    const hornMat = new THREE.MeshLambertMaterial({color:0x8B7355});
+    const hornL = new THREE.Mesh(hornGeo,hornMat);
+    hornL.rotation.z = 0.4;
+    hornL.position.set(-0.28, hb+0.42, 0);
+    group.add(hornL);
+    const hornR = new THREE.Mesh(hornGeo,hornMat);
+    hornR.rotation.z = -0.4;
+    hornR.position.set(0.28, hb+0.42, 0);
+    group.add(hornR);
+    // Wild spiky hair — several cone spikes
+    const hairMat = new THREE.MeshLambertMaterial({color:0x4A2800});
+    const spikePositions = [
+      {x:0,    z:0,   rx:-0.3, rz:0},
+      {x:-0.15,z:0.05,rx:-0.2, rz:0.5},
+      {x:0.15, z:0.05,rx:-0.2, rz:-0.5},
+      {x:-0.25,z:0,   rx:-0.1, rz:0.8},
+      {x:0.25, z:0,   rx:-0.1, rz:-0.8},
+    ];
+    spikePositions.forEach(sp=>{
+      const spikeGeo = new THREE.ConeGeometry(0.07,0.32,5);
+      const spike = new THREE.Mesh(spikeGeo,hairMat);
+      spike.rotation.x = sp.rx;
+      spike.rotation.z = sp.rz;
+      spike.position.set(sp.x, hb+0.48, sp.z);
+      group.add(spike);
+    });
+    // Goat beard
+    const beardGeo = new THREE.ConeGeometry(0.07,0.22,6);
+    const beardMat = new THREE.MeshLambertMaterial({color:0xD4B483});
+    const beard = new THREE.Mesh(beardGeo,beardMat);
+    beard.rotation.x = Math.PI;
+    beard.position.set(0, hb-0.38, 0.22);
+    group.add(beard);
+    // Ears — long floppy goat ears
+    const earGeo = new THREE.BoxGeometry(0.10,0.28,0.08);
+    const earMat = new THREE.MeshLambertMaterial({color:0xC8A46E});
+    const earL = new THREE.Mesh(earGeo,earMat);
+    earL.rotation.z = 0.5;
+    earL.position.set(-0.45, hb+0.05, 0);
+    group.add(earL);
+    const earR = new THREE.Mesh(earGeo,earMat);
+    earR.rotation.z = -0.5;
+    earR.position.set(0.45, hb+0.05, 0);
+    group.add(earR);
+  }
+
   // Ball dot (shows who has ball)
   const dotGeo = new THREE.SphereGeometry(0.15,8,6);
   const dotMat = new THREE.MeshBasicMaterial({color:0xFFD700,visible:false});
   const ballDot = new THREE.Mesh(dotGeo,dotMat);
-  ballDot.position.set(0,2.75,0);
+  ballDot.position.set(0, isGoat ? 3.8 : 2.75, 0);
   group.add(ballDot);
   group.ballDot=ballDot;
 
