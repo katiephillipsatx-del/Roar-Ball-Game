@@ -149,6 +149,7 @@ Broadcast  |  2K  |  Follow  |  Overhead
     </div>
   </div>
   <div id="toast-area"></div>
+  <div id="stadium-label" style="position:absolute;bottom:30px;left:50%;transform:translateX(-50%);font-size:12px;font-family:'Arial Black',sans-serif;color:#FFD700;background:#00000099;padding:4px 18px;border-radius:4px;display:none;letter-spacing:1px;pointer-events:none;"></div>
   <div id="qtr-overlay">
     <div class="qo-title" id="qo-title"></div>
     <div class="qo-score" id="qo-score"></div>
@@ -249,6 +250,13 @@ const GS = {
   score:[0,0], quarter:1, camMode:0
 };
 const CAM_MODES = ['Broadcast','2K','Follow','Overhead'];
+const STADIUM_INFO = [
+  {name:'Thorn Garden Arena', city:'Vineland, NJ'},
+  {name:'The Inferno',        city:'Inferno Lava Coast'},
+  {name:'The Cave',           city:'Sunken City'},
+  {name:'The Cryosphere',     city:'Arctic Ridge'},
+  {name:'Scorch Valley Arena',city:'Scorch Valley'},
+];
 const QTR_SECS  = 120;
 const BALL_R    = 0.28;
 const RIM_Y     = 3.05;
@@ -366,6 +374,10 @@ let _clockInterval=null;
 let _camTarget={x:0,y:16,z:20};
 let _camLookTarget={x:0,y:0,z:-1};
 let _animFrame=null;
+// Stadium / environment
+let _scoreboardMesh=null, _scoreboardCanvas=null, _scoreboardCtx=null;
+let _particles=[], _particleTimer=0, _particleTheme=0;
+let _stadiumObjs=[];
 
 // Keys
 const KEYS={};
@@ -526,21 +538,13 @@ function buildScene(){
     lineSeg(pts);
   }
 
-  // ── Stands ───────────────────────────────────────────────────
-  const standMat = new THREE.MeshLambertMaterial({color:0x111122});
-  [[0,-10.5,28,4,5],[0,10.5,28,4,5]].forEach(([x,z,w,h,d])=>{
-    const g=new THREE.BoxGeometry(w,h,d);
-    const m=new THREE.Mesh(g,standMat);
-    m.position.set(x,h/2-0.5,z);
-    scene.add(m);
-  });
-  // Side stands
-  [[-17,0,4,4,15],[17,0,4,4,15]].forEach(([x,z,w,h,d])=>{
-    const g=new THREE.BoxGeometry(w,h,d);
-    const m=new THREE.Mesh(g,standMat);
-    m.position.set(x,h/2-0.5,z);
-    scene.add(m);
-  });
+  // ── Stadium theme + crowd + scoreboard ──────────────────────
+  buildStadiumTheme(GS.team1);
+  buildCrowd(GS.team1);
+  buildScoreboard3D();
+  // Stadium label
+  const _sl=document.getElementById('stadium-label');
+  if(_sl){const _si=STADIUM_INFO[GS.team1];_sl.textContent=_si.name.toUpperCase()+' \u2022 '+_si.city.toUpperCase();_sl.style.display='block';}
 
   // ── Hoops ───────────────────────────────────────────────────
   hoop1pos = new THREE.Vector3(-13, RIM_Y, 0);
@@ -584,6 +588,556 @@ function buildHoop(x){
     ];
     const g=new THREE.BufferGeometry().setFromPoints(pts);
     scene.add(new THREE.Line(g,new THREE.LineBasicMaterial({color:netColor,transparent:true,opacity:0.5})));
+  }
+}
+
+// ================================================================
+//  STADIUM ENVIRONMENTS
+// ================================================================
+
+const STAND_COLORS=[0x1A2B0A,0x1A0500,0x050518,0x0A1828,0x1A1000];
+const STAND_CFG=[[0,-10.5,28,4,5],[0,10.5,28,4,5],[-17,0,4,4,15],[17,0,4,4,15]];
+
+function _addSO(obj){scene.add(obj);_stadiumObjs.push(obj);return obj;}
+
+function buildStadiumTheme(idx){
+  _stadiumObjs.forEach(o=>scene.remove(o));
+  _stadiumObjs=[];
+  _particles.forEach(p=>scene.remove(p.mesh));
+  _particles=[];
+  _particleTimer=0;
+  _particleTheme=idx;
+
+  // Base stand blocks
+  const standMat=new THREE.MeshLambertMaterial({color:STAND_COLORS[idx]||0x111122});
+  STAND_CFG.forEach(([x,z,w,h,d])=>{
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),standMat);
+    m.position.set(x,h/2-0.5,z);
+    _addSO(m);
+  });
+
+  if(idx===0) _buildThorns();
+  else if(idx===1) _buildMagma();
+  else if(idx===2) _buildShadows();
+  else if(idx===3) _buildShivers();
+  else if(idx===4) _buildSandstorms();
+}
+
+// ── 0: VINELAND THORNS — Thorn Garden Arena ──────────────────────
+function _buildThorns(){
+  const thornMat =new THREE.MeshLambertMaterial({color:0x3D7A20});
+  const thornDkMat=new THREE.MeshLambertMaterial({color:0x1E4A08});
+
+  // Thorn spikes along all 4 court edges
+  for(let x=-14.5;x<=14.5;x+=1.3){
+    [-7.7,7.7].forEach(z=>{
+      const h=0.6+Math.random()*0.6;
+      const m=new THREE.Mesh(new THREE.ConeGeometry(0.11,h,5),Math.random()>0.4?thornMat:thornDkMat);
+      m.position.set(x,h/2,z);
+      _addSO(m);
+    });
+  }
+  for(let z=-7;z<=7;z+=1.3){
+    [-15.2,15.2].forEach(x=>{
+      const h=0.6+Math.random()*0.6;
+      const m=new THREE.Mesh(new THREE.ConeGeometry(0.11,h,5),Math.random()>0.4?thornMat:thornDkMat);
+      m.position.set(x,h/2,z);
+      _addSO(m);
+    });
+  }
+
+  // Foliage clusters on sidelines
+  const fMats=[
+    new THREE.MeshLambertMaterial({color:0x2A7010}),
+    new THREE.MeshLambertMaterial({color:0x1E5508}),
+    new THREE.MeshLambertMaterial({color:0x4A9020})
+  ];
+  for(let x=-12;x<=12;x+=2.5){
+    [-9.8,-9.2,9.2,9.8].forEach(z=>{
+      const r=0.45+Math.random()*0.55;
+      const m=new THREE.Mesh(new THREE.SphereGeometry(r,7,6),fMats[Math.floor(Math.random()*3)]);
+      m.position.set(x+(Math.random()-0.5)*0.8,r*0.5+Math.random()*0.3,z);
+      _addSO(m);
+    });
+  }
+
+  // Purple banners from sideline stands
+  const banMat=new THREE.MeshLambertMaterial({color:0x7B21C8,side:THREE.DoubleSide});
+  [-10,-5,0,5,10].forEach(x=>{
+    [-9.5,9.5].forEach(z=>{
+      const m=new THREE.Mesh(new THREE.PlaneGeometry(1.0,2.2),banMat);
+      m.position.set(x,2.2,z);
+      _addSO(m);
+    });
+  });
+  [-5,0,5].forEach(z=>{
+    [-16.5,16.5].forEach(x=>{
+      const m=new THREE.Mesh(new THREE.PlaneGeometry(1.0,2.2),banMat);
+      m.position.set(x,2.2,z);
+      m.rotation.y=Math.PI/2;
+      _addSO(m);
+    });
+  });
+}
+
+// ── 1: TEAM MAGMA — The Inferno ────────────────────────────────
+function _buildMagma(){
+  // 4 lava pools (emissive orange cylinders)
+  const lavaMat=new THREE.MeshLambertMaterial({color:0xFF4400,emissive:0xFF2200,emissiveIntensity:0.8});
+  [[-10,-5],[-10,5],[10,-5],[10,5]].forEach(([x,z])=>{
+    const m=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.4,0.12,20),lavaMat);
+    m.position.set(x,0.07,z);
+    _addSO(m);
+    // Glow ring
+    const gm=new THREE.Mesh(new THREE.RingGeometry(1.4,2.2,20),new THREE.MeshBasicMaterial({color:0xFF6600,transparent:true,opacity:0.35,side:THREE.DoubleSide,depthWrite:false}));
+    gm.rotation.x=-Math.PI/2;
+    gm.position.set(x,0.06,z);
+    _addSO(gm);
+    // Point light above lava pool
+    const pl=new THREE.PointLight(0xFF4400,1.2,8);
+    pl.position.set(x,1.5,z);
+    _addSO(pl);
+  });
+
+  // Lava crack lines from corners (emissive)
+  const crackMat=new THREE.MeshLambertMaterial({color:0xFF5500,emissive:0xFF2200,emissiveIntensity:0.9});
+  [[-15,-7.5],[15,-7.5],[-15,7.5],[15,7.5]].forEach(([cx,cz])=>{
+    for(let i=0;i<4;i++){
+      const angle=Math.atan2(-cz,-cx)+((Math.random()-0.5)*0.6);
+      const len=4+Math.random()*4;
+      const m=new THREE.Mesh(new THREE.BoxGeometry(len,0.04,0.06),crackMat);
+      m.position.set(cx+Math.cos(angle)*len/2,0.05,cz+Math.sin(angle)*len/2);
+      m.rotation.y=-angle;
+      _addSO(m);
+    }
+  });
+
+  // Volcanic rock formations
+  const rockMat=new THREE.MeshLambertMaterial({color:0x221108});
+  const rockMat2=new THREE.MeshLambertMaterial({color:0x331A0A});
+  [[-14,-6.5],[-14,6.5],[14,-6.5],[14,6.5],[-7,-7.2],[7,-7.2],[-7,7.2],[7,7.2]].forEach(([rx,rz])=>{
+    const s=1.0+Math.random()*1.0;
+    const m=new THREE.Mesh(new THREE.DodecahedronGeometry(s,0),Math.random()>0.5?rockMat:rockMat2);
+    m.position.set(rx,s*0.4,rz);
+    m.rotation.set(Math.random(),Math.random(),Math.random());
+    _addSO(m);
+  });
+
+  // Orange/red banners
+  const banMat=new THREE.MeshLambertMaterial({color:0xCC2200,side:THREE.DoubleSide});
+  [-8,-3,3,8].forEach(x=>{
+    [-9.5,9.5].forEach(z=>{
+      const m=new THREE.Mesh(new THREE.PlaneGeometry(0.9,2.0),banMat);
+      m.position.set(x,2.0,z);
+      _addSO(m);
+    });
+  });
+}
+
+// ── 2: TEAM SHADOWS — The Cave ─────────────────────────────────
+function _buildShadows(){
+  // Cavern ceiling
+  const ceilMat=new THREE.MeshLambertMaterial({color:0x080C14,side:THREE.DoubleSide});
+  const ceil=new THREE.Mesh(new THREE.PlaneGeometry(40,30),ceilMat);
+  ceil.rotation.x=Math.PI/2;
+  ceil.position.set(0,14,0);
+  _addSO(ceil);
+
+  // Stalactites from ceiling
+  const stalMat=new THREE.MeshLambertMaterial({color:0x0D1520});
+  const stalMat2=new THREE.MeshLambertMaterial({color:0x15253A});
+  for(let i=0;i<30;i++){
+    const x=(Math.random()-0.5)*34;
+    const z=(Math.random()-0.5)*26;
+    if(Math.abs(x)<16&&Math.abs(z)<8)continue; // don't clutter court
+    const h=1.5+Math.random()*3;
+    const m=new THREE.Mesh(new THREE.ConeGeometry(0.2+Math.random()*0.3,h,6),Math.random()>0.5?stalMat:stalMat2);
+    m.rotation.z=Math.PI; // point down
+    m.position.set(x,14-h/2,z);
+    _addSO(m);
+  }
+
+  // Stalagmites from baselines
+  const stagMat=new THREE.MeshLambertMaterial({color:0x0A1825});
+  [[-16,-6],[16,-6],[-16,0],[16,0],[-16,6],[16,6],
+   [-14,-7],[14,-7],[-14,7],[14,7]].forEach(([sx,sz])=>{
+    const h=0.8+Math.random()*1.5;
+    const m=new THREE.Mesh(new THREE.ConeGeometry(0.18,h,6),stagMat);
+    m.position.set(sx,h/2,sz);
+    _addSO(m);
+  });
+
+  // Bioluminescent orbs on walls
+  const bioColors=[0x4400CC,0x0044FF,0x00AACC,0x6600AA];
+  for(let i=0;i<20;i++){
+    const side=Math.random()>0.5?1:-1;
+    const z=(Math.random()-0.5)*20;
+    const y=1+Math.random()*8;
+    const x=side*(16+Math.random()*4);
+    const col=bioColors[Math.floor(Math.random()*bioColors.length)];
+    const m=new THREE.Mesh(new THREE.SphereGeometry(0.18,8,6),new THREE.MeshBasicMaterial({color:col}));
+    m.position.set(x,y,z);
+    _addSO(m);
+    const pl=new THREE.PointLight(col,0.7,5);
+    pl.position.set(x,y,z);
+    _addSO(pl);
+  }
+
+  // Murky water on baselines
+  const waterMat=new THREE.MeshLambertMaterial({color:0x0A1A2A,transparent:true,opacity:0.6});
+  [-16.5,16.5].forEach(x=>{
+    const m=new THREE.Mesh(new THREE.BoxGeometry(5,0.15,15),waterMat);
+    m.position.set(x,0.08,0);
+    _addSO(m);
+  });
+}
+
+// ── 3: TEAM SHIVERS — The Cryosphere ──────────────────────────
+function _buildShivers(){
+  // Ice wall panels on sidelines
+  const iceMat=new THREE.MeshLambertMaterial({color:0x9DCFEE,transparent:true,opacity:0.7});
+  const iceDkMat=new THREE.MeshLambertMaterial({color:0x5A9FCC,transparent:true,opacity:0.7});
+  for(let x=-12;x<=12;x+=3){
+    [-9.5,9.5].forEach(z=>{
+      const h=2.5+Math.random()*1.5;
+      const w=2.5;
+      const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,0.25),Math.random()>0.5?iceMat:iceDkMat);
+      m.position.set(x,h/2,z);
+      _addSO(m);
+      // Ice glare streak
+      const gm=new THREE.Mesh(new THREE.PlaneGeometry(0.08,h*0.7),new THREE.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:0.5,side:THREE.DoubleSide}));
+      gm.position.set(x+w*0.3,h/2,z+(z>0?-0.14:0.14));
+      _addSO(gm);
+    });
+  }
+  [-7,-4,-1,2,5].forEach(z=>{
+    [-16.5,16.5].forEach(x=>{
+      const h=2.5+Math.random()*1.0;
+      const m=new THREE.Mesh(new THREE.BoxGeometry(0.25,h,2.5),iceMat);
+      m.position.set(x,h/2,z);
+      _addSO(m);
+    });
+  });
+
+  // Snow drifts on sidelines
+  const snowMat=new THREE.MeshLambertMaterial({color:0xEEF6FF});
+  for(let x=-13;x<=13;x+=3){
+    [-8.5,-8.0,8.0,8.5].forEach(z=>{
+      const r=0.4+Math.random()*0.4;
+      const m=new THREE.Mesh(new THREE.SphereGeometry(r,8,5),snowMat);
+      m.scale.y=0.45;
+      m.position.set(x+(Math.random()-0.5)*0.6,0,z);
+      _addSO(m);
+    });
+  }
+
+  // Northern lights arcs (colored lines high above)
+  const nlColors=[0x00FF88,0x00AAFF,0xFF00AA,0xAAFF00];
+  nlColors.forEach((col,ci)=>{
+    const pts=[];
+    const baseZ=-4+ci*3;
+    for(let i=0;i<=32;i++){
+      const t=i/32;
+      const x=-18+t*36;
+      const y=12+Math.sin(t*Math.PI)*6+(ci*1.5);
+      pts.push(new THREE.Vector3(x,y,baseZ));
+    }
+    const geo=new THREE.BufferGeometry().setFromPoints(pts);
+    const mat=new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.55});
+    _addSO(new THREE.Line(geo,mat));
+    // Double it slightly offset
+    const pts2=pts.map(p=>new THREE.Vector3(p.x,p.y-0.3,p.z+0.2));
+    const geo2=new THREE.BufferGeometry().setFromPoints(pts2);
+    _addSO(new THREE.Line(geo2,new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.3})));
+  });
+
+  // Ambient light tint
+  const coldLight=new THREE.PointLight(0x4499FF,0.5,60);
+  coldLight.position.set(0,12,0);
+  _addSO(coldLight);
+}
+
+// ── 4: THE SANDSTORMS — Scorch Valley Arena ────────────────────
+function _buildSandstorms(){
+  // Blazing sun sphere + overhead point light
+  const sunMat=new THREE.MeshBasicMaterial({color:0xFFDD44});
+  const sun=new THREE.Mesh(new THREE.SphereGeometry(1.8,14,10),sunMat);
+  sun.position.set(0,22,0);
+  _addSO(sun);
+  const sunHalo=new THREE.Mesh(new THREE.SphereGeometry(2.8,12,8),new THREE.MeshBasicMaterial({color:0xFF8800,transparent:true,opacity:0.18,side:THREE.FrontSide}));
+  sunHalo.position.set(0,22,0);
+  _addSO(sunHalo);
+  const sunLight=new THREE.PointLight(0xFFCC44,2.0,80);
+  sunLight.position.set(0,22,0);
+  _addSO(sunLight);
+
+  // Sandstone rock pillar stacks
+  const sandMat=new THREE.MeshLambertMaterial({color:0xB8763A});
+  const sandDkMat=new THREE.MeshLambertMaterial({color:0x8A5220});
+  [[-14,-6.5],[14,-6.5],[-14,6.5],[14,6.5],[-11,-7.2],[11,-7.2],[-11,7.2],[11,7.2]].forEach(([px,pz])=>{
+    const stack=1+Math.floor(Math.random()*2);
+    let baseY=0;
+    for(let s=0;s<stack;s++){
+      const w=0.9-s*0.2;
+      const h=1.0+Math.random()*0.8;
+      const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,w),Math.random()>0.5?sandMat:sandDkMat);
+      m.position.set(px+(Math.random()-0.5)*0.2,baseY+h/2,pz+(Math.random()-0.5)*0.2);
+      _addSO(m);
+      baseY+=h;
+    }
+  });
+
+  // Sand dunes behind baselines
+  const duneMat=new THREE.MeshLambertMaterial({color:0xC8A050});
+  const duneMat2=new THREE.MeshLambertMaterial({color:0xA8803A});
+  for(let i=0;i<8;i++){
+    [-1,1].forEach(side=>{
+      const rx=(Math.random()-0.5)*26;
+      const rz=side*(9+Math.random()*3);
+      const r=1.2+Math.random()*1.0;
+      const m=new THREE.Mesh(new THREE.SphereGeometry(r,10,7),Math.random()>0.5?duneMat:duneMat2);
+      m.scale.y=0.4;
+      m.position.set(rx,0,rz);
+      _addSO(m);
+    });
+  }
+  // Side dunes
+  for(let i=0;i<5;i++){
+    [-1,1].forEach(side=>{
+      const rx=side*(17+Math.random()*3);
+      const rz=(Math.random()-0.5)*14;
+      const r=1.0+Math.random()*0.8;
+      const m=new THREE.Mesh(new THREE.SphereGeometry(r,10,7),duneMat);
+      m.scale.y=0.4;
+      m.position.set(rx,0,rz);
+      _addSO(m);
+    });
+  }
+
+  // Yellow banners
+  const banMat=new THREE.MeshLambertMaterial({color:0xCC7700,side:THREE.DoubleSide});
+  [-9,-4,4,9].forEach(x=>{
+    [-9.5,9.5].forEach(z=>{
+      const m=new THREE.Mesh(new THREE.PlaneGeometry(0.9,2.0),banMat);
+      m.position.set(x,2.0,z);
+      _addSO(m);
+    });
+  });
+}
+
+// ================================================================
+//  CROWD
+// ================================================================
+function buildCrowd(teamIdx){
+  const t=TEAMS[teamIdx];
+  const crowdColors=[t.color, 0x333333, 0x555555, parseInt(t.hex.replace('#','0x'))];
+  const numColors=crowdColors.length;
+
+  function mkSpectator(x,y,z,colHex){
+    const bodyMat=new THREE.MeshLambertMaterial({color:colHex});
+    const body=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.52,0.32),bodyMat);
+    body.position.set(x,y+0.26,z);
+    _addSO(body);
+    const headMat=new THREE.MeshLambertMaterial({color:0xFFAA60});
+    const head=new THREE.Mesh(new THREE.SphereGeometry(0.18,6,5),headMat);
+    head.position.set(x,y+0.65,z);
+    _addSO(head);
+  }
+
+  // Front/back stands: two rows along z=±(9.5 to 11)
+  for(let row=0;row<3;row++){
+    const rowZ_neg=-(9.2+row*0.8);
+    const rowZ_pos= (9.2+row*0.8);
+    const rowY=row*0.55+0.3;
+    for(let i=0;i<20;i++){
+      const x=-12+i*1.2+(Math.random()-0.5)*0.25;
+      const col=crowdColors[Math.floor(Math.random()*numColors)];
+      mkSpectator(x,rowY,rowZ_neg,col);
+      mkSpectator(x,rowY,rowZ_pos,col);
+    }
+  }
+  // Side stands: two rows along x=±(16.2 to 18)
+  for(let row=0;row<3;row++){
+    const rowX_neg=-(16.2+row*0.8);
+    const rowX_pos= (16.2+row*0.8);
+    const rowY=row*0.55+0.3;
+    for(let i=0;i<13;i++){
+      const z=-6+i*0.95+(Math.random()-0.5)*0.25;
+      const col=crowdColors[Math.floor(Math.random()*numColors)];
+      mkSpectator(rowX_neg,rowY,z,col);
+      mkSpectator(rowX_pos,rowY,z,col);
+    }
+  }
+}
+
+// ================================================================
+//  3D SCOREBOARD
+// ================================================================
+function buildScoreboard3D(){
+  if(_scoreboardMesh){scene.remove(_scoreboardMesh);_scoreboardMesh=null;}
+
+  _scoreboardCanvas=document.createElement('canvas');
+  _scoreboardCanvas.width=512;
+  _scoreboardCanvas.height=160;
+  _scoreboardCtx=_scoreboardCanvas.getContext('2d');
+
+  const tex=new THREE.CanvasTexture(_scoreboardCanvas);
+  const geo=new THREE.PlaneGeometry(8,2.5);
+  const mat=new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide,transparent:false});
+  _scoreboardMesh=new THREE.Mesh(geo,mat);
+  _scoreboardMesh.position.set(0,9,0);
+  scene.add(_scoreboardMesh);
+
+  // Slim black frame around the scoreboard
+  const frameMat=new THREE.MeshLambertMaterial({color:0x111111});
+  const frameH=new THREE.Mesh(new THREE.BoxGeometry(8.3,0.12,0.1),frameMat);
+  frameH.position.set(0,9+1.27,0);
+  scene.add(frameH);
+  _stadiumObjs.push(frameH);
+  const frameH2=new THREE.Mesh(new THREE.BoxGeometry(8.3,0.12,0.1),frameMat);
+  frameH2.position.set(0,9-1.27,0);
+  scene.add(frameH2);
+  _stadiumObjs.push(frameH2);
+
+  refreshScoreboard3D();
+}
+
+function refreshScoreboard3D(){
+  if(!_scoreboardCtx||!_scoreboardMesh)return;
+  const ctx=_scoreboardCtx;
+  const W=512,H=160;
+
+  // Background
+  ctx.fillStyle='#050508';
+  ctx.fillRect(0,0,W,H);
+  // Orange border
+  ctx.strokeStyle='#FF6B35';
+  ctx.lineWidth=4;
+  ctx.strokeRect(2,2,W-4,H-4);
+
+  const t1=TEAMS[GS.team1]||TEAMS[0];
+  const t2=TEAMS[GS.team2]||TEAMS[1];
+  const s1=GS.score?GS.score[0]:0;
+  const s2=GS.score?GS.score[1]:0;
+
+  // Team 1 side
+  ctx.font='bold 18px Arial Black, Arial';
+  ctx.fillStyle=t1.textColor||'#ffffff';
+  ctx.textAlign='left';
+  ctx.fillText(t1.abbr||t1.name.slice(0,3),16,36);
+
+  ctx.font='bold 72px Arial Black, Arial';
+  ctx.fillStyle='#ffffff';
+  ctx.textAlign='left';
+  ctx.fillText(s1,16,112);
+
+  // Team 2 side
+  ctx.font='bold 18px Arial Black, Arial';
+  ctx.fillStyle=t2.textColor||'#ffffff';
+  ctx.textAlign='right';
+  ctx.fillText(t2.abbr||t2.name.slice(0,3),W-16,36);
+
+  ctx.font='bold 72px Arial Black, Arial';
+  ctx.fillStyle='#ffffff';
+  ctx.textAlign='right';
+  ctx.fillText(s2,W-16,112);
+
+  // Center: quarter + clock
+  ctx.fillStyle='#555555';
+  ctx.fillRect(W/2-1,14,2,H-28);
+
+  const m=GS.quarter?Math.floor(timeLeft/60):0;
+  const s=GS.quarter?timeLeft%60:0;
+  const clockStr=`${m}:${String(s).padStart(2,'0')}`;
+
+  ctx.font='bold 14px Arial Black, Arial';
+  ctx.fillStyle='#FFD700';
+  ctx.textAlign='center';
+  ctx.fillText(`Q${GS.quarter||1}`,W/2,36);
+
+  ctx.font='bold 28px Courier New, monospace';
+  ctx.fillStyle='#ffffff';
+  ctx.textAlign='center';
+  ctx.fillText(clockStr,W/2,80);
+
+  ctx.font='bold 16px Arial Black, Arial';
+  ctx.fillStyle='#FF4500';
+  ctx.textAlign='center';
+  ctx.fillText(shotClock||'24',W/2,108);
+
+  _scoreboardMesh.material.map.needsUpdate=true;
+}
+
+// ================================================================
+//  PARTICLES
+// ================================================================
+function spawnParticle(x,y,z,vx,vy,vz,color,life,size){
+  const mat=new THREE.MeshBasicMaterial({color,transparent:true,opacity:1,depthWrite:false});
+  const mesh=new THREE.Mesh(new THREE.SphereGeometry(size||0.08,5,4),mat);
+  mesh.position.set(x,y,z);
+  scene.add(mesh);
+  _particles.push({mesh,vx,vy,vz,life,maxLife:life,mat});
+}
+
+function updateParticles(dt){
+  // Ambient particle spawn
+  _particleTimer-=dt;
+  if(_particleTimer<=0&&_particles.length<120){
+    _particleTimer=0.18;
+    if(_particleTheme===1){
+      // Magma embers: spawn near lava pools
+      const pools=[[-10,-5],[-10,5],[10,-5],[10,5]];
+      const [px,pz]=pools[Math.floor(Math.random()*4)];
+      const a=Math.random()*Math.PI*2;
+      const r=Math.random()*1.3;
+      spawnParticle(px+Math.cos(a)*r,0.2,pz+Math.sin(a)*r,
+        (Math.random()-0.5)*0.4,(0.8+Math.random()*0.8),(Math.random()-0.5)*0.4,
+        Math.random()>0.5?0xFF4400:0xFF8800, 1.2+Math.random()*0.8, 0.05+Math.random()*0.06);
+    } else if(_particleTheme===2){
+      // Shadow bubbles: slow rising
+      const bx=(Math.random()-0.5)*26;
+      const bz=(Math.random()-0.5)*20;
+      spawnParticle(bx,0.5+Math.random()*3,bz,
+        (Math.random()-0.5)*0.1,0.15+Math.random()*0.2,(Math.random()-0.5)*0.1,
+        Math.random()>0.5?0x4400BB:0x0033BB, 3+Math.random()*2, 0.08+Math.random()*0.1);
+    } else if(_particleTheme===3){
+      // Shivers snowflakes: falling from above
+      const sx=(Math.random()-0.5)*32;
+      const sz=(Math.random()-0.5)*22;
+      spawnParticle(sx,14+Math.random()*2,sz,
+        (Math.random()-0.5)*0.3,-0.5-Math.random()*0.5,(Math.random()-0.5)*0.3,
+        0xCCEEFF, 4+Math.random()*3, 0.06+Math.random()*0.05);
+    } else if(_particleTheme===4){
+      // Sandstorms: horizontal sand streaks
+      const sy=0.3+Math.random()*2;
+      const sz=(Math.random()-0.5)*12;
+      const dir=Math.random()>0.5?1:-1;
+      spawnParticle(dir*(-16+Math.random()*3),sy,sz,
+        dir*(1.5+Math.random()*1.5),(Math.random()-0.5)*0.1,(Math.random()-0.5)*0.3,
+        Math.random()>0.5?0xD4A050:0xEECC80, 1.5+Math.random(), 0.04+Math.random()*0.05);
+    }
+  }
+
+  // Update existing particles
+  for(let i=_particles.length-1;i>=0;i--){
+    const p=_particles[i];
+    p.life-=dt;
+    if(p.life<=0){
+      scene.remove(p.mesh);
+      p.mat.dispose();
+      p.mesh.geometry.dispose();
+      _particles.splice(i,1);
+      continue;
+    }
+    p.mesh.position.x+=p.vx*dt;
+    p.mesh.position.y+=p.vy*dt;
+    p.mesh.position.z+=p.vz*dt;
+    p.mat.opacity=Math.max(p.life/p.maxLife,0);
+    // Magma ember gravity + flicker
+    if(_particleTheme===1){p.vy-=0.3*dt; p.vx*=0.98; p.vz*=0.98;}
+    // Shadow bubbles drift
+    if(_particleTheme===2){p.vx+=(Math.random()-0.5)*0.02;p.vz+=(Math.random()-0.5)*0.02;}
+    // Snow no gravity extra since vy is already set
   }
 }
 
@@ -1215,12 +1769,14 @@ function updateHUD(){
 function updateHUDScore(){
   document.getElementById('sb-s1').textContent=GS.score[0];
   document.getElementById('sb-s2').textContent=GS.score[1];
+  refreshScoreboard3D();
 }
 
 function updateClockDisplay(){
   const m=Math.floor(timeLeft/60),s=timeLeft%60;
   document.getElementById('sb-clock').textContent=`${m}:${s.toString().padStart(2,'0')}`;
   document.getElementById('sb-qtr').textContent=`Q${GS.quarter}`;
+  refreshScoreboard3D();
 }
 
 function updateShotClockDisplay(){
@@ -1356,6 +1912,7 @@ function update(dt){
     p.ringMat.opacity=0.6+Math.sin(t*3+i)*0.3;
   });
 
+  updateParticles(dt);
   updateCamera(dt);
 }
 
