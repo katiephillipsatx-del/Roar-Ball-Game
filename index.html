@@ -465,31 +465,69 @@ class GameScene extends Phaser.Scene {
   }
 
   // ── court ──────────────────────────────────────────────────
+  // ── stadium themes ─────────────────────────────────────────
+  _stadiumTheme() {
+    return [
+      { // 0 – Vineland Thorns — Thorn Garden Arena
+        name: 'Thorn Garden Arena', loc: 'Vineland',
+        bg: 0x071403, floor: 0x2C5014, plank: 0x1E3D0C, plankA: 0.5,
+        line: 0xffffff, hoop: 0x88DD33, banner: 0x6B21A8,
+      },
+      { // 1 – Team Magma — The Inferno
+        name: 'The Inferno', loc: 'Inferno Lava Coast',
+        bg: 0x150600, floor: 0x1A0900, plank: 0x260D00, plankA: 0.6,
+        line: 0xFF8800, hoop: 0xFF4400, banner: 0xCC2200,
+      },
+      { // 2 – Team Shadows — The Cave
+        name: 'The Cave', loc: 'Sunken City',
+        bg: 0x03060F, floor: 0x0B101E, plank: 0x0F1628, plankA: 0.45,
+        line: 0x44AACC, hoop: 0x00CCEE, banner: 0x1E1B4B,
+      },
+      { // 3 – Team Shivers — The Cryosphere
+        name: 'The Cryosphere', loc: 'Arctic',
+        bg: 0x051525, floor: 0xB4D8F2, plank: 0x9AC4E4, plankA: 0.35,
+        line: 0xffffff, hoop: 0x66BBDD, banner: 0x0E4D91,
+      },
+      { // 4 – The Sandstorms — Scorch Valley Arena
+        name: 'Scorch Valley Arena', loc: 'Scorch Valley',
+        bg: 0x381600, floor: 0xC09040, plank: 0xAA7C2C, plankA: 0.4,
+        line: 0xF5DEB3, hoop: 0xFF8C00, banner: 0x92400E,
+      },
+    ][GS.team1] || this._stadiumTheme()[0];
+  }
+
   _drawCourt() {
-    const g = this.add.graphics();
+    const t  = this._stadiumTheme();
     const [x, y, w, h] = [CX, CY, CW, CH];
     const mid = { x: x + w / 2, y: y + h / 2 };
 
-    // Floor
-    g.fillStyle(0xC8881E); g.fillRect(x, y, w, h);
-    // Lane lines (wood planks effect)
-    g.lineStyle(1, 0xA06010, 0.4);
+    // Background layer
+    const bg = this.add.graphics().setDepth(0);
+    bg.fillStyle(t.bg); bg.fillRect(0, 0, W, H);
+
+    // Stadium-specific atmosphere (drawn behind the court)
+    this._drawAtmosphere(bg, t, x, y, w, h);
+
+    // ── Court floor ─────────────────────────────────────────
+    const g = this.add.graphics().setDepth(1);
+    g.fillStyle(t.floor); g.fillRect(x, y, w, h);
+
+    // Floor plank texture
+    g.lineStyle(1, t.plank, t.plankA);
     for (let i = 0; i < h; i += 20) { g.moveTo(x, y + i); g.lineTo(x + w, y + i); }
     g.strokePath();
 
-    // White lines
-    g.lineStyle(3, 0xffffff, 1);
+    // ── Court lines ─────────────────────────────────────────
+    g.lineStyle(3, t.line, 1);
     g.strokeRect(x, y, w, h);
     g.moveTo(mid.x, y); g.lineTo(mid.x, y + h); g.strokePath();
-
-    // Center circle
     g.strokeCircle(mid.x, mid.y, 55);
+    g.fillStyle(t.line, 0.6); g.fillCircle(mid.x, mid.y, 6);
 
     const laneW = 155, laneH = 155;
-    // Left lane
+    g.lineStyle(3, t.line, 1);
     g.strokeRect(x, mid.y - laneH / 2, laneW, laneH);
     g.strokeCircle(x + laneW, mid.y, 55);
-    // Right lane
     g.strokeRect(x + w - laneW, mid.y - laneH / 2, laneW, laneH);
     g.strokeCircle(x + w - laneW, mid.y, 55);
 
@@ -497,33 +535,309 @@ class GameScene extends Phaser.Scene {
     g.beginPath(); g.arc(x + 65, mid.y, 185, -1.35, 1.35); g.strokePath();
     g.beginPath(); g.arc(x + w - 65, mid.y, 185, Math.PI - 1.35, Math.PI + 1.35); g.strokePath();
 
-    // Backboards
-    g.lineStyle(5, 0xcccccc);
+    // Restricted-area arcs
+    g.beginPath(); g.arc(x + laneW, mid.y, 30, -Math.PI / 2, Math.PI / 2); g.strokePath();
+    g.beginPath(); g.arc(x + w - laneW, mid.y, 30, Math.PI / 2, -Math.PI / 2); g.strokePath();
+
+    // ── Backboards ──────────────────────────────────────────
+    g.lineStyle(5, 0xCCCCCC);
     g.moveTo(x + 20, mid.y - 30); g.lineTo(x + 20, mid.y + 30); g.strokePath();
     g.moveTo(x + w - 20, mid.y - 30); g.lineTo(x + w - 20, mid.y + 30); g.strokePath();
 
-    // Hoops (orange circles)
-    g.fillStyle(0xFF4400);
-    g.fillCircle(x + 50, mid.y, 14); g.strokeCircle(x + 50, mid.y, 14);
-    g.fillCircle(x + w - 50, mid.y, 14); g.strokeCircle(x + w - 50, mid.y, 14);
+    // ── Hoops ───────────────────────────────────────────────
+    g.fillStyle(t.hoop);
+    g.fillCircle(x + 50, mid.y, 14);
+    g.lineStyle(3, 0xffffff, 0.8); g.strokeCircle(x + 50, mid.y, 14);
+    g.fillStyle(t.hoop);
+    g.fillCircle(x + w - 50, mid.y, 14);
+    g.lineStyle(3, 0xffffff, 0.8); g.strokeCircle(x + w - 50, mid.y, 14);
 
     // Net lines
-    g.lineStyle(2, 0xffffff, 0.6);
+    g.lineStyle(2, 0xffffff, 0.5);
     for (let i = -3; i <= 3; i++) {
-      g.moveTo(x + 50 + i * 3,  mid.y + 14);
-      g.lineTo(x + 50 + i * 4, mid.y + 30);
+      g.moveTo(x + 50 + i * 3, mid.y + 14); g.lineTo(x + 50 + i * 4, mid.y + 30);
     }
     for (let i = -3; i <= 3; i++) {
-      g.moveTo(x + w - 50 + i * 3, mid.y + 14);
-      g.lineTo(x + w - 50 + i * 4, mid.y + 30);
+      g.moveTo(x + w - 50 + i * 3, mid.y + 14); g.lineTo(x + w - 50 + i * 4, mid.y + 30);
     }
     g.strokePath();
+
+    // Stadium name watermark
+    this.add.text(W / 2, H - 18, `🏟️  ${t.name}  •  ${t.loc}`, {
+      fontSize: '13px', color: '#ffffff44', fontStyle: 'italic'
+    }).setOrigin(0.5).setDepth(2);
 
     // Store hoop positions
     this.hoop1 = { x: x + 50,     y: CY + CH / 2 };
     this.hoop2 = { x: x + w - 50, y: CY + CH / 2 };
-
     this.courtBounds = new Phaser.Geom.Rectangle(x + 5, y + 5, w - 10, h - 10);
+  }
+
+  // ── per-stadium atmosphere drawings ────────────────────────
+  _drawAtmosphere(g, t, x, y, w, h) {
+    switch (GS.team1) {
+      case 0: this._atmoVineland(g, x, y, w, h, t); break;
+      case 1: this._atmoMagma(g, x, y, w, h, t); break;
+      case 2: this._atmoShadows(g, x, y, w, h, t); break;
+      case 3: this._atmoShivers(g, x, y, w, h, t); break;
+      case 4: this._atmoSandstorms(g, x, y, w, h, t); break;
+    }
+  }
+
+  _crowd(g, x, y, w, h, colors, rows = 2) {
+    // Draw crowd silhouettes above and below court
+    for (let r = 0; r < rows; r++) {
+      for (let i = 0; i < 55; i++) {
+        const cx = 30 + i * (W / 56);
+        const cyTop = y - 14 - r * 16 + Math.sin(i * 0.7) * 5;
+        const cyBot = y + h + 12 + r * 16 + Math.sin(i * 0.8) * 5;
+        g.fillStyle(colors[i % colors.length], 0.75);
+        g.fillCircle(cx, cyTop, 7);
+        g.fillCircle(cx, cyBot, 7);
+      }
+    }
+  }
+
+  _banners(g, x, y, h, color) {
+    // Vertical banners on sidelines
+    g.fillStyle(color, 0.85);
+    for (let i = 0; i < 4; i++) {
+      const by = y + 15 + i * (h / 4.2);
+      g.fillRect(8 + (i % 2) * 30, by, 16, 38);
+      g.fillRect(x + CW + 10 + (i % 2) * 30, by, 16, 38);
+    }
+  }
+
+  _atmoVineland(g, x, y, w, h, t) {
+    // Deep jungle gradient above / below
+    for (let i = 0; i < 6; i++) {
+      g.fillStyle(0x071403 + i * 0x020501, 0.95);
+      g.fillRect(0, i * (CY / 6), W, CY / 6 + 1);
+    }
+
+    // Dense foliage strips on left and right margins
+    const leafColors = [0x1A4D08, 0x256010, 0x0F3205, 0x347014];
+    for (let i = 0; i < 18; i++) {
+      const lx = (i % 2 === 0) ? Math.floor(Math.random() * (x - 10)) : x + w + Math.floor(Math.random() * (W - x - w - 10));
+      const ly = y + Math.floor(Math.random() * h);
+      const lr = 12 + Math.floor(Math.random() * 22);
+      g.fillStyle(leafColors[i % 4], 0.75);
+      g.fillEllipse(lx, ly, lr * 2, lr);
+    }
+
+    // Thick thorn-vine border along court edges
+    g.lineStyle(4, 0x1E5C0A, 0.9);
+    g.strokeRect(x - 8, y - 8, w + 16, h + 16);
+    g.lineStyle(2, 0x0D3006, 0.7);
+    g.strokeRect(x - 14, y - 14, w + 28, h + 28);
+
+    // Thorn spikes along top/bottom border
+    g.fillStyle(0x0D3006, 0.9);
+    for (let i = 0; i < 30; i++) {
+      const tx = x + i * (w / 29);
+      g.fillTriangle(tx - 4, y - 8, tx + 4, y - 8, tx, y - 18);
+      g.fillTriangle(tx - 4, y + h + 8, tx + 4, y + h + 8, tx, y + h + 18);
+    }
+    // Thorns on sides
+    for (let i = 0; i < 14; i++) {
+      const ty = y + i * (h / 13);
+      g.fillTriangle(x - 8, ty - 4, x - 8, ty + 4, x - 18, ty);
+      g.fillTriangle(x + w + 8, ty - 4, x + w + 8, ty + 4, x + w + 18, ty);
+    }
+
+    this._crowd(g, x, y, w, h, [0x2D5A1B, 0x1A3D0A, 0x7B2D8B, 0x4CAF50, 0x388E3C]);
+    this._banners(g, x, y, h, t.banner);
+  }
+
+  _atmoMagma(g, x, y, w, h, t) {
+    // Volcanic sky — dark reddish gradient
+    for (let i = 0; i < H; i += 4) {
+      const a = (1 - i / H) * 0.6;
+      g.fillStyle(0x3A0800, a); g.fillRect(0, i, W, 4);
+    }
+
+    // Glow halos from lava pools on sides
+    [{ cx: x - 55, cy: y + h * 0.35 }, { cx: x - 65, cy: y + h * 0.72 },
+     { cx: x + w + 55, cy: y + h * 0.28 }, { cx: x + w + 65, cy: y + h * 0.65 }
+    ].forEach(lp => {
+      g.fillStyle(0xFF5500, 0.12); g.fillCircle(lp.cx, lp.cy, 110);
+      g.fillStyle(0xFF7700, 0.18); g.fillCircle(lp.cx, lp.cy, 70);
+      g.fillStyle(0xFFAA00, 0.25); g.fillCircle(lp.cx, lp.cy, 36);
+      // Lava pool surface
+      g.fillStyle(0xFF4400, 0.75); g.fillEllipse(lp.cx, lp.cy, 70, 24);
+      g.fillStyle(0xFF8800, 0.85); g.fillEllipse(lp.cx, lp.cy, 40, 14);
+      g.fillStyle(0xFFCC00, 0.6);  g.fillEllipse(lp.cx, lp.cy, 16, 6);
+    });
+
+    // Lava crack lines radiating from court corners
+    g.lineStyle(2, 0xFF6600, 0.7);
+    [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([cx, cy], i) => {
+      const dx = (i % 2 === 0) ? -1 : 1;
+      const dy = (i < 2) ? -1 : 1;
+      g.moveTo(cx, cy); g.lineTo(cx + dx * 60, cy + dy * 25);
+      g.moveTo(cx, cy); g.lineTo(cx + dx * 30, cy + dy * 55);
+    });
+    g.strokePath();
+
+    // Volcanic rocks on side margins (dark irregular blobs)
+    g.fillStyle(0x1A0800, 0.9);
+    [[x - 65, y + 40, 50, 34], [x - 50, y + h - 60, 44, 28],
+     [x + w + 65, y + 60, 48, 32], [x + w + 50, y + h - 70, 40, 26]
+    ].forEach(([rx, ry, rw, rh]) => g.fillEllipse(rx, ry, rw, rh));
+
+    this._crowd(g, x, y, w, h, [0xFF4400, 0xCC2200, 0xFF8800, 0xDD3300, 0xFF6600]);
+    this._banners(g, x, y, h, t.banner);
+  }
+
+  _atmoShadows(g, x, y, w, h, t) {
+    // Deep murky underwater / cavern void
+    g.fillStyle(0x03060F, 0.98); g.fillRect(0, 0, W, H);
+
+    // Stalactites hanging from ceiling above court
+    const stalX = [x+60, x+170, x+310, x+450, x+580, x+700, x+820, x+900];
+    stalX.forEach((sx, i) => {
+      const sh = 35 + (i % 3) * 28, sw = 10 + (i % 2) * 5;
+      g.fillStyle(0x141C30, 0.95);
+      g.fillTriangle(sx - sw, y - 4, sx + sw, y - 4, sx, y + sh);
+      g.fillStyle(0x1E2A44, 0.7);
+      g.fillTriangle(sx - sw + 3, y - 2, sx + sw - 3, y - 2, sx, y + sh - 10);
+      // Drip dot
+      g.fillStyle(0x1A3040, 0.65); g.fillCircle(sx, y + 4, 3);
+    });
+
+    // Stalagmites rising from floor
+    const stagX = [x+100, x+300, x+520, x+750, x+880];
+    stagX.forEach((sx, i) => {
+      const sh = 20 + (i % 2) * 14, sw = 7;
+      g.fillStyle(0x141C30, 0.8);
+      g.fillTriangle(sx - sw, y + h + 4, sx + sw, y + h + 4, sx, y + h - sh);
+    });
+
+    // Bioluminescent glows on side walls
+    [[x - 40, y + h * 0.25], [x - 55, y + h * 0.65],
+     [x + w + 40, y + h * 0.35], [x + w + 50, y + h * 0.7]
+    ].forEach(([bx, by]) => {
+      g.fillStyle(0x0088AA, 0.12); g.fillCircle(bx, by, 60);
+      g.fillStyle(0x00AACC, 0.2);  g.fillCircle(bx, by, 30);
+      g.fillStyle(0x00CCEE, 0.35); g.fillCircle(bx, by, 12);
+    });
+
+    // Floating bubbles in margins
+    for (let i = 0; i < 22; i++) {
+      const bx = (i < 11) ? Math.floor(Math.random() * (x - 5)) : x + w + Math.floor(Math.random() * (W - x - w));
+      const by = y + Math.floor(Math.random() * h);
+      const br = 2 + Math.floor(Math.random() * 5);
+      g.fillStyle(0x00AACC, 0.3); g.fillCircle(bx, by, br);
+      g.lineStyle(1, 0x00DDFF, 0.2); g.strokeCircle(bx, by, br);
+    }
+
+    // Murky water tint at floor level
+    g.fillStyle(0x0066AA, 0.07); g.fillRect(x, y + h - 50, w, 50);
+
+    this._crowd(g, x, y, w, h, [0x1A1F30, 0x252A40, 0x1E1B4B, 0x2D2550]);
+    this._banners(g, x, y, h, t.banner);
+  }
+
+  _atmoShivers(g, x, y, w, h, t) {
+    // Arctic sky gradient — midnight blue to steel
+    for (let i = 0; i < H / 3; i++) {
+      g.fillStyle(0x051525, 0.95); g.fillRect(0, i * 3, W, 3);
+    }
+
+    // Northern lights shimmer (faint arcs above court)
+    [[0x00FF88, 0.04], [0x00AAFF, 0.05], [0x8800FF, 0.03]].forEach(([col, a], i) => {
+      g.lineStyle(18, col, a);
+      g.beginPath(); g.arc(W / 2, y - 200 + i * 40, 400 + i * 60, Math.PI + 0.3, -0.3); g.strokePath();
+    });
+
+    // Ice wall panels on side margins
+    const icePanel = [0xB8DCF0, 0x90C8E8, 0xC8E8F8, 0xA0D0F0];
+    for (let i = 0; i < 5; i++) {
+      const py = y + i * (h / 5), ph = h / 5 - 3;
+      g.fillStyle(icePanel[i % 4], 0.28); g.fillRect(6, py + 2, x - 16, ph);
+      g.lineStyle(1, 0xD8F0FF, 0.25); g.strokeRect(6, py + 2, x - 16, ph);
+      g.fillStyle(icePanel[(i+1) % 4], 0.28); g.fillRect(x + w + 10, py + 2, W - x - w - 16, ph);
+      g.lineStyle(1, 0xD8F0FF, 0.25); g.strokeRect(x + w + 10, py + 2, W - x - w - 16, ph);
+      // Ice glare streak
+      g.fillStyle(0xffffff, 0.12); g.fillRect(10, py + 4, 20, 4);
+      g.fillStyle(0xffffff, 0.12); g.fillRect(x + w + 14, py + 4, 20, 4);
+    }
+
+    // Ice cracks on court floor (overlaid after floor is drawn)
+    // We draw them in the atmosphere pass at a slight offset
+    g.lineStyle(1, 0xffffff, 0.22);
+    g.moveTo(x + 180, y + 45); g.lineTo(x + 270, y + 130); g.lineTo(x + 200, y + 210);
+    g.moveTo(x + 580, y + h - 70); g.lineTo(x + 680, y + h - 150); g.lineTo(x + 620, y + h - 55);
+    g.moveTo(x + w - 190, y + 80); g.lineTo(x + w - 260, y + 170);
+    g.strokePath();
+
+    // Snow drift mounds below court
+    g.fillStyle(0xD0EBFA, 0.55);
+    for (let i = 0; i < 7; i++) {
+      const sx = 30 + i * (W / 7), sr = 30 + (i % 3) * 18;
+      g.fillCircle(sx, y + h + 55, sr);
+    }
+
+    // Snowflakes drifting above
+    g.fillStyle(0xffffff, 0.6);
+    for (let i = 0; i < 35; i++) {
+      const sx = x + Math.floor(Math.random() * w);
+      const sy = y - 75 + Math.floor(Math.random() * 70);
+      g.fillCircle(sx, sy, 2);
+    }
+
+    this._crowd(g, x, y, w, h, [0x0E4D91, 0x1565C0, 0x38BDF8, 0x0C3D70, 0x7DD3FC]);
+    this._banners(g, x, y, h, t.banner);
+  }
+
+  _atmoSandstorms(g, x, y, w, h, t) {
+    // Desert sky — dark terracotta
+    g.fillStyle(0x381600, 0.98); g.fillRect(0, 0, W, H);
+
+    // Scorching sun glow high up
+    g.fillStyle(0xFF8C00, 0.10); g.fillCircle(W / 2, 28, 160);
+    g.fillStyle(0xFFAA00, 0.15); g.fillCircle(W / 2, 28, 100);
+    g.fillStyle(0xFFCC00, 0.20); g.fillCircle(W / 2, 28, 55);
+    g.fillStyle(0xFFEE44, 0.35); g.fillCircle(W / 2, 28, 22);
+
+    // Heat shimmer lines
+    g.lineStyle(1, 0xFF8C00, 0.06);
+    for (let i = 0; i < 8; i++) {
+      const hx = x + (i / 8) * w;
+      g.moveTo(hx, CY); g.lineTo(hx + 12, y + h); g.strokePath();
+    }
+
+    // Sandstone rock pillars on sides
+    const pillarColor = [0x8B5C20, 0x7A4E18, 0x9B6828];
+    [[8, y + 15, 34, h * 0.42], [50, y + 80, 22, h * 0.3], [8, y + h * 0.62, 28, h * 0.35],
+     [x+w+10, y+20, 34, h*0.38], [x+w+50, y+90, 22, h*0.28], [x+w+10, y+h*0.60, 28, h*0.37]
+    ].forEach(([rx, ry, rw, rh], i) => {
+      g.fillStyle(pillarColor[i % 3], 0.88); g.fillRect(rx, ry, rw, rh);
+      // Cap
+      g.fillStyle(0xC09840, 0.5); g.fillRect(rx - 3, ry, rw + 6, 8);
+      // Shadow stripe
+      g.fillStyle(0x5A3A0A, 0.4); g.fillRect(rx + rw - 8, ry, 8, rh);
+    });
+
+    // Sand dunes at bottom
+    g.fillStyle(0xB07030, 0.55);
+    [[W*0.1, y+h+60, 340, 100], [W*0.5, y+h+78, 440, 120], [W*0.85, y+h+55, 300, 90]]
+      .forEach(([dx, dy, dw, dh]) => g.fillEllipse(dx, dy, dw, dh));
+    g.fillStyle(0xC8943C, 0.4);
+    [[W*0.25, y+h+50, 200, 60], [W*0.7, y+h+48, 220, 55]]
+      .forEach(([dx, dy, dw, dh]) => g.fillEllipse(dx, dy, dw, dh));
+
+    // Wind-blown sand streaks
+    g.lineStyle(1, 0xD4A030, 0.2);
+    for (let i = 0; i < 12; i++) {
+      const sy = y + 20 + i * (h / 12);
+      g.moveTo(x - 30, sy); g.lineTo(x + 15, sy + 3);
+      g.moveTo(x + w - 15, sy); g.lineTo(x + w + 30, sy + 3);
+    }
+    g.strokePath();
+
+    this._crowd(g, x, y, w, h, [0x8B4513, 0xD2691E, 0xF59E0B, 0xA0522D, 0xCD853F]);
+    this._banners(g, x, y, h, t.banner);
   }
 
   // ── players ────────────────────────────────────────────────
