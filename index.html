@@ -930,48 +930,99 @@ function _buildSandstorms(){
 // ================================================================
 function buildCrowd(teamIdx){
   const t=TEAMS[teamIdx];
-  const crowdColors=[t.color, 0x444444, 0x666666, parseInt(t.hex.replace('#','0x'))];
-  const numColors=crowdColors.length;
-  // Stand box top = h/2-0.5 + h/2 = h-0.5 = 3.5 for h=4
-  // Place crowd ON TOP of stands, each row stepping back/higher (stadium seating)
+  // Jersey colors: mostly team color + some neutrals for variety
+  const jerseyColors=[t.color,t.color,t.color,0x444444,0x222222,parseInt(t.hex.replace('#','0x'))];
+  const headColors=[0xFF8C20,0xCCA060,0x886633,0xDDBB88,0x555555,0x3A3A3A,0xFFCC88,0xCC8840];
   const STAND_TOP=3.5;
 
-  function mkSpectator(x,y,z,colHex){
-    const bodyMat=new THREE.MeshLambertMaterial({color:colHex});
-    const body=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.52,0.32),bodyMat);
+  // 5 animal crowd types: round-ears, pointy-ears, horns, long-ears, snout
+  function mkAnimal(x,y,z,jerseyHex){
+    const hcol=headColors[Math.floor(Math.random()*headColors.length)];
+    const type=Math.floor(Math.random()*5);
+    const headMat=new THREE.MeshLambertMaterial({color:hcol});
+
+    // Body (jersey)
+    const body=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.52,0.32),
+      new THREE.MeshLambertMaterial({color:jerseyHex}));
     body.position.set(x,y+0.26,z);
     _addSO(body);
-    const head=new THREE.Mesh(new THREE.SphereGeometry(0.18,6,5),
-      new THREE.MeshLambertMaterial({color:0xFFAA60}));
-    head.position.set(x,y+0.65,z);
+    // Legs
+    const legMat=new THREE.MeshLambertMaterial({color:0x1A1A1A});
+    [-0.1,0.1].forEach(ox=>{
+      const leg=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.28,0.14),legMat);
+      leg.position.set(x+ox,y+0.0,z);
+      _addSO(leg);
+    });
+    // Head
+    const head=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6),headMat);
+    head.position.set(x,y+0.74,z);
     _addSO(head);
-  }
 
-  // Front/back stands (z=±10.5): 3 rows stepping away from court + up
-  // near side (positive z): rows at z=8.6, 9.4, 10.2 (front-to-back of stand)
-  // far side (negative z): rows at z=-8.6, -9.4, -10.2
-  for(let row=0;row<3;row++){
-    const rowY=STAND_TOP+row*0.65;
-    const rowZ_pos= 8.6+row*0.8;   // near side (camera side)
-    const rowZ_neg=-(8.6+row*0.8); // far side (opposite)
-    for(let i=0;i<20;i++){
-      const x=-11.4+i*1.1+(Math.random()-0.5)*0.2;
-      const col=crowdColors[Math.floor(Math.random()*numColors)];
-      mkSpectator(x,rowY,rowZ_pos,col);
-      mkSpectator(x,rowY,rowZ_neg,col);
+    if(type===0){
+      // Round ears — bear / cat
+      [-0.13,0.13].forEach(ox=>{
+        const ear=new THREE.Mesh(new THREE.SphereGeometry(0.08,5,4),headMat);
+        ear.position.set(x+ox,y+0.96,z);
+        _addSO(ear);
+      });
+    } else if(type===1){
+      // Pointy ears — fox / wolf
+      [-0.12,0.12].forEach(ox=>{
+        const ear=new THREE.Mesh(new THREE.ConeGeometry(0.07,0.22,4),headMat);
+        ear.position.set(x+ox,y+1.02,z);
+        _addSO(ear);
+      });
+    } else if(type===2){
+      // Horns — bull / rhino
+      const hornMat=new THREE.MeshLambertMaterial({color:0xDDCC88});
+      [-0.13,0.13].forEach(ox=>{
+        const horn=new THREE.Mesh(new THREE.ConeGeometry(0.04,0.2,4),hornMat);
+        horn.position.set(x+ox,y+1.0,z);
+        _addSO(horn);
+      });
+    } else if(type===3){
+      // Long ears — rabbit / donkey
+      [-0.11,0.11].forEach(ox=>{
+        const ear=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.3,0.05),headMat);
+        ear.position.set(x+ox,y+1.06,z);
+        _addSO(ear);
+      });
+    } else {
+      // Snout — horse / gator / croc
+      const snout=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.1,0.14),headMat);
+      snout.position.set(x,y+0.7,z-0.2);
+      _addSO(snout);
+      // small ears
+      [-0.11,0.11].forEach(ox=>{
+        const ear=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.1,0.04),headMat);
+        ear.position.set(x+ox,y+0.94,z);
+        _addSO(ear);
+      });
     }
   }
-  // Side stands (x=±17): 3 rows stepping outward + up
-  // inner face of side stand is at x=±15, so rows at ±15.3, ±16.1, ±16.9
+
+  // Front/back stands (z=±10.5): 3 stepped rows above stand top
   for(let row=0;row<3;row++){
-    const rowY=STAND_TOP+row*0.65;
-    const rowX_pos= 15.3+row*0.8;
-    const rowX_neg=-(15.3+row*0.8);
+    const rowY=STAND_TOP+row*0.68;
+    const rowZpos= 8.6+row*0.8;
+    const rowZneg=-(8.6+row*0.8);
+    for(let i=0;i<20;i++){
+      const x=-11.4+i*1.1+(Math.random()-0.5)*0.2;
+      const col=jerseyColors[Math.floor(Math.random()*jerseyColors.length)];
+      mkAnimal(x,rowY,rowZpos,col);
+      mkAnimal(x,rowY,rowZneg,col);
+    }
+  }
+  // Side stands (x=±17): 3 stepped rows
+  for(let row=0;row<3;row++){
+    const rowY=STAND_TOP+row*0.68;
+    const rowXpos= 15.3+row*0.8;
+    const rowXneg=-(15.3+row*0.8);
     for(let i=0;i<12;i++){
       const z=-5.5+i*0.95+(Math.random()-0.5)*0.2;
-      const col=crowdColors[Math.floor(Math.random()*numColors)];
-      mkSpectator(rowX_pos,rowY,z,col);
-      mkSpectator(rowX_neg,rowY,z,col);
+      const col=jerseyColors[Math.floor(Math.random()*jerseyColors.length)];
+      mkAnimal(rowXpos,rowY,z,col);
+      mkAnimal(rowXneg,rowY,z,col);
     }
   }
 }
