@@ -1520,29 +1520,7 @@ function makePlayerMesh(pd, teamColor, team){
     const kLegH     = legH;
     const hb        = headBase;
 
-    // --- CAMO SHORTS ---
-    const camoCanvas = document.createElement('canvas');
-    camoCanvas.width=64; camoCanvas.height=64;
-    const cCtx = camoCanvas.getContext('2d');
-    cCtx.fillStyle='#4a5c2a'; cCtx.fillRect(0,0,64,64);
-    [{x:5,y:8,w:18,h:12,c:'#2a3a12'},{x:28,y:4,w:22,h:14,c:'#6b7c3a'},
-     {x:10,y:28,w:14,h:16,c:'#7a6b3a'},{x:32,y:22,w:20,h:18,c:'#2a3a12'},
-     {x:0,y:42,w:16,h:14,c:'#6b7c3a'},{x:20,y:44,w:26,h:12,c:'#4a3a1a'},
-     {x:50,y:10,w:14,h:22,c:'#2a3a12'},{x:46,y:36,w:18,h:20,c:'#6b7c3a'}
-    ].forEach(p=>{
-      cCtx.fillStyle=p.c;
-      cCtx.beginPath();
-      cCtx.ellipse(p.x+p.w/2,p.y+p.h/2,p.w/2,p.h/2,0.4,0,Math.PI*2);
-      cCtx.fill();
-    });
-    const camoTex  = new THREE.CanvasTexture(camoCanvas);
-    const shortsH  = 0.58;
-    const shorts   = new THREE.Mesh(new THREE.BoxGeometry(0.96,shortsH,0.58),new THREE.MeshLambertMaterial({map:camoTex}));
-    shorts.position.set(0,kLegH+shortsH/2,0);
-    shorts.castShadow=true;
-    group.add(shorts);
-
-    // --- THORNS JERSEY (#11) ---
+// --- THORNS JERSEY (#11) ---
     const jerseyCanvas = document.createElement('canvas');
     jerseyCanvas.width=128; jerseyCanvas.height=128;
     const jCtx = jerseyCanvas.getContext('2d');
