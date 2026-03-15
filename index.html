@@ -1374,7 +1374,7 @@ function makePlayerMesh(pd, teamColor, team){
   }
 
   // Head
-  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : (isGiraffe ? bodyY + bodyH/2 + 0.16 : 2.0)));
+  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : (isGiraffe ? bodyY + bodyH/2 + 1.34 : 2.0)));
   if(!isKomodo && !isGiraffe){
     const headColor = isPanther ? 0x0D0D0D : (isGoat ? 0xC8A46E : 0xFF8C00);
     const headGeo = new THREE.SphereGeometry(0.42,10,8);
@@ -1688,7 +1688,21 @@ function makePlayerMesh(pd, teamColor, team){
     // Neck — three tapered segments (tall, signature giraffe look)
     const neckMat = new THREE.MeshLambertMaterial({color:TAN});
     const neckSpMat = new THREE.MeshLambertMaterial({color:SPOT});
-    // No neck — head sits directly on body
+    // Neck — three tapered segments giving a proper giraffe long neck
+    const neckSegs = [
+      {rTop:0.15, rBot:0.20, h:0.45, y:gBodyTop+0.225, z:0.02},
+      {rTop:0.12, rBot:0.15, h:0.40, y:gBodyTop+0.650, z:0.06},
+      {rTop:0.10, rBot:0.12, h:0.35, y:gBodyTop+1.025, z:0.10},
+    ];
+    neckSegs.forEach(s=>{
+      const seg = new THREE.Mesh(new THREE.CylinderGeometry(s.rTop,s.rBot,s.h,8),neckMat);
+      seg.position.set(0,s.y,s.z); seg.castShadow=true; group.add(seg);
+    });
+    // Neck spots
+    [{y:gBodyTop+0.22,x:0.09},{y:gBodyTop+0.62,x:-0.08},{y:gBodyTop+0.98,x:0.07}].forEach(s=>{
+      const sp = new THREE.Mesh(new THREE.BoxGeometry(0.10,0.11,0.10),neckSpMat);
+      sp.position.set(s.x,s.y,0.12); group.add(sp);
+    });
 
     // Head — slightly elongated box (giraffe head is long and flat)
     const headMat = new THREE.MeshLambertMaterial({color:TAN});
@@ -1782,9 +1796,10 @@ function makePlayerMesh(pd, teamColor, team){
   if(pd.name==='Modo Olachenko'){
     group.scale.setScalar(142/78); // 142in / 78in ≈ 1.82
   }
-  // Lenny Williamson is 17'5" — impossibly tall giraffe
+  // Lenny Williamson is 17'5" — tall giraffe; scale accounts for his taller mesh
+  // mesh top ≈ 3.83u vs reference 2.42u, so scale = (209/78) × (2.42/3.83) ≈ 1.693
   if(pd.name==='Lenny Williamson'){
-    group.scale.setScalar(209/78); // 209in / 78in ≈ 2.68
+    group.scale.setScalar(1.693);
   }
 
   return group;
