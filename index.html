@@ -35,47 +35,68 @@ const CX = 170, CY = 110, CW = 940, CH = 500;
 // ── Team / Player data ──────────────────────────────────────
 const TEAMS = [
   {
-    id: 0, name: 'WILDCATS', abbr: 'WLD',
-    color: 0xE85D04, textColor: '#E85D04', secondary: 0xFFD700,
+    id: 0, name: 'VINELAND THORNS', abbr: 'VTH',
+    location: 'Vineland',
+    color: 0x6B21A8, textColor: '#A855F7', secondary: 0x22C55E,
     players: [
-      { name: 'Leon',   emoji: '🦁', spd: 7, sht: 8, drb: 9, def: 7, str: 8 },
-      { name: 'Tigra',  emoji: '🐯', spd: 9, sht: 7, drb: 8, def: 6, str: 7 },
-      { name: 'Chaz',   emoji: '🐆', spd:10, sht: 6, drb: 9, def: 5, str: 6 },
-      { name: 'Lexi',   emoji: '🐱', spd: 8, sht: 9, drb: 7, def: 8, str: 6 },
-      { name: 'Puma',   emoji: '🐈', spd: 9, sht: 7, drb: 8, def: 7, str: 6 },
+      { name: 'Jett Fillmore',    animal: 'Panther',        emoji: '🐈‍⬛', spd: 9, sht: 7, drb: 9, def: 8, str: 8 },
+      { name: 'Lenny Williamson', animal: 'Giraffe',        emoji: '🦒',  spd: 4, sht: 8, drb: 5, def: 7, str: 9 },
+      { name: 'Olivia Burke',     animal: 'Ostrich',        emoji: '🦃',  spd:10, sht: 6, drb: 8, def: 5, str: 5 },
+      { name: 'Modo Olachenko',   animal: 'Komodo Dragon',  emoji: '🦎',  spd: 5, sht: 6, drb: 6, def: 9, str: 9 },
+      { name: 'Archie Everhardt', animal: 'Rhino',          emoji: '🦏',  spd: 5, sht: 7, drb: 5, def: 9, str:10 },
+      { name: 'Will Harris',      animal: 'Goat',           emoji: '🐐',  spd: 7, sht: 9, drb: 8, def: 7, str: 7 },
     ]
   },
   {
-    id: 1, name: 'ROARERS', abbr: 'ROA',
-    color: 0x1D6FA4, textColor: '#1D6FA4', secondary: 0xF5F5F5,
+    id: 1, name: 'TEAM MAGMA', abbr: 'MAG',
+    location: 'Inferno Lava Coast',
+    color: 0xCC2200, textColor: '#FF5500', secondary: 0xFF8800,
     players: [
-      { name: 'Grizz',  emoji: '🐻', spd: 5, sht: 7, drb: 6, def: 9, str:10 },
-      { name: 'Wolfe',  emoji: '🐺', spd: 8, sht: 8, drb: 8, def: 8, str: 7 },
-      { name: 'Foxy',   emoji: '🦊', spd: 9, sht: 8, drb: 9, def: 6, str: 5 },
-      { name: 'Kodi',   emoji: '🐼', spd: 6, sht: 9, drb: 7, def: 7, str: 8 },
-      { name: 'Polar',  emoji: '🐻‍❄️', spd: 6, sht: 8, drb: 6, def: 9, str:10 },
+      { name: 'Mane Attraction',  animal: 'Andalusian Horse', emoji: '🐎',  spd: 8, sht: 9, drb: 7, def: 6, str: 8 },
+      { name: 'Grizz',            animal: 'Bear',             emoji: '🐻',  spd: 5, sht: 7, drb: 6, def: 9, str:10 },
+      { name: 'Kong',             animal: 'Gorilla',          emoji: '🦍',  spd: 6, sht: 8, drb: 7, def: 8, str:10 },
+      { name: 'Lary',             animal: 'Lizard',           emoji: '🦎',  spd: 9, sht: 6, drb: 8, def: 7, str: 5 },
+      { name: 'Bill',             animal: 'Bull',             emoji: '🐂',  spd: 6, sht: 7, drb: 6, def: 8, str:10 },
+      { name: 'Cinder',           animal: 'Fire Salamander',  emoji: '🔥',  spd: 8, sht: 8, drb: 8, def: 7, str: 6 },
     ]
   },
   {
-    id: 2, name: 'STAMPEDE', abbr: 'STP',
-    color: 0x6B2737, textColor: '#C0392B', secondary: 0xD4AF37,
+    id: 2, name: 'TEAM SHADOWS', abbr: 'SHA',
+    location: 'Sunken City',
+    color: 0x1E1B4B, textColor: '#818CF8', secondary: 0x06B6D4,
     players: [
-      { name: 'Elroy',  emoji: '🐘', spd: 4, sht: 6, drb: 5, def:10, str:10 },
-      { name: 'Rhino',  emoji: '🦏', spd: 5, sht: 7, drb: 6, def: 9, str:10 },
-      { name: 'Bull',   emoji: '🐂', spd: 7, sht: 8, drb: 7, def: 8, str: 9 },
-      { name: 'Hippo',  emoji: '🦛', spd: 4, sht: 6, drb: 5, def: 9, str:10 },
-      { name: 'Goril',  emoji: '🦍', spd: 6, sht: 8, drb: 7, def: 9, str:10 },
+      { name: 'Kouyate',  animal: 'Alligator', emoji: '🐊',  spd: 5, sht: 7, drb: 6, def: 9, str:10 },
+      { name: 'Rosette',  animal: 'Bull',      emoji: '🐂',  spd: 6, sht: 7, drb: 6, def: 8, str:10 },
+      { name: 'Daskas',   animal: 'Gorilla',   emoji: '🦍',  spd: 6, sht: 8, drb: 7, def: 8, str:10 },
+      { name: 'Chase',    animal: 'Lion',      emoji: '🦁',  spd: 8, sht: 8, drb: 8, def: 8, str: 8 },
+      { name: 'Ripper',   animal: 'Jaguar',    emoji: '🐆',  spd: 9, sht: 7, drb: 8, def: 8, str: 7 },
+      { name: 'Viper',    animal: 'Black Mamba', emoji: '🐍', spd:10, sht: 8, drb: 9, def: 7, str: 4 },
     ]
   },
   {
-    id: 3, name: 'SKY HAWKS', abbr: 'SKY',
-    color: 0x1A7A4A, textColor: '#1A7A4A', secondary: 0xFF4500,
+    id: 3, name: 'TEAM SHIVERS', abbr: 'SHV',
+    location: 'Arctic',
+    color: 0x0E4D91, textColor: '#38BDF8', secondary: 0xE0F2FE,
     players: [
-      { name: 'Eagle',  emoji: '🦅', spd: 9, sht: 9, drb: 8, def: 7, str: 6 },
-      { name: 'Falcon', emoji: '🦆', spd:10, sht: 8, drb: 9, def: 6, str: 5 },
-      { name: 'Hawke',  emoji: '🦜', spd: 8, sht: 9, drb: 8, def: 7, str: 5 },
-      { name: 'Raven',  emoji: '🐦', spd: 9, sht:10, drb: 7, def: 6, str: 5 },
-      { name: 'Condor', emoji: '🦢', spd: 7, sht: 9, drb: 8, def: 8, str: 6 },
+      { name: 'Propp',    animal: 'Polar Bear',    emoji: '🐻‍❄️', spd: 5, sht: 8, drb: 6, def: 9, str:10 },
+      { name: 'Spots',    animal: 'Snow Leopard',  emoji: '🐆',   spd: 9, sht: 8, drb: 8, def: 7, str: 7 },
+      { name: 'Fang',     animal: 'Sabertooth Cat',emoji: '🦁',   spd: 8, sht: 7, drb: 7, def: 9, str: 9 },
+      { name: 'Moe',      animal: 'Moose',         emoji: '🦌',   spd: 5, sht: 7, drb: 5, def: 8, str: 9 },
+      { name: 'Blizzard', animal: 'Arctic Wolf',   emoji: '🐺',   spd: 9, sht: 7, drb: 8, def: 8, str: 7 },
+      { name: 'Tusk',     animal: 'Walrus',        emoji: '🦭',   spd: 3, sht: 8, drb: 5, def: 9, str:10 },
+    ]
+  },
+  {
+    id: 4, name: 'THE SANDSTORMS', abbr: 'SND',
+    location: 'Scorch Valley',
+    color: 0x92400E, textColor: '#F59E0B', secondary: 0xFDE68A,
+    players: [
+      { name: 'Dune',    animal: 'Camel',              emoji: '🐪',  spd: 6, sht: 7, drb: 6, def: 7, str: 8 },
+      { name: 'Sting',   animal: 'Scorpion',           emoji: '🦂',  spd: 7, sht: 8, drb: 7, def: 9, str: 7 },
+      { name: 'Sandy',   animal: 'Fennec Fox',         emoji: '🦊',  spd:10, sht: 8, drb: 9, def: 6, str: 4 },
+      { name: 'Rattles', animal: 'Sidewinder Snake',   emoji: '🐍',  spd: 8, sht: 7, drb: 8, def: 7, str: 5 },
+      { name: 'Cleo',    animal: 'Sand Cat',           emoji: '🐱',  spd: 9, sht: 8, drb: 8, def: 7, str: 6 },
+      { name: 'Sly',     animal: 'Meerkat',            emoji: '🐿️', spd: 8, sht: 9, drb: 8, def: 7, str: 5 },
     ]
   }
 ];
@@ -115,7 +136,7 @@ class MenuScene extends Phaser.Scene {
       shadow: { offsetX: 6, offsetY: 6, color: '#000', blur: 10, fill: true }
     }).setOrigin(0.5);
 
-    this.add.text(W / 2, 215, '🦁  THE G.O.A.T. ANIMAL BASKETBALL GAME  🏀', {
+    this.add.text(W / 2, 215, '🦁  5 TEAMS • 30 PLAYERS • ONE CHAMPION  🏀', {
       fontSize: '20px', color: '#FFD700', fontFamily: 'Arial'
     }).setOrigin(0.5);
 
@@ -224,7 +245,7 @@ class TeamSelectScene extends Phaser.Scene {
   }
 
   _drawTeams() {
-    const cardW = 260, cardH = 190, gap = 20;
+    const cardW = 218, cardH = 200, gap = 13;
     const totalW = TEAMS.length * (cardW + gap) - gap;
     const startX = (W - totalW) / 2;
 
@@ -241,18 +262,23 @@ class TeamSelectScene extends Phaser.Scene {
       const bg = this.add.rectangle(x + cardW / 2, y + cardH / 2, cardW, cardH, team.color, selected ? 1 : 0.7)
         .setStrokeStyle(selected ? 4 : 2, 0xffffff, selected ? 1 : 0.5);
 
-      const name = this.add.text(x + cardW / 2, y + 28, team.name, {
-        fontSize: '22px', fontFamily: 'Arial Black', color: '#fff'
+      const name = this.add.text(x + cardW / 2, y + 22, team.name, {
+        fontSize: '15px', fontFamily: 'Arial Black', color: '#fff',
+        wordWrap: { width: cardW - 10 }, align: 'center'
       }).setOrigin(0.5);
 
-      const emojis = team.players.map(p => p.emoji).join(' ');
-      const emoText = this.add.text(x + cardW / 2, y + 80, emojis, { fontSize: '22px' }).setOrigin(0.5);
-
-      const abbr = this.add.text(x + cardW / 2, y + 145, `${team.players.length} players`, {
-        fontSize: '14px', color: '#ddd'
+      const locTxt = this.add.text(x + cardW / 2, y + 56, team.location, {
+        fontSize: '11px', color: '#ddd', fontStyle: 'italic'
       }).setOrigin(0.5);
 
-      [sh, bg, name, emoText, abbr].forEach(o => this.cardContainer.add(o));
+      const emojis = team.players.map(p => p.emoji).join('');
+      const emoText = this.add.text(x + cardW / 2, y + 100, emojis, { fontSize: '18px' }).setOrigin(0.5);
+
+      const abbr = this.add.text(x + cardW / 2, y + 156, `${team.players.length} players`, {
+        fontSize: '12px', color: '#ddd'
+      }).setOrigin(0.5);
+
+      [sh, bg, name, locTxt, emoText, abbr].forEach(o => this.cardContainer.add(o));
 
       // Hit zone
       const hit = this.add.zone(x + cardW / 2, y + cardH / 2, cardW, cardH)
@@ -273,21 +299,25 @@ class TeamSelectScene extends Phaser.Scene {
   }
 
   _drawPlayers(team) {
-    const cardW = 200, cardH = 240, gap = 16;
+    const cardW = 184, cardH = 250, gap = 13;
     const totalW = team.players.length * (cardW + gap) - gap;
     const startX = (W - totalW) / 2;
 
     team.players.forEach((player, i) => {
       const x = startX + i * (cardW + gap);
-      const y = 160;
+      const y = 148;
 
       const bg = this.add.rectangle(x + cardW / 2, y + cardH / 2, cardW, cardH, team.color, 0.85)
         .setStrokeStyle(3, 0xffffff, 0.8);
       const shadow = this.add.rectangle(x + cardW / 2 + 4, y + cardH / 2 + 4, cardW, cardH, 0x000000, 0.4);
 
-      const emoText = this.add.text(x + cardW / 2, y + 50, player.emoji, { fontSize: '52px' }).setOrigin(0.5);
-      const nameT   = this.add.text(x + cardW / 2, y + 105, player.name, {
-        fontSize: '20px', fontFamily: 'Arial Black', color: '#fff'
+      const emoText = this.add.text(x + cardW / 2, y + 44, player.emoji, { fontSize: '44px' }).setOrigin(0.5);
+      const nameT   = this.add.text(x + cardW / 2, y + 94, player.name, {
+        fontSize: '15px', fontFamily: 'Arial Black', color: '#fff',
+        wordWrap: { width: cardW - 8 }, align: 'center'
+      }).setOrigin(0.5);
+      const animalT = this.add.text(x + cardW / 2, y + 118, player.animal, {
+        fontSize: '11px', color: '#ffeeaa', fontStyle: 'italic'
       }).setOrigin(0.5);
 
       // Stats
@@ -298,14 +328,14 @@ class TeamSelectScene extends Phaser.Scene {
         { label: 'DEF', val: player.def },
       ];
       stats.forEach((s, si) => {
-        const sy = y + 128 + si * 24;
-        const lbl = this.add.text(x + 14, sy, s.label, { fontSize: '13px', color: '#ddd' });
-        const bar = this.add.rectangle(x + 55 + (s.val * 6.5), sy + 8, s.val * 13, 10, 0x00ff88);
+        const sy = y + 136 + si * 24;
+        const lbl = this.add.text(x + 10, sy, s.label, { fontSize: '11px', color: '#ddd' });
+        const bar = this.add.rectangle(x + 46 + (s.val * 6), sy + 7, s.val * 12, 9, 0x00ff88);
         this.cardContainer.add(lbl);
         this.cardContainer.add(bar);
       });
 
-      [shadow, bg, emoText, nameT].forEach(o => this.cardContainer.add(o));
+      [shadow, bg, emoText, nameT, animalT].forEach(o => this.cardContainer.add(o));
 
       const hit = this.add.zone(x + cardW / 2, y + cardH / 2, cardW, cardH)
         .setInteractive({ useHandCursor: true });
@@ -544,8 +574,9 @@ class GameScene extends Phaser.Scene {
     // Emoji
     c.add(this.add.text(0, 0, pd.emoji, { fontSize: '18px' }).setOrigin(0.5));
 
-    // Name tag
-    c.add(this.add.text(0, -34, pd.name, {
+    // Name tag (first name only to keep it compact on-court)
+    const shortName = pd.name.split(' ')[0];
+    c.add(this.add.text(0, -34, shortName, {
       fontSize: '11px', color: '#fff',
       backgroundColor: '#00000099', padding: { x: 4, y: 1 }
     }).setOrigin(0.5));
@@ -582,32 +613,41 @@ class GameScene extends Phaser.Scene {
     const sb = this.add.graphics().setDepth(20);
     sb.fillStyle(0x000000, 0.82); sb.fillRoundedRect(W / 2 - 320, 4, 640, 64, 12);
 
-    // Team names
-    this.add.text(W / 2 - 220, 14, this.t1.name, {
-      fontSize: '13px', fontFamily: 'Arial Black', color: this.t1.textColor
+    // Team names (use abbreviated name to fit HUD)
+    this.add.text(W / 2 - 220, 10, this.t1.name, {
+      fontSize: '11px', fontFamily: 'Arial Black', color: this.t1.textColor,
+      wordWrap: { width: 190 }, align: 'center'
     }).setOrigin(0.5, 0).setDepth(21);
-    this.add.text(W / 2 + 220, 14, this.t2.name, {
-      fontSize: '13px', fontFamily: 'Arial Black', color: this.t2.textColor
+    this.add.text(W / 2 + 220, 10, this.t2.name, {
+      fontSize: '11px', fontFamily: 'Arial Black', color: this.t2.textColor,
+      wordWrap: { width: 190 }, align: 'center'
+    }).setOrigin(0.5, 0).setDepth(21);
+    // Location sub-labels
+    this.add.text(W / 2 - 220, 26, this.t1.location, {
+      fontSize: '10px', color: '#aaa', fontStyle: 'italic'
+    }).setOrigin(0.5, 0).setDepth(21);
+    this.add.text(W / 2 + 220, 26, this.t2.location, {
+      fontSize: '10px', color: '#aaa', fontStyle: 'italic'
     }).setOrigin(0.5, 0).setDepth(21);
 
     // Score digits
-    this.scoreT1 = this.add.text(W / 2 - 110, 36, '0', {
-      fontSize: '38px', fontFamily: 'Arial Black', color: '#fff'
+    this.scoreT1 = this.add.text(W / 2 - 110, 40, '0', {
+      fontSize: '32px', fontFamily: 'Arial Black', color: '#fff'
     }).setOrigin(0.5).setDepth(21);
-    this.scoreT2 = this.add.text(W / 2 + 110, 36, '0', {
-      fontSize: '38px', fontFamily: 'Arial Black', color: '#fff'
+    this.scoreT2 = this.add.text(W / 2 + 110, 40, '0', {
+      fontSize: '32px', fontFamily: 'Arial Black', color: '#fff'
     }).setOrigin(0.5).setDepth(21);
-    this.add.text(W / 2, 36, '—', { fontSize: '28px', color: '#aaa' }).setOrigin(0.5).setDepth(21);
+    this.add.text(W / 2, 40, '—', { fontSize: '24px', color: '#aaa' }).setOrigin(0.5).setDepth(21);
 
     // Quarter
-    this.qtrTxt  = this.add.text(W / 2,  14, `Q${GS.quarter}`, {
-      fontSize: '14px', fontFamily: 'Arial Black', color: '#FFD700'
+    this.qtrTxt  = this.add.text(W / 2,  8, `Q${GS.quarter}`, {
+      fontSize: '12px', fontFamily: 'Arial Black', color: '#FFD700'
     }).setOrigin(0.5, 0).setDepth(21);
 
     // Game clock
-    this.clockTxt = this.add.text(W / 2, 36, '2:00', {
-      fontSize: '20px', fontFamily: 'Courier New', color: '#fff'
-    }).setOrigin(0.5).setDepth(21);
+    this.clockTxt = this.add.text(W / 2, 30, '2:00', {
+      fontSize: '22px', fontFamily: 'Courier New', color: '#fff'
+    }).setOrigin(0.5, 0).setDepth(21);
 
     // Shot clock
     const scBg = this.add.graphics().setDepth(20);
