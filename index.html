@@ -2229,22 +2229,13 @@ function aiTick(p){
     }
     tx=p._aiTarget.x; tz=p._aiTarget.z;
   } else {
-    // Defensive formation — hold slot, blend toward ball side
-    const mode='def';
-    if(p._aiMode!==mode){ p._aiMode=mode; p._aiTarget=null; }
-    const slot=DEF_SLOTS[pIdx%DEF_SLOTS.length];
-    const goalX=-atkSign*slot.x, goalZ=slot.z;
-    const bx=ball3d.position.x,bz=ball3d.position.z;
-    // Blend formation spot with ball-to-hoop midpoint so defenders shade toward ball
-    const midX=(bx+myHoop.x)*0.5, midZ=(bz+myHoop.z)*0.5;
-    const blendX=goalX*0.65+midX*0.35, blendZ=goalZ*0.65+midZ*0.35;
-    const atTarget=p._aiTarget &&
-      Math.abs(p.position.x-p._aiTarget.x)<0.9 &&
-      Math.abs(p.position.z-p._aiTarget.z)<0.9;
-    if(!p._aiTarget||atTarget){
-      p._aiTarget={x:blendX+(Math.random()-0.5)*0.8, z:Math.max(-6.5,Math.min(6.5,blendZ+(Math.random()-0.5)*0.8))};
-    }
-    tx=p._aiTarget.x; tz=p._aiTarget.z;
+    // Man-to-man defense — guard the opponent with the same index
+    const oppTeam=p.team===1?team2Players:team1Players;
+    const mark=oppTeam[pIdx%oppTeam.length];
+    // Position between mark and own hoop (2/3 toward mark so defender trails closely)
+    const guardX=mark.position.x*0.65+myHoop.x*0.35;
+    const guardZ=mark.position.z*0.65+myHoop.z*0.35;
+    tx=guardX; tz=guardZ;
     // steal attempt
     const holder=ball3d.holder;
     if(holder&&holder.team!==p.team){
