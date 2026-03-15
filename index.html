@@ -1459,7 +1459,41 @@ function resolveShot(pNum,chance,pts){
     setTimeout(()=>resetPossession(next),700);
   } else {
     toast('NO GOOD!','#ff4444');
-    setTimeout(()=>rebound(),350);
+    setTimeout(()=>bounceMiss(pNum),50);
+  }
+}
+
+function bounceMiss(pNum){
+  const hoopPos = pNum===1 ? hoop2pos : hoop1pos;
+  const side = hoopPos.x > 0 ? 1 : -1;
+  const bx = ball3d.position.x, by = ball3d.position.y, bz = ball3d.position.z;
+
+  // 35% backboard bounce, 65% rim rattle
+  if(Math.random() < 0.35){
+    // ── Backboard bounce ──────────────────────────────────────────
+    const bbX = hoopPos.x + side * 0.55;
+    const bbY = RIM_Y + 0.25 + Math.random()*0.3;
+    const bbZ = (Math.random()-0.5)*0.5;
+    const landX = hoopPos.x + (Math.random()-0.5)*4;
+    const landZ = (Math.random()-0.5)*5;
+    ballFlyTo(bx,by,bz, bbX,bbY,bbZ, 0.5,0.15, ()=>{
+      ballFlyTo(bbX,bbY,bbZ, landX,0.28,landZ, 1.4,0.4, ()=>{
+        ball3d.flying=false;
+        setTimeout(()=>{ if(!ball3d.holder)rebound(); },400);
+      });
+    });
+  } else {
+    // ── Rim rattle ────────────────────────────────────────────────
+    const rattleX = hoopPos.x + (Math.random()-0.5)*0.7;
+    const rattleZ = (Math.random()-0.5)*0.7;
+    const landX = hoopPos.x + (Math.random()-0.5)*4;
+    const landZ = (Math.random()-0.5)*5;
+    ballFlyTo(bx,by,bz, rattleX,RIM_Y+0.1,rattleZ, 0.4,0.13, ()=>{
+      ballFlyTo(rattleX,RIM_Y+0.1,rattleZ, landX,0.28,landZ, 1.0,0.38, ()=>{
+        ball3d.flying=false;
+        setTimeout(()=>{ if(!ball3d.holder)rebound(); },400);
+      });
+    });
   }
 }
 
