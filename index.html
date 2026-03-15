@@ -1248,7 +1248,7 @@ function makePlayerMesh(pd, teamColor, team){
   const legH = isPanther ? 1.05 : (isGoat ? 1.0 : (isGiraffe ? 1.25 : (isOstrich ? 0.85 : (isRhino ? 0.80 : 0.7))));
   const legW = isGoat ? 0.22 : (isGiraffe ? 0.13 : (isOstrich ? 0.10 : (isRhino ? 0.38 : 0.28)));
   const legGeo = new THREE.BoxGeometry(legW, legH, legW);
-  const legColor = isPanther ? 0x0A0A0A : (isGoat ? 0x1A6B1A : (isKomodo ? 0x4A8C3F : (isGiraffe ? 0xD4963C : (isOstrich ? 0xE8DFC8 : (isRhino ? 0x7A7A7A : 0x222222)))));
+  const legColor = isPanther ? 0x0A0A0A : (isGoat ? 0x1A6B1A : (isKomodo ? 0x4A8C3F : (isGiraffe ? 0xD4963C : (isOstrich ? 0xE8DFC8 : (isRhino ? 0x7A7A7A : (isHorse ? 0x888898 : 0x222222))))));
   const legMat = new THREE.MeshLambertMaterial({color:legColor});
   const legL = new THREE.Mesh(legGeo,legMat);
   legL.position.set(-0.22, legH/2, 0);
@@ -1949,8 +1949,8 @@ function makePlayerMesh(pd, teamColor, team){
 
   // ── ANDALUSIAN HORSE (Mane Attraction) ──────────────────────────────────────
   if(isHorse){
-    const HSKIN  = 0x1C1A2E; // dark blue-gray skin
-    const HDARK  = 0x13111F; // deeper shadow skin
+    const HSKIN  = 0x888898; // gray skin
+    const HDARK  = 0x666676; // deeper gray shadow
     const hBodyTop = bodyY + bodyH/2;
 
     // Dark near-black boots with a subtle sole
@@ -2110,6 +2110,10 @@ function makePlayerMesh(pd, teamColor, team){
   // Archie Everhardt is 9'6" — head top 3.04u, scale = 114/(3.04×32.23) ≈ 1.164
   if(pd.name==='Archie Everhardt'){
     group.scale.setScalar(1.164);
+  }
+  // Mane Attraction is 10'0" — scale = 120in / 78in ≈ 1.538
+  if(pd.name==='Mane Attraction'){
+    group.scale.setScalar(1.538);
   }
 
   return group;
