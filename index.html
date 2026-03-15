@@ -1659,11 +1659,8 @@ function makePlayerMesh(pd, teamColor, team){
     jCanvas.width=128; jCanvas.height=128;
     const jCtx = jCanvas.getContext('2d');
     jCtx.fillStyle='#1A7A1A'; jCtx.fillRect(0,0,128,128);
-    jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,0,128,13);    // red collar
-    jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,115,128,13);  // red hem
     jCtx.fillStyle='#FF6B00'; jCtx.textAlign='center'; jCtx.textBaseline='middle';
     jCtx.font='bold 22px Arial Black'; jCtx.fillText('THORNS',64,26);
-    jCtx.fillStyle='#FFFFFF';
     jCtx.font='bold 72px Arial Black'; jCtx.fillText('#7',64,82);
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
