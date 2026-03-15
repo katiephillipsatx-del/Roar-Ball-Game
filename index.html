@@ -949,7 +949,7 @@ class GameScene extends Phaser.Scene {
       .setStrokeStyle(2, isAI ? color : 0xFFD700, isAI ? 0.25 : 0.85);
     c.add(gndRing);
     if (!isAI) {
-      this.tweens.add({ targets: gndRing, alpha: 0.15, scaleX: 1.32, scaleY: 1.32,
+      this.tweens.add({ targets: gndRing, alpha: 0.15,
         duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
 
@@ -1194,8 +1194,6 @@ class GameScene extends Phaser.Scene {
       if (player.legR) player.legR.setAngle(-swing);
       if (player.armL) player.armL.setAngle(-swing * 0.5);
       if (player.armR) player.armR.setAngle(swing * 0.5);
-      // Flip sprite to face movement direction
-      if (dx !== 0) player.setScaleX(dx < 0 ? -1 : 1);
     } else {
       // Smooth deceleration
       player.vx = Phaser.Math.Linear(player.vx, 0, 0.28);
