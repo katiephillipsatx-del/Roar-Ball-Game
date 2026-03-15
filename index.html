@@ -121,44 +121,103 @@ class MenuScene extends Phaser.Scene {
   constructor() { super('Menu'); }
 
   create() {
-    // Dark court-pattern bg
     const g = this.add.graphics();
-    g.fillStyle(0x0d0d1a); g.fillRect(0, 0, W, H);
-    for (let i = 0; i < 8; i++) {
-      g.lineStyle(1, 0x1a2a4a, 0.5);
-      g.strokeRect(50 + i * 150, 60 + i * 60, W - 100 - i * 300, H - 120 - i * 120);
+
+    // ── Deep arena background ───────────────────────────────
+    g.fillGradientStyle(0x120008, 0x120008, 0x1a0520, 0x1a0520, 1);
+    g.fillRect(0, 0, W, H);
+
+    // ── Hardwood court floor (bottom half) ──────────────────
+    g.fillStyle(0x8B4A10, 1);
+    g.fillRect(0, H * 0.62, W, H * 0.38);
+    // Plank lines
+    g.lineStyle(1, 0x7A3D0A, 0.7);
+    for (let i = 0; i < 20; i++) { g.moveTo(0, H * 0.62 + i * 14); g.lineTo(W, H * 0.62 + i * 14); }
+    g.strokePath();
+    // Court markings on floor
+    g.lineStyle(3, 0xffffff, 0.25);
+    g.strokeCircle(W / 2, H * 0.62, 70);
+    g.moveTo(W / 2, H * 0.62 - 70); g.lineTo(W / 2, H); g.strokePath();
+    g.lineStyle(3, 0xffffff, 0.18);
+    g.strokeRect(60, H * 0.62 - 40, 180, 80);
+    g.strokeRect(W - 240, H * 0.62 - 40, 180, 80);
+
+    // ── Arena spotlight beams from above ────────────────────
+    const spotColors = [0xFF6B35, 0xFFD700, 0xFF3300, 0xFFAA00];
+    [[W * 0.2, 0], [W * 0.5, 0], [W * 0.8, 0]].forEach(([sx, sy], si) => {
+      for (let layer = 0; layer < 3; layer++) {
+        g.fillStyle(spotColors[si % spotColors.length], 0.025 - layer * 0.007);
+        g.fillTriangle(sx, sy, sx - 120 - layer * 40, H, sx + 120 + layer * 40, H);
+      }
+    });
+
+    // ── Arena glow behind title ──────────────────────────────
+    g.fillStyle(0xFF4400, 0.12); g.fillCircle(W / 2, 120, 340);
+    g.fillStyle(0xFF6600, 0.08); g.fillCircle(W / 2, 120, 220);
+
+    // ── Crowd silhouettes (two rows, top and bottom) ─────────
+    const crowdEmojis = ['🦁','🐻','🐆','🦊','🦍','🐺','🐊','🦅','🐂','🦏','🦒','🐎'];
+    // Top row
+    for (let i = 0; i < 26; i++) {
+      const em = crowdEmojis[i % crowdEmojis.length];
+      const cx = 16 + i * (W / 26);
+      const dy = Math.sin(i * 1.3) * 8;
+      const crowd = this.add.text(cx, 640 + dy, em, { fontSize: '26px', alpha: 0.55 }).setOrigin(0.5);
+      this.tweens.add({ targets: crowd, y: crowd.y - 10, duration: 900 + i * 80, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
 
-    // ROARBALL title
-    this.add.text(W / 2, 105, 'ROARBALL', {
-      fontSize: '104px', fontFamily: 'Arial Black',
-      color: '#FF6B35', stroke: '#FFD700', strokeThickness: 9,
-      shadow: { offsetX: 6, offsetY: 6, color: '#000', blur: 12, fill: true }
-    }).setOrigin(0.5);
+    // ── Floating embers / sparks ─────────────────────────────
+    for (let i = 0; i < 28; i++) {
+      const px = Phaser.Math.Between(0, W);
+      const py = Phaser.Math.Between(H * 0.3, H);
+      const ember = this.add.circle(px, py, Phaser.Math.Between(2, 4), 0xFF6600, 0.5 + Math.random() * 0.4);
+      this.tweens.add({
+        targets: ember, y: -20, x: px + Phaser.Math.Between(-60, 60), alpha: 0,
+        duration: Phaser.Math.Between(2200, 4800), delay: Phaser.Math.Between(0, 3000),
+        repeat: -1,
+        onRepeat: () => { ember.setPosition(Phaser.Math.Between(0, W), H + 10); ember.setAlpha(0.5 + Math.random() * 0.4); }
+      });
+    }
+
+    // ── ROARBALL title ───────────────────────────────────────
+    this.add.text(W / 2, 108, 'ROARBALL', {
+      fontSize: '112px', fontFamily: 'Arial Black',
+      color: '#FF6B35', stroke: '#FFD700', strokeThickness: 10,
+      shadow: { offsetX: 0, offsetY: 0, color: '#FF2200', blur: 40, fill: true }
+    }).setOrigin(0.5).setDepth(5);
+
+    // Subtitle glow line
+    const glowLine = this.add.graphics().setDepth(4);
+    glowLine.lineStyle(2, 0xFFD700, 0.6);
+    glowLine.moveTo(W / 2 - 260, 172); glowLine.lineTo(W / 2 + 260, 172); glowLine.strokePath();
 
     // Movie tie-in badge
     this.add.text(W / 2, 193, '🐐  AS SEEN IN  THE G.O.A.T.  🐐', {
       fontSize: '17px', fontFamily: 'Arial Black', color: '#FFD700',
       backgroundColor: '#00000099', padding: { x: 14, y: 6 }
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(5);
 
     // Sport tagline
     this.add.text(W / 2, 244, 'FULL-CONTACT ANIMAL BASKETBALL  •  5 TEAMS  •  30 PLAYERS', {
-      fontSize: '14px', color: '#aaaaaa', fontFamily: 'Arial'
-    }).setOrigin(0.5);
+      fontSize: '14px', color: '#cccccc', fontFamily: 'Arial'
+    }).setOrigin(0.5).setDepth(5);
 
-    // Buttons
-    this._btn(W / 2, 340, '🤖  VS CPU',       0xFF6B35, () => { GS.mode = 'cpu';      this.scene.start('TeamSelect'); });
+    // ── Buttons ──────────────────────────────────────────────
+    this._btn(W / 2, 340, '🤖  VS CPU',       0xCC3300, () => { GS.mode = 'cpu';      this.scene.start('TeamSelect'); });
     this._btn(W / 2, 428, '👥  2 PLAYERS',    0x1D6FA4, () => { GS.mode = '2player';  this.scene.start('TeamSelect'); });
     this._btn(W / 2, 516, '❓  HOW TO PLAY',  0x1A7A4A, () => this._howTo(), 22);
 
-    // Bouncing ball + goat
-    const ball = this.add.text(80, 618, '🏀', { fontSize: '44px' });
-    this.tweens.add({ targets: ball, x: W - 80, duration: 3200, yoyo: true, repeat: -1 });
-    this.tweens.add({ targets: ball, y: 585, duration: 380, yoyo: true, repeat: -1, ease: 'Bounce.easeOut' });
+    // Animated ball that bounces across the court floor
+    const ball = this.add.text(80, 652, '🏀', { fontSize: '38px' }).setDepth(6);
+    this.tweens.add({ targets: ball, x: W - 80, duration: 2800, yoyo: true, repeat: -1 });
+    this.tweens.add({ targets: ball, y: 628, duration: 320, yoyo: true, repeat: -1, ease: 'Bounce.easeOut' });
 
-    const goat = this.add.text(W / 2, 618, '🐐', { fontSize: '36px' }).setOrigin(0.5);
-    this.tweens.add({ targets: goat, scaleX: 1.15, scaleY: 1.15, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    // Will Harris the goat — featured centre bottom
+    const goat = this.add.text(W / 2, 615, '🐐', { fontSize: '48px' }).setOrigin(0.5).setDepth(6);
+    this.tweens.add({ targets: goat, scaleX: 1.18, scaleY: 1.18, duration: 950, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    const goatLabel = this.add.text(W / 2, 668, 'WILL HARRIS  •  THE G.O.A.T.', {
+      fontSize: '11px', fontFamily: 'Arial Black', color: '#FFD700aa'
+    }).setOrigin(0.5).setDepth(6);
   }
 
   _btn(x, y, label, bg, cb, size = 30) {
