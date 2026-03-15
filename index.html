@@ -280,14 +280,11 @@ class TeamSelectScene extends Phaser.Scene {
 
       [sh, bg, name, locTxt, emoText, abbr].forEach(o => this.cardContainer.add(o));
 
-      // Hit zone
-      const hit = this.add.zone(x + cardW / 2, y + cardH / 2, cardW, cardH)
-        .setInteractive({ useHandCursor: true });
-      this.cardContainer.add(hit);
-
-      hit.on('pointerover', () => bg.setScale(1.04));
-      hit.on('pointerout',  () => bg.setScale(1));
-      hit.on('pointerdown', () => {
+      // Make bg directly interactive (more reliable than Zone inside container)
+      bg.setInteractive({ useHandCursor: true });
+      bg.on('pointerover', () => bg.setScale(1.04));
+      bg.on('pointerout',  () => bg.setScale(1));
+      bg.on('pointerdown', () => {
         if (this.step === 'team1') { this.sel.team1 = i; this.step = 'player1'; }
         else                       { this.sel.team2 = i; this.step = 'player2'; }
         this._refresh();
@@ -337,13 +334,10 @@ class TeamSelectScene extends Phaser.Scene {
 
       [shadow, bg, emoText, nameT, animalT].forEach(o => this.cardContainer.add(o));
 
-      const hit = this.add.zone(x + cardW / 2, y + cardH / 2, cardW, cardH)
-        .setInteractive({ useHandCursor: true });
-      this.cardContainer.add(hit);
-
-      hit.on('pointerover', () => bg.setScale(1.04));
-      hit.on('pointerout',  () => bg.setScale(1));
-      hit.on('pointerdown', () => {
+      bg.setInteractive({ useHandCursor: true });
+      bg.on('pointerover', () => bg.setScale(1.04));
+      bg.on('pointerout',  () => bg.setScale(1));
+      bg.on('pointerdown', () => {
         if (this.step === 'player1') {
           this.sel.p1 = i;
           if (GS.mode === 'cpu') {
@@ -879,24 +873,47 @@ class GameScene extends Phaser.Scene {
     const c = this.add.container(x, y).setDepth(5);
 
     // Shadow
-    c.add(this.add.ellipse(0, 20, 36, 12, 0x000000, 0.35));
+    c.add(this.add.ellipse(0, 30, 42, 14, 0x000000, 0.35));
 
-    // Body
-    const body = this.add.circle(0, 0, 20, color).setStrokeStyle(2, 0xffffff);
-    c.add(body);
+    // Legs (behind body) — origins at hip so they rotate like limbs
+    const legL = this.add.rectangle(-6, 10, 8, 22, color);
+    const legR = this.add.rectangle( 6, 10, 8, 22, color);
+    legL.setOrigin(0.5, 0);
+    legR.setOrigin(0.5, 0);
+    c.add(legL); c.add(legR);
 
-    // Emoji
-    c.add(this.add.text(0, 0, pd.emoji, { fontSize: '18px' }).setOrigin(0.5));
+    // Shoes
+    const shoeL = this.add.ellipse(-7, 34, 14, 8, 0x222222);
+    const shoeR = this.add.ellipse( 7, 34, 14, 8, 0x222222);
+    c.add(shoeL); c.add(shoeR);
 
-    // Name tag (first name only to keep it compact on-court)
+    // Torso
+    const torso = this.add.rectangle(0, -3, 18, 20, color).setStrokeStyle(1, 0xffffff, 0.5);
+    c.add(torso);
+
+    // Arms — origins at shoulder
+    const armL = this.add.rectangle(-14, -6, 7, 18, color);
+    const armR = this.add.rectangle( 14, -6, 7, 18, color);
+    armL.setOrigin(0.5, 0);
+    armR.setOrigin(0.5, 0);
+    c.add(armL); c.add(armR);
+
+    // Head
+    const head = this.add.circle(0, -22, 14, color).setStrokeStyle(2, 0xffffff);
+    c.add(head);
+
+    // Emoji face on head
+    c.add(this.add.text(0, -23, pd.emoji, { fontSize: '15px' }).setOrigin(0.5));
+
+    // Name tag
     const shortName = pd.name.split(' ')[0];
-    c.add(this.add.text(0, -34, shortName, {
+    c.add(this.add.text(0, -44, shortName, {
       fontSize: '11px', color: '#fff',
       backgroundColor: '#00000099', padding: { x: 4, y: 1 }
     }).setOrigin(0.5));
 
     // Ball dot indicator
-    const dot = this.add.circle(15, -15, 6, 0xFFD700).setVisible(false);
+    const dot = this.add.circle(18, -22, 6, 0xFFD700).setVisible(false);
     c.add(dot);
 
     // Properties
@@ -905,10 +922,13 @@ class GameScene extends Phaser.Scene {
     c.isAI   = isAI;
     c.hasBall = false;
     c.dot    = dot;
+    c.legL = legL; c.legR = legR;
+    c.armL = armL; c.armR = armR;
+    c.walkPhase = 0;
     c.vx = 0; c.vy = 0;
     c.aiState  = 'idle';
     c.aiCooldown = 0;
-    c.setSize(40, 40);   // for hit area
+    c.setSize(40, 60);
     return c;
   }
 
@@ -1078,6 +1098,16 @@ class GameScene extends Phaser.Scene {
       const len = Math.sqrt(dx * dx + dy * dy);
       player.x += (dx / len) * spd * dt;
       player.y += (dy / len) * spd * dt;
+      // Walking animation
+      player.walkPhase += spd * dt * 0.13;
+      const swing = Math.sin(player.walkPhase) * 30;
+      if (player.legL) player.legL.setAngle(swing);
+      if (player.legR) player.legR.setAngle(-swing);
+      if (player.armL) player.armL.setAngle(-swing * 0.5);
+      if (player.armR) player.armR.setAngle(swing * 0.5);
+    } else {
+      if (player.legL) { player.legL.setAngle(0); player.legR.setAngle(0); }
+      if (player.armL) { player.armL.setAngle(0); player.armR.setAngle(0); }
     }
 
     // Clamp to court
@@ -1384,6 +1414,16 @@ class GameScene extends Phaser.Scene {
     if (dist > 12) {
       p.x += (dx / dist) * spd;
       p.y += (dy / dist) * spd;
+      // Walking animation
+      p.walkPhase = (p.walkPhase || 0) + spd * 0.13;
+      const swing = Math.sin(p.walkPhase) * 30;
+      if (p.legL) p.legL.setAngle(swing);
+      if (p.legR) p.legR.setAngle(-swing);
+      if (p.armL) p.armL.setAngle(-swing * 0.5);
+      if (p.armR) p.armR.setAngle(swing * 0.5);
+    } else {
+      if (p.legL) { p.legL.setAngle(0); p.legR.setAngle(0); }
+      if (p.armL) { p.armL.setAngle(0); p.armR.setAngle(0); }
     }
 
     p.x = Phaser.Math.Clamp(p.x, CX + 18, CX + CW - 18);
