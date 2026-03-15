@@ -2176,11 +2176,12 @@ function aiTick(p){
   const oppHoop=p.team===1?hoop2pos:hoop1pos;
   const myHoop =p.team===1?hoop1pos:hoop2pos;
   const spd=p.pd.spd*0.022;
+  const fmtSpd=spd*1.55; // faster for formation/man-to-man movement
   // Team 1 attacks toward +x, Team 2 toward -x
   const atkSign=p.team===1?1:-1;
   const myTeam=p.team===1?team1Players:team2Players;
   const pIdx=myTeam.indexOf(p);
-  let tx,tz;
+  let tx,tz,useSpd=spd;
 
   // Loose ball — everyone chases it
   if(!ball3d.holder && !ball3d.flying){
@@ -2215,6 +2216,7 @@ function aiTick(p){
     tx=oppHoop.x+(Math.random()-0.5)*3;
     tz=oppHoop.z+(Math.random()-0.5)*3;
   } else if(possession===p.team){
+    useSpd=fmtSpd;
     // Offensive formation — each player holds their slot, only re-targets on arrival
     const mode='off';
     if(p._aiMode!==mode){ p._aiMode=mode; p._aiTarget=null; }
@@ -2229,6 +2231,7 @@ function aiTick(p){
     }
     tx=p._aiTarget.x; tz=p._aiTarget.z;
   } else {
+    useSpd=fmtSpd;
     // Man-to-man defense — guard the opponent with the same index
     const oppTeam=p.team===1?team2Players:team1Players;
     const mark=oppTeam[pIdx%oppTeam.length];
@@ -2253,12 +2256,12 @@ function aiTick(p){
   const dxm=tx-p.position.x,dzm=tz-p.position.z;
   const dist2=Math.sqrt(dxm*dxm+dzm*dzm);
   if(dist2>0.5){
-    p.position.x+=dxm/dist2*spd;
-    p.position.z+=dzm/dist2*spd;
+    p.position.x+=dxm/dist2*useSpd;
+    p.position.z+=dzm/dist2*useSpd;
     p.position.x=Math.max(-14.5,Math.min(14.5,p.position.x));
     p.position.z=Math.max(-7,Math.min(7,p.position.z));
     p.rotation.y=Math.atan2(dxm,dzm);
-    p.walkPhase+=spd*6;
+    p.walkPhase+=useSpd*6;
     const swing=Math.sin(p.walkPhase)*0.6;
     p.legL.rotation.x=swing;
     p.legR.rotation.x=-swing;
