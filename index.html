@@ -1374,7 +1374,7 @@ function makePlayerMesh(pd, teamColor, team){
   }
 
   // Head
-  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : (isGiraffe ? bodyY + bodyH/2 + 0.40 : 2.0)));
+  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : (isGiraffe ? bodyY + bodyH/2 + 0.16 : 2.0)));
   if(!isKomodo && !isGiraffe){
     const headColor = isPanther ? 0x0D0D0D : (isGoat ? 0xC8A46E : 0xFF8C00);
     const headGeo = new THREE.SphereGeometry(0.42,10,8);
@@ -1688,18 +1688,7 @@ function makePlayerMesh(pd, teamColor, team){
     // Neck — three tapered segments (tall, signature giraffe look)
     const neckMat = new THREE.MeshLambertMaterial({color:TAN});
     const neckSpMat = new THREE.MeshLambertMaterial({color:SPOT});
-    const neckSegs = [
-      {rTop:0.14, rBot:0.19, h:0.26, y:gBodyTop+0.13, z:0.02},
-    ];
-    neckSegs.forEach(s=>{
-      const seg = new THREE.Mesh(new THREE.CylinderGeometry(s.rTop,s.rBot,s.h,8),neckMat);
-      seg.position.set(0,s.y,s.z); seg.castShadow=true; group.add(seg);
-    });
-    // Neck spots
-    [{y:gBodyTop+0.13,x:0.08}].forEach(s=>{
-      const sp = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.14,0.12),neckSpMat);
-      sp.position.set(s.x,s.y,0.15); group.add(sp);
-    });
+    // No neck — head sits directly on body
 
     // Head — slightly elongated box (giraffe head is long and flat)
     const headMat = new THREE.MeshLambertMaterial({color:TAN});
