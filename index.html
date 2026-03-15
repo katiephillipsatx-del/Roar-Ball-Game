@@ -1284,10 +1284,12 @@ function makePlayerMesh(pd, teamColor, team){
     numCtx.fillStyle='#1A7A1A';
     numCtx.fillRect(0,0,128,128);
     numCtx.fillStyle='#FF6B00';
-    numCtx.font='bold 90px Arial Black';
+    numCtx.font='bold 28px Arial Black';
     numCtx.textAlign='center';
     numCtx.textBaseline='middle';
-    numCtx.fillText('3',64,68);
+    numCtx.fillText('THORNS',64,22);
+    numCtx.font='bold 80px Arial Black';
+    numCtx.fillText('3',64,80);
     const numTex = new THREE.CanvasTexture(numCanvas);
     const numGeo = new THREE.PlaneGeometry(0.44,0.52);
     const numMat = new THREE.MeshBasicMaterial({map:numTex,transparent:true});
