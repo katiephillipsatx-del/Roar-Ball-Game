@@ -2658,6 +2658,42 @@ function makePlayerMesh(pd, teamColor, team){
         new THREE.MeshBasicMaterial({color:LAVA_GLOW}));
       lavaSole.position.set(xOff, 0.00, 0.08); group.add(lavaSole);
     });
+
+    // Orange spots — fire salamander markings
+    const spotMat = new THREE.MeshBasicMaterial({color:0xFF6600});
+    [
+      // body front
+      [ 0,     bodyY+0.38,  0.36, 0.11],
+      [ 0.26,  bodyY+0.18,  0.36, 0.09],
+      [-0.26,  bodyY+0.18,  0.36, 0.09],
+      [ 0.30,  bodyY-0.10,  0.36, 0.09],
+      [-0.30,  bodyY-0.10,  0.36, 0.09],
+      [ 0,     bodyY-0.30,  0.36, 0.10],
+      // body back
+      [ 0.20,  bodyY+0.22, -0.36, 0.09],
+      [-0.20,  bodyY+0.22, -0.36, 0.09],
+      [ 0.25,  bodyY-0.15, -0.36, 0.08],
+      [-0.25,  bodyY-0.15, -0.36, 0.08],
+      // head
+      [ 0.18,  hb+0.20,     0.33, 0.07],
+      [-0.18,  hb+0.20,     0.33, 0.07],
+      [ 0,     hb+0.28,     0,    0.08],
+      // arms
+      [-0.72,  bodyY+0.18,  0.14, 0.07],
+      [ 0.72,  bodyY+0.18,  0.14, 0.07],
+      [-0.70,  bodyY-0.20,  0.12, 0.06],
+      [ 0.70,  bodyY-0.20,  0.12, 0.06],
+      // legs
+      [-0.22,  legH*0.72,   0.16, 0.07],
+      [ 0.22,  legH*0.72,   0.16, 0.07],
+      [-0.22,  legH*0.35,   0.16, 0.07],
+      [ 0.22,  legH*0.35,   0.16, 0.07],
+    ].forEach(([x,y,z,r])=>{
+      const spot = new THREE.Mesh(new THREE.SphereGeometry(r,6,4),spotMat);
+      spot.scale.z = 0.4;
+      spot.position.set(x,y,z);
+      group.add(spot);
+    });
   }
 
   if(!isPanther && !isGoat && !isKomodo && !isGiraffe && !isOstrich && !isRhino && !isHorse && !isBear && !isGorilla && !isLizard && !isBull && !isFireSalamander){
