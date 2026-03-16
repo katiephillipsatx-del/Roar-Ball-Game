@@ -392,6 +392,7 @@ let _aiInterval=null;
 let bench1Idx=5; // index in team1Players currently on bench
 let bench2Idx=5; // index in team2Players currently on bench
 let subPanelOpen=false;
+let inbounding=false, inbounderTeam=0;
 let _clockInterval=null;
 let _camTarget={x:0,y:16,z:20};
 let _camLookTarget={x:0,y:0,z:-1};
@@ -4961,8 +4962,46 @@ function tipOff(){
   resetPossession(1);
 }
 
+// ── Inbound pass (after a score) ──────────────────────────────────
+// team=1 inbounds from left baseline (x=-14, behind hoop1)
+// team=2 inbounds from right baseline (x=14, behind hoop2)
+function startInbound(team){
+  if(transitioning)return;
+  clearBall();
+  possession=team;
+  shotClock=24;
+  updateShotClockDisplay();
+
+  inbounding=true;
+  inbounderTeam=team;
+
+  const inboundX=team===1?-14:14;
+  const cp=team===1?ctrl1:ctrl2;
+  cp.position.set(inboundX,0,0);
+  cp.vx=0; cp.vz=0;
+  ball3d.position.set(inboundX,1.0,0);
+
+  toast('INBOUND →','#FFD700');
+
+  setTimeout(()=>{
+    if(!gameActive)return;
+    giveBall(cp);
+    // AI-controlled player auto-passes to inbound
+    const isAI=!(team===1||GS.mode==='2player');
+    if(isAI){
+      setTimeout(()=>{
+        if(inbounding&&cp.hasBall){
+          const myTeam=team===1?team1Players:team2Players;
+          passBall(cp,myTeam);
+        }
+      },700);
+    }
+  },400);
+}
+
 function resetPossession(team){
   if(transitioning)return;
+  inbounding=false;
   clearBall();
   ball3d.position.set(0,1.0,0);
   possession=team;
@@ -5056,7 +5095,7 @@ function resolveShot(pNum,chance,pts,scorer){
       else        showScorerLabel(scorer,'TWO POINTER!','#00ee55');
     }
     const next=pNum===1?2:1;
-    setTimeout(()=>resetPossession(next),700);
+    setTimeout(()=>startInbound(next),700);
   } else {
     toast('NO GOOD!','#ff4444');
     setTimeout(()=>bounceMiss(pNum),50);
@@ -5111,9 +5150,11 @@ function rebound(){
 // ── Passing ───────────────────────────────────────────────────────
 function passBall(from,teammates){
   if(!from.hasBall)return;
+  const wasInbound=inbounding&&from===(inbounderTeam===1?ctrl1:ctrl2);
   let best=null,bestD=Infinity;
   teammates.forEach(p=>{
     if(p===from||p.isBench)return;
+    // During inbound, prefer players on the court (not also at baseline)
     const dx=p.position.x-from.position.x;
     const dz=p.position.z-from.position.z;
     const d=Math.sqrt(dx*dx+dz*dz);
@@ -5127,6 +5168,7 @@ function passBall(from,teammates){
   ball3d.flying=true;
   ballFlyTo(sx,sy,sz,tx,ty,tz,1.5,0.25,()=>{
     ball3d.flying=false;
+    if(wasInbound)inbounding=false;
     giveBall(best);
   });
 }
@@ -5216,8 +5258,8 @@ function releaseMeter(pNum){
 function onKeyDown(e){
   if(e.code==='KeyF'){e.preventDefault();toggleSubPanel();return;}
   if(!gameActive||transitioning)return;
-  if(e.code==='Space'){e.preventDefault();if(ctrl1&&ctrl1.hasBall&&!meterState.on)startMeter(1);}
-  if(e.code==='Enter'){e.preventDefault();if(ctrl2&&ctrl2.hasBall&&!meterState.on)startMeter(2);}
+  if(e.code==='Space'){e.preventDefault();if(ctrl1&&ctrl1.hasBall&&!meterState.on&&!inbounding)startMeter(1);}
+  if(e.code==='Enter'){e.preventDefault();if(ctrl2&&ctrl2.hasBall&&!meterState.on&&!inbounding)startMeter(2);}
   if(e.code==='KeyE'){if(ctrl1&&ctrl1.hasBall)passBall(ctrl1,team1Players);}
   if(e.code==='KeyQ'){
     if(ctrl1&&ctrl1.hasBall)passBall(ctrl1,team1Players);
@@ -5380,6 +5422,11 @@ function moveHuman(player, keySet, pNum, dt){
   player.position.z+=player.vz*dt;
   player.position.x=Math.max(-14.5,Math.min(14.5,player.position.x));
   player.position.z=Math.max(-7,Math.min(7,player.position.z));
+  // Inbounder stays behind the baseline until the pass is made
+  if(inbounding&&player===(inbounderTeam===1?ctrl1:ctrl2)){
+    if(inbounderTeam===1) player.position.x=Math.min(-13.5,player.position.x);
+    else                  player.position.x=Math.max(13.5,player.position.x);
+  }
 
   // Walk animation
   const spd=Math.sqrt(player.vx*player.vx+player.vz*player.vz);
