@@ -3950,8 +3950,11 @@ function releaseMeter(pNum){
   const base=shooter.pd.sht/10;
   const _hp=pNum===1?hoop2pos:hoop1pos;
   const _shotDist=Math.sqrt(Math.pow(_hp.x-shooter.position.x,2)+Math.pow(_hp.z-shooter.position.z,2));
-  const _willInsideArc=shooter.pd.name==='Will Harris'&&_shotDist<=THREE_PT;
-  const chance=_willInsideArc?1.0:inGreen?Math.min(base*1.35,0.97):base*(power/100)*0.75;
+  const _isWill=shooter.pd.name==='Will Harris';
+  const _willInsideArc=_isWill&&_shotDist<=THREE_PT;
+  const _willTopKey=_isWill&&Math.abs(_shotDist-THREE_PT)<1.2&&Math.abs(shooter.position.z)<2;
+  const _willHalfCourt=_isWill&&Math.abs(shooter.position.x)<3;
+  const chance=(_willInsideArc||_willTopKey||_willHalfCourt)?1.0:inGreen?Math.min(base*1.35,0.97):base*(power/100)*0.75;
   const timing=inGreen?'PERFECT RELEASE 🔥':power>=50?(power<65?'EARLY':'LATE'):'WAY EARLY';
   const col=inGreen?'#00ff55':power>=50?'#ffbb00':'#ff3300';
   toast(timing,col);
