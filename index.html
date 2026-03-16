@@ -216,7 +216,7 @@ const TEAMS = [
     color:0x1E1B4B, textColor:'#818CF8', hex:'#1E1B4B',
     floorColor:0x0B101E, lineColor:0x44AACC,
     players:[
-      {name:'Kouyate', animal:'Alligator', emoji:'🐊', spd:5,sht:7,drb:6,def:9,str:10},
+      {name:'Kouyate', animal:'Alligator', emoji:'🐊', spd:5,sht:7,drb:6,def:9,str:10, ht:"8'9\""},
       {name:'Rosette', animal:'Bull',      emoji:'🐂', spd:6,sht:7,drb:6,def:8,str:10},
       {name:'Daskas',  animal:'Gorilla',   emoji:'🦍', spd:6,sht:8,drb:7,def:8,str:10},
       {name:'Chase',   animal:'Lion',      emoji:'🦁', spd:8,sht:8,drb:8,def:8,str:8},
@@ -2925,6 +2925,10 @@ function makePlayerMesh(pd, teamColor, team){
   // Cinder is 9'5" — scale = 113in / 78in ≈ 1.449
   if(pd.name==='Cinder'){
     group.scale.setScalar(113/78);
+  }
+  // Kouyate is 8'9" — scale = 105in / 78in ≈ 1.346
+  if(pd.name==='Kouyate'){
+    group.scale.setScalar(105/78);
   }
 
   return group;
