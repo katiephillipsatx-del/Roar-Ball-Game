@@ -4377,8 +4377,76 @@ let ballFly={active:false,t:0,dur:1,sx:0,sy:0,sz:0,tx:0,ty:0,tz:0,arcH:4,onDone:
 
 function spawnBall(){
   if(ball3d)scene.remove(ball3d);
-  const geo=new THREE.SphereGeometry(BALL_R,12,10);
-  const mat=new THREE.MeshLambertMaterial({color:0xFF6600,emissive:0x221100});
+
+  // ── Lattice basketball texture (white base + red perforated panels) ──
+  const W=512, H=256;
+  const bc=document.createElement('canvas');
+  bc.width=W; bc.height=H;
+  const bx=bc.getContext('2d');
+
+  // White base
+  bx.fillStyle='#F0EEEC';
+  bx.fillRect(0,0,W,H);
+
+  // Fill red panels (everything, then we cut out seams + holes)
+  bx.fillStyle='#C8101C';
+  bx.fillRect(0,0,W,H);
+
+  // Helper: draw seam band (thick = white gap, thin = black line)
+  const seamAmp = W/11;
+  const drawSeam=(cx,color,lw)=>{
+    bx.strokeStyle=color; bx.lineWidth=lw; bx.lineCap='round';
+    for(let tile=-1;tile<=1;tile++){
+      bx.beginPath();
+      for(let y=0;y<=H;y++){
+        const x=cx+tile*W+seamAmp*Math.sin(y*Math.PI*2/H);
+        if(y===0) bx.moveTo(x,y); else bx.lineTo(x,y);
+      }
+      bx.stroke();
+    }
+  };
+
+  // White seam bands first (carve out red)
+  bx.strokeStyle='#F0EEEC'; bx.lineWidth=20; bx.lineCap='round';
+  bx.beginPath(); bx.moveTo(0,H/2); bx.lineTo(W,H/2); bx.stroke(); // equator
+  drawSeam(W/4,  '#F0EEEC', 20);
+  drawSeam(3*W/4,'#F0EEEC', 20);
+  // left/right edge vertical seam
+  bx.fillStyle='#F0EEEC';
+  bx.fillRect(0,0,10,H); bx.fillRect(W-10,0,10,H);
+
+  // Oval holes punched through red panels
+  bx.fillStyle='#F0EEEC';
+  const cols=13, rows=7;
+  const hW=24, hH=15;
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const xShift=(r%2===0)?0:W/(cols*2);
+      const cx2=(c*W/cols + W/(cols*2) + xShift) % W;
+      const cy2=r*H/rows + H/(rows*2);
+      // skip holes near seam bands
+      if(Math.abs(cy2-H/2)<16) continue;
+      // skip holes near S-curve seams (approximate)
+      const seamX1=(W/4  + seamAmp*Math.sin(cy2*Math.PI*2/H)+W)%W;
+      const seamX2=(3*W/4+ seamAmp*Math.sin(cy2*Math.PI*2/H)+W)%W;
+      const dx1=Math.min(Math.abs(cx2-seamX1), W-Math.abs(cx2-seamX1));
+      const dx2=Math.min(Math.abs(cx2-seamX2), W-Math.abs(cx2-seamX2));
+      if(dx1<24||dx2<24) continue;
+      bx.beginPath();
+      bx.ellipse(cx2, cy2, hW/2, hH/2, Math.PI/10, 0, Math.PI*2);
+      bx.fill();
+    }
+  }
+
+  // Black seam lines on top
+  bx.strokeStyle='#140A06'; bx.lineWidth=5; bx.lineCap='round';
+  bx.beginPath(); bx.moveTo(0,H/2); bx.lineTo(W,H/2); bx.stroke();
+  drawSeam(W/4,  '#140A06', 5);
+  drawSeam(3*W/4,'#140A06', 5);
+
+  const ballTex=new THREE.CanvasTexture(bc);
+  const geo=new THREE.SphereGeometry(BALL_R,28,22);
+  const mat=new THREE.MeshLambertMaterial({map:ballTex});
   ballMesh=new THREE.Mesh(geo,mat);
   ball3d=new THREE.Group();
   ball3d.add(ballMesh);
@@ -4387,7 +4455,6 @@ function spawnBall(){
   ball3d.flying=false;
   scene.add(ball3d);
 
-  // Reset fly state
   ballFly={active:false,t:0,dur:1,sx:0,sy:0,sz:0,tx:0,ty:0,tz:0,arcH:4,onDone:null};
 }
 
