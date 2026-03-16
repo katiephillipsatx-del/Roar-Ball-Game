@@ -2896,20 +2896,6 @@ function makePlayerMesh(pd, teamColor, team){
     const snoutMat = new THREE.MeshLambertMaterial({color:WHITE_SOFT});
     const snout = new THREE.Mesh(new THREE.BoxGeometry(0.26,0.18,0.22),snoutMat);
     snout.position.set(0, hb-0.08, 0.38); group.add(snout);
-    // Open happy mouth
-    const mouthMat = new THREE.MeshLambertMaterial({color:0xC03050});
-    const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.18,0.08,0.10),mouthMat);
-    mouth.position.set(0, hb-0.16, 0.42); group.add(mouth);
-    // Tongue
-    const tongueMat = new THREE.MeshLambertMaterial({color:0xE04060});
-    const tongue = new THREE.Mesh(new THREE.BoxGeometry(0.10,0.05,0.08),tongueMat);
-    tongue.position.set(0, hb-0.19, 0.44); group.add(tongue);
-    // Small white teeth
-    const toothMat = new THREE.MeshLambertMaterial({color:0xF8F8F0});
-    [-0.06,0.06].forEach(xOff=>{
-      const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.05,0.06,0.05),toothMat);
-      tooth.position.set(xOff, hb-0.13, 0.44); group.add(tooth);
-    });
 
     // Black nose
     const noseMat = new THREE.MeshLambertMaterial({color:0x0A0A0C});
