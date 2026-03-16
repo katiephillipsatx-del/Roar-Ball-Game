@@ -2789,13 +2789,6 @@ function makePlayerMesh(pd, teamColor, team){
     const nose2 = new THREE.Mesh(new THREE.SphereGeometry(0.052,7,5),noseMat2);
     nose2.scale.set(1.3,0.75,0.90); nose2.position.set(0, hb-0.01, 0.44); group.add(nose2);
 
-    // Whiskers — thin white lines as flat planes
-    const whiskMat = new THREE.MeshBasicMaterial({color:0xF8F8F0,side:THREE.DoubleSide});
-    [[-0.32,hb-0.07,0.38,0.22,0.02,0.20],[ 0.32,hb-0.07,0.38,0.22,0.02,0.20],
-     [-0.32,hb-0.12,0.37,0.20,0.02,0.20],[ 0.32,hb-0.12,0.37,0.20,0.02,0.20]].forEach(([wx,wy,wz,ww,wh,wd])=>{
-      const w = new THREE.Mesh(new THREE.BoxGeometry(ww,wh,wd),whiskMat);
-      w.position.set(wx,wy,wz); group.add(w);
-    });
   }
   // ── LIZARD (Lary) ───────────────────────────────────────────────
   if(isLizard){
