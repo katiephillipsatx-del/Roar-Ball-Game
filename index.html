@@ -2269,24 +2269,25 @@ function makePlayerMesh(pd, teamColor, team){
       if(side===-1) group.armL=upper; else group.armR=upper;
     });
 
-    // Mane — large dark sphere behind head
+    // Mane — flattened dark sphere pushed behind head so face stays visible
     const maneMat = new THREE.MeshLambertMaterial({color:FUR_DARK});
-    const mane = new THREE.Mesh(new THREE.SphereGeometry(0.62,10,8),maneMat);
-    mane.scale.set(1.0,1.1,0.92);
-    mane.position.set(0, hb-0.10, -0.04);
+    const mane = new THREE.Mesh(new THREE.SphereGeometry(0.64,10,8),maneMat);
+    mane.scale.set(1.05,1.15,0.60); // flat in Z so it doesn't cover the face
+    mane.position.set(0, hb-0.08, -0.18);
     group.add(mane);
 
-    // Dreadlock strands hanging from mane
+    // Dreadlock strands — sides and back only, not in front of face
     const dreadMat = new THREE.MeshLambertMaterial({color:0x1E1008});
+    // [dx, dz, len] — dz negative = behind head
     const dreadData = [
-      [-0.30, 0.26, 0.46], [-0.50, 0.06, 0.46], [-0.46,-0.22, 0.46],
-      [-0.26,-0.38, 0.46], [ 0.00,-0.44, 0.46], [ 0.26,-0.38, 0.46],
-      [ 0.46,-0.22, 0.46], [ 0.50, 0.06, 0.46], [ 0.30, 0.26, 0.46],
-      [ 0.00, 0.40, 0.42], [-0.16,-0.42, 0.42], [ 0.16,-0.42, 0.42],
+      [-0.54, -0.05, 0.50], [-0.50, -0.28, 0.50], [-0.36, -0.46, 0.50],
+      [-0.16, -0.54, 0.48], [ 0.00, -0.56, 0.48], [ 0.16, -0.54, 0.48],
+      [ 0.36, -0.46, 0.50], [ 0.50, -0.28, 0.50], [ 0.54, -0.05, 0.50],
+      [-0.30, -0.52, 0.44], [ 0.30, -0.52, 0.44],
     ];
     dreadData.forEach(([dx, dz, len])=>{
       const d = new THREE.Mesh(new THREE.CylinderGeometry(0.065,0.04,len,5),dreadMat);
-      d.position.set(dx, hb-0.65-len/2, dz);
+      d.position.set(dx, hb-0.62-len/2, dz);
       group.add(d);
     });
 
