@@ -2677,22 +2677,22 @@ function makePlayerMesh(pd, teamColor, team){
     const armGreyMat = new THREE.MeshLambertMaterial({color:FUR_GREY});
     const spotMat   = new THREE.MeshLambertMaterial({color:SPOT});
     [-1,1].forEach(side=>{
-      const upper = new THREE.Mesh(new THREE.BoxGeometry(0.28,0.55,0.26),armFurMat);
-      upper.position.set(side*0.60, bodyY+0.105, 0);
+      const upper = new THREE.Mesh(new THREE.BoxGeometry(0.28,0.42,0.26),armFurMat);
+      upper.position.set(side*0.60, bodyY+0.17, 0);
       upper.castShadow=true; group.add(upper);
-      [[side*0.60, bodyY+0.305, 0.11],[side*0.60, bodyY+0.105, -0.10],[side*0.60, bodyY-0.095, 0.12]].forEach(([sx,sy,sz])=>{
+      [[side*0.60, bodyY+0.37, 0.11],[side*0.60, bodyY+0.17, -0.10],[side*0.60, bodyY-0.03, 0.12]].forEach(([sx,sy,sz])=>{
         const sp = new THREE.Mesh(new THREE.SphereGeometry(0.072,5,4),spotMat);
         sp.scale.set(1.1,0.55,0.75); sp.position.set(sx,sy,sz); group.add(sp);
       });
-      const fore = new THREE.Mesh(new THREE.BoxGeometry(0.24,0.46,0.22),armFurMat);
-      fore.position.set(side*0.58, bodyY-0.40, 0.04);
+      const fore = new THREE.Mesh(new THREE.BoxGeometry(0.24,0.35,0.22),armFurMat);
+      fore.position.set(side*0.58, bodyY-0.215, 0.04);
       fore.castShadow=true; group.add(fore);
-      [[side*0.58, bodyY-0.26, 0.12],[side*0.58, bodyY-0.48, -0.08]].forEach(([sx,sy,sz])=>{
+      [[side*0.58, bodyY-0.075, 0.12],[side*0.58, bodyY-0.295, -0.08]].forEach(([sx,sy,sz])=>{
         const sp = new THREE.Mesh(new THREE.SphereGeometry(0.060,5,4),spotMat);
         sp.scale.set(1.0,0.50,0.70); sp.position.set(sx,sy,sz); group.add(sp);
       });
       const paw = new THREE.Mesh(new THREE.BoxGeometry(0.26,0.20,0.30),armGreyMat);
-      paw.position.set(side*0.56, bodyY-0.73, 0.06);
+      paw.position.set(side*0.56, bodyY-0.49, 0.06);
       group.add(paw);
       if(side===-1) group.armL=upper; else group.armR=upper;
     });
