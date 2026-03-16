@@ -3732,7 +3732,8 @@ function shootBall(player, pNum, chance){
   if(dist<DUNK_DIST&&player.pd.name!=='Will Harris'){dunkBall(player,pNum);return;}
   const is3 = dist>THREE_PT;
   const pts  = is3?3:2;
-  const finalChance = Math.max(chance-dist/40,0.08);
+  const rawChance = Math.max(chance-dist/40,0.08);
+  const finalChance = (!is3 && player.pd.sht>=10) ? 1.0 : rawChance;
 
   const sx=player.position.x,sy=1.5,sz=player.position.z;
   const tx=tpos.x,ty=RIM_Y,tz=tpos.z;
