@@ -2737,6 +2737,10 @@ function makePlayerMesh(pd, teamColor, team){
   if(pd.name==='Mane Attraction'){
     group.scale.setScalar(1.538);
   }
+  // Cinder is 9'5" — scale = 113in / 78in ≈ 1.449
+  if(pd.name==='Cinder'){
+    group.scale.setScalar(113/78);
+  }
 
   return group;
 }
