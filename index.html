@@ -3724,6 +3724,14 @@ function makePlayerMesh(pd, teamColor, team){
   if(pd.name==='Viper'){
     group.scale.setScalar(120/78);
   }
+  // Propp is 10'0" — scale = 120in / 78in ≈ 1.538
+  if(pd.name==='Propp'){
+    group.scale.setScalar(120/78);
+  }
+  // Spots is 10'0" — scale = 120in / 78in ≈ 1.538
+  if(pd.name==='Spots'){
+    group.scale.setScalar(120/78);
+  }
 
   return group;
 }
