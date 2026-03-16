@@ -4707,15 +4707,9 @@ function update(dt){
     const bounce=Math.abs(Math.sin(dribT*Math.PI));
     const dribY=0.28+bounce*0.9;
     ballMesh.rotation.x+=dt*6;
-    const isSideDribbler = h.pd && (h.pd.name==='Propp' || h.pd.name==='Spots');
-    if(isSideDribbler){
-      // Dribble to the right side of the body
-      ball3d.position.set(h.position.x+0.55, dribY, h.position.z+0.1);
-      if(h.armR){ h.armR.rotation.x = -0.1+bounce*0.25; h.armR.rotation.z = -0.4-bounce*0.35; }
-    } else {
-      ball3d.position.set(h.position.x,dribY,h.position.z+0.4);
-      if(h.armR){ h.armR.rotation.x = -0.2+bounce*0.5; h.armR.rotation.z = 0; }
-    }
+    // Dribble to the right side of the body
+    ball3d.position.set(h.position.x+0.55, dribY, h.position.z+0.1);
+    if(h.armR){ h.armR.rotation.x = -0.1+bounce*0.25; h.armR.rotation.z = -0.4-bounce*0.35; }
   }
 
   // Shoot animation
