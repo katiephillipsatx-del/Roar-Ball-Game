@@ -653,7 +653,7 @@ function buildHoop(x){
 // ================================================================
 
 const STAND_COLORS=[0x1A2B0A,0x1A0500,0x050518,0x0A1828,0x1A1000];
-const STAND_CFG=[[0,-10.5,28,4,5],[0,10.5,28,4,5],[-17,0,4,4,15],[17,0,4,4,15]];
+const STAND_CFG=[[0,-13,28,4,5],[0,13,28,4,5],[-17,0,4,4,15],[17,0,4,4,15]];
 
 function _addSO(obj){scene.add(obj);_stadiumObjs.push(obj);return obj;}
 
@@ -1061,8 +1061,8 @@ function buildCrowd(teamIdx){
   // Front/back stands (z=±10.5): 3 stepped rows above stand top
   for(let row=0;row<3;row++){
     const rowY=STAND_TOP+row*0.68;
-    const rowZpos= 8.6+row*0.8;
-    const rowZneg=-(8.6+row*0.8);
+    const rowZpos= 11.0+row*0.8;
+    const rowZneg=-(11.0+row*0.8);
     for(let i=0;i<20;i++){
       const x=-11.4+i*1.1+(Math.random()-0.5)*0.2;
       const col=jerseyColors[Math.floor(Math.random()*jerseyColors.length)];
