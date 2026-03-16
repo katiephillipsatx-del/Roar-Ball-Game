@@ -3027,6 +3027,10 @@ function makePlayerMesh(pd, teamColor, team){
   group._ringTween=null;
   group.spawnX=0; group.spawnZ=0;
 
+  // Chase is 8'11" — scale up relative to 6'6" reference
+  if(pd.name==='Chase'){
+    group.scale.setScalar(107/78); // 107in / 78in ≈ 1.372
+  }
   // Will Harris is 5'7" — scale down relative to 6'6" reference
   if(pd.name==='Will Harris'){
     group.scale.setScalar(67/78); // 67in / 78in ≈ 0.859
