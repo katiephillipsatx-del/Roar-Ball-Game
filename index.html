@@ -4706,10 +4706,16 @@ function update(dt){
     const dribT=performance.now()/1000*3.5;
     const bounce=Math.abs(Math.sin(dribT*Math.PI));
     const dribY=0.28+bounce*0.9;
-    ball3d.position.set(h.position.x,dribY,h.position.z+0.4);
     ballMesh.rotation.x+=dt*6;
-    // Dribble arm follows ball
-    if(h.armR) h.armR.rotation.x = -0.2+bounce*0.5;
+    const isSideDribbler = h.pd && (h.pd.name==='Propp' || h.pd.name==='Spots');
+    if(isSideDribbler){
+      // Dribble to the right side of the body
+      ball3d.position.set(h.position.x+0.55, dribY, h.position.z+0.1);
+      if(h.armR){ h.armR.rotation.x = -0.1+bounce*0.25; h.armR.rotation.z = -0.4-bounce*0.35; }
+    } else {
+      ball3d.position.set(h.position.x,dribY,h.position.z+0.4);
+      if(h.armR){ h.armR.rotation.x = -0.2+bounce*0.5; h.armR.rotation.z = 0; }
+    }
   }
 
   // Shoot animation
@@ -4724,7 +4730,7 @@ function update(dt){
     if(p.body) p.body.rotation.x=f<0.5 ? -(f*2)*0.25 : -((1-f)*2)*0.25;
     if(f>=1){
       p.shootAnim.active=false;
-      if(p.armR) p.armR.rotation.x=0;
+      if(p.armR){ p.armR.rotation.x=0; p.armR.rotation.z=0; }
       if(p.body) p.body.rotation.x=0;
     }
   });
@@ -4758,7 +4764,7 @@ function update(dt){
     if(f>=1){
       da.active=false;
       p.position.y=0;
-      if(p.armR) p.armR.rotation.x=0;
+      if(p.armR){ p.armR.rotation.x=0; p.armR.rotation.z=0; }
       if(p.armL) p.armL.rotation.x=0;
     }
   });
