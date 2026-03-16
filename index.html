@@ -2892,11 +2892,6 @@ function makePlayerMesh(pd, teamColor, team){
       earIn.position.set(xOff, hb+0.52, 0.04); group.add(earIn);
     });
 
-    // Wolf muzzle
-    const snoutMat = new THREE.MeshLambertMaterial({color:WHITE_SOFT});
-    const snout = new THREE.Mesh(new THREE.BoxGeometry(0.26,0.18,0.22),snoutMat);
-    snout.position.set(0, hb-0.08, 0.38); group.add(snout);
-
     // Black nose
     const noseMat = new THREE.MeshLambertMaterial({color:0x0A0A0C});
     const nose = new THREE.Mesh(new THREE.SphereGeometry(0.052,7,5),noseMat);
