@@ -1179,6 +1179,7 @@ function makePlayerMesh(pd, teamColor, team){
   const isRipper          = pd && pd.name   === 'Ripper';
   const isFireSalamander  = pd && pd.animal === 'Fire Salamander';
   const isAlligator       = pd && pd.animal === 'Alligator';
+  const isBlackMamba      = pd && pd.animal === 'Black Mamba';
 
   // Ground shadow
   const shadowGeo = new THREE.CircleGeometry(0.65,32);
@@ -1207,12 +1208,12 @@ function makePlayerMesh(pd, teamColor, team){
   const legL = new THREE.Mesh(legGeo,legMat);
   legL.position.set(-0.22, legH/2, 0);
   legL.castShadow=true;
-  group.add(legL);
+  if(!isBlackMamba)group.add(legL);
   const legR = new THREE.Mesh(legGeo,legMat);
   legR.position.set(0.22, legH/2, 0);
   legR.castShadow=true;
-  group.add(legR);
-  group.legL=legL; group.legR=legR;
+  if(!isBlackMamba)group.add(legR);
+  if(!isBlackMamba){group.legL=legL; group.legR=legR;}
 
   // Goat shoes — white sneakers
   if(isGoat){
@@ -1255,8 +1256,8 @@ function makePlayerMesh(pd, teamColor, team){
   const body = new THREE.Mesh(bodyGeo,bodyMat);
   body.position.set(0, bodyY, 0);
   body.castShadow=true;
-  group.add(body);
-  group.body=body;
+  if(!isBlackMamba)group.add(body);
+  if(!isBlackMamba)group.body=body;
 
   // Panther: green jersey number 3 + black arms
   if(isPanther){
@@ -1334,8 +1335,8 @@ function makePlayerMesh(pd, teamColor, team){
   }
 
   // Head
-  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : (isGiraffe ? bodyY + bodyH/2 + 1.34 : (isOstrich ? bodyY + bodyH/2 + 1.06 : (isRhino ? bodyY + bodyH/2 + 0.63 : (isHorse ? bodyY + bodyH/2 + 0.48 : (isBear ? bodyY + bodyH/2 + 0.54 : (isGorilla ? bodyY + bodyH/2 + 0.38 : (isLizard ? bodyY + bodyH/2 + 0.44 : (isBull ? bodyY + bodyH/2 + 0.40 : (isFireSalamander ? bodyY + bodyH/2 + 0.42 : (isAlligator ? bodyY + bodyH/2 + 0.44 : 2.0))))))))))));
-  if(!isKomodo && !isGiraffe && !isHorse && !isLizard && !isFireSalamander && !isAlligator){
+  const headBase = isPanther ? bodyY + bodyH/2 + 0.50 : (isGoat ? bodyY + bodyH/2 + 0.12 + 0.38 : (isKomodo ? bodyY + bodyH/2 + 0.45 : (isGiraffe ? bodyY + bodyH/2 + 1.34 : (isOstrich ? bodyY + bodyH/2 + 1.06 : (isRhino ? bodyY + bodyH/2 + 0.63 : (isHorse ? bodyY + bodyH/2 + 0.48 : (isBear ? bodyY + bodyH/2 + 0.54 : (isGorilla ? bodyY + bodyH/2 + 0.38 : (isLizard ? bodyY + bodyH/2 + 0.44 : (isBull ? bodyY + bodyH/2 + 0.40 : (isFireSalamander ? bodyY + bodyH/2 + 0.42 : (isAlligator ? bodyY + bodyH/2 + 0.44 : (isBlackMamba ? 3.1 : 2.0)))))))))))));
+  if(!isKomodo && !isGiraffe && !isHorse && !isLizard && !isFireSalamander && !isAlligator && !isBlackMamba){
     const headColor = isPanther ? 0x0D0D0D : (isGoat ? 0xC8A46E : (isBear ? 0x7A4A28 : (isGorilla ? 0x2E1E1E : (isRosette ? 0x2E0A50 : (isBull ? 0x1A1210 : (isChase ? 0xC8982A : (isRipper ? 0xC4922A : 0xFF8C00)))))));
     const headGeo = new THREE.SphereGeometry(isGorilla ? 0.54 : (isBear ? 0.50 : (isBull ? 0.50 : 0.42)),10,8);
     const headMat = new THREE.MeshLambertMaterial({color:headColor});
@@ -3002,6 +3003,165 @@ function makePlayerMesh(pd, teamColor, team){
     });
   }
 
+  // ── BLACK MAMBA (Viper) ──────────────────────────────────────────
+  if(isBlackMamba){
+    const MAMBA    = 0x07080A; // jet-black scales
+    const SHINE    = 0x0C0E16; // blue-black sheen
+    const BELLY    = 0x151210; // slightly lighter underscales
+    const MOUTH_C  = 0xAA3848; // dark pink mouth interior
+    const FANG_C   = 0xF2F0E8; // ivory fang colour
+    const TONGUE_C = 0xCC1020; // bright red forked tongue
+    const hb       = headBase; // 3.1
+
+    const skinMat    = new THREE.MeshLambertMaterial({color:MAMBA});
+    const shineMat2  = new THREE.MeshLambertMaterial({color:SHINE});
+    const bellyMat2  = new THREE.MeshLambertMaterial({color:BELLY});
+    const mouthMat2  = new THREE.MeshBasicMaterial({color:MOUTH_C});
+    const fangMat    = new THREE.MeshLambertMaterial({color:FANG_C});
+    const tongueMat  = new THREE.MeshBasicMaterial({color:TONGUE_C});
+
+    // ── SHADOWS jersey canvas (black + purple trim, "SHADOW") ──
+    const jCv=document.createElement('canvas'); jCv.width=128; jCv.height=128;
+    const jCx=jCv.getContext('2d');
+    jCx.fillStyle='#0D0D0D'; jCx.fillRect(0,0,128,128);
+    // V-neck
+    jCx.fillStyle='#818CF8';
+    jCx.beginPath(); jCx.moveTo(38,0); jCx.lineTo(64,26); jCx.lineTo(90,0); jCx.closePath(); jCx.fill();
+    // side trim
+    jCx.fillStyle='#818CF8'; jCx.fillRect(0,0,7,128); jCx.fillRect(121,0,7,128);
+    jCx.fillStyle='#4B0082'; jCx.fillRect(7,0,4,128); jCx.fillRect(117,0,4,128);
+    // team name
+    jCx.fillStyle='#818CF8'; jCx.font='bold 19px Arial Black';
+    jCx.textAlign='center'; jCx.textBaseline='middle'; jCx.fillText('SHADOW',64,36);
+    // number 10
+    jCx.fillStyle='#FFFFFF'; jCx.font='bold 58px Arial Black'; jCx.fillText('10',64,86);
+    const jTex=new THREE.CanvasTexture(jCv);
+    const jPlane2=new THREE.Mesh(new THREE.PlaneGeometry(0.78,0.88),
+      new THREE.MeshBasicMaterial({map:jTex,transparent:true}));
+    jPlane2.position.set(-0.04,2.10,0.21); group.add(jPlane2);
+
+    // ── COILED BODY BASE ──
+    const coilOuter=new THREE.Mesh(new THREE.TorusGeometry(0.90,0.24,8,36),skinMat);
+    coilOuter.rotation.x=Math.PI/2; coilOuter.position.set(0,0.24,0);
+    coilOuter.castShadow=true; group.add(coilOuter);
+
+    const coilMid=new THREE.Mesh(new THREE.TorusGeometry(0.56,0.21,8,30),skinMat);
+    coilMid.rotation.x=Math.PI/2; coilMid.position.set(0,0.42,0);
+    coilMid.castShadow=true; group.add(coilMid);
+
+    const coilInner=new THREE.Mesh(new THREE.TorusGeometry(0.30,0.18,8,22),shineMat2);
+    coilInner.rotation.x=Math.PI/2; coilInner.position.set(0,0.56,0);
+    coilInner.castShadow=true; group.add(coilInner);
+
+    // Use coils as walk-animation targets (they rock slightly — looks like shifting weight)
+    group.legL=coilOuter; group.legR=coilMid;
+
+    // ── S-CURVE BODY RISING ──
+    [
+      {y:0.82, x:0,     z:0,     rT:0.20,rB:0.23,h:0.52},
+      {y:1.26, x:0.04,  z:-0.03, rT:0.19,rB:0.20,h:0.50},
+      {y:1.68, x:-0.02, z:0.06,  rT:0.19,rB:0.19,h:0.50},
+      {y:2.10, x:-0.06, z:0.08,  rT:0.20,rB:0.19,h:0.50},
+      {y:2.48, x:-0.01, z:0.02,  rT:0.16,rB:0.20,h:0.44},
+    ].forEach(s=>{
+      const seg=new THREE.Mesh(new THREE.CylinderGeometry(s.rT,s.rB,s.h,12),skinMat);
+      seg.position.set(s.x,s.y,s.z); seg.castShadow=true; group.add(seg);
+    });
+
+    // Belly underscale strips (lighter band along front of body)
+    for(let i=0;i<5;i++){
+      const strip=new THREE.Mesh(new THREE.CylinderGeometry(0.10,0.12,0.26,8),bellyMat2);
+      strip.position.set(-0.02, 0.88+i*0.38, 0.11); group.add(strip);
+    }
+
+    // Scale texture bumps on body sides
+    for(let i=0;i<10;i++){
+      const bx=(i%2===0)?-0.13:0.13;
+      const bump=new THREE.Mesh(new THREE.SphereGeometry(0.034,5,4),shineMat2);
+      bump.position.set(bx, 0.84+i*0.19, 0.14); group.add(bump);
+    }
+
+    // ── COBRA HOOD FLARE ──
+    // Left flare panel
+    const hoodL=new THREE.Mesh(new THREE.BoxGeometry(0.48,0.54,0.09),shineMat2);
+    hoodL.rotation.z=0.38; hoodL.position.set(-0.44,2.66,0); group.add(hoodL);
+    // Right flare panel
+    const hoodR=new THREE.Mesh(new THREE.BoxGeometry(0.48,0.54,0.09),shineMat2);
+    hoodR.rotation.z=-0.38; hoodR.position.set(0.44,2.66,0); group.add(hoodR);
+    // Centre hood spine
+    const hoodSpine=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.20,0.56,10),skinMat);
+    hoodSpine.position.set(0,2.64,0); group.add(hoodSpine);
+    // Hood eye-spot marking (darker ellipse)
+    const spot=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.20,0.08),shineMat2);
+    spot.position.set(0,2.78,0.10); group.add(spot);
+
+    // ── NECK ──
+    const neck2=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.16,0.32,10),skinMat);
+    neck2.position.set(-0.01,2.87,0.02); neck2.castShadow=true; group.add(neck2);
+
+    // ── HEAD — upper jaw / skull ──
+    const skull=new THREE.Mesh(new THREE.BoxGeometry(0.34,0.22,0.58),skinMat);
+    skull.position.set(0,hb+0.04,0.04); skull.castShadow=true; group.add(skull);
+    group.head=skull;
+
+    // Flat snout tip
+    const snout2=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.14,0.26),shineMat2);
+    snout2.position.set(0,hb-0.01,0.38); group.add(snout2);
+
+    // Brow ridges
+    [-0.10,0.10].forEach(xo=>{
+      const brow=new THREE.Mesh(new THREE.BoxGeometry(0.10,0.06,0.28),shineMat2);
+      brow.position.set(xo,hb+0.12,0.08); group.add(brow);
+    });
+
+    // ── LOWER JAW (open ~35°) ──
+    const lowerJaw2=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.13,0.52),shineMat2);
+    lowerJaw2.rotation.x=0.52; lowerJaw2.position.set(0,hb-0.22,0.24); group.add(lowerJaw2);
+
+    // ── MOUTH INTERIOR ──
+    const mouthInt=new THREE.Mesh(new THREE.BoxGeometry(0.26,0.20,0.48),mouthMat2);
+    mouthInt.position.set(0,hb-0.09,0.22); group.add(mouthInt);
+
+    // ── FANGS (two long curved ivory cones) ──
+    [-0.08,0.08].forEach(xo=>{
+      const fang=new THREE.Mesh(new THREE.ConeGeometry(0.026,0.26,5),fangMat);
+      fang.rotation.x=-0.22; fang.position.set(xo,hb-0.08,0.32); group.add(fang);
+    });
+
+    // ── FORKED TONGUE ──
+    const tongBase2=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.020,0.18,6),tongueMat);
+    tongBase2.rotation.x=Math.PI/2+0.18; tongBase2.position.set(0,hb-0.24,0.42); group.add(tongBase2);
+    [-0.07,0.07].forEach((xo,i)=>{
+      const fork=new THREE.Mesh(new THREE.CylinderGeometry(0.009,0.016,0.15,5),tongueMat);
+      fork.rotation.x=Math.PI/2+0.12; fork.rotation.z=xo>0?0.22:-0.22;
+      fork.position.set(xo,hb-0.30,0.54); group.add(fork);
+    });
+
+    // ── EYES — dark slit pupils ──
+    const eyeMat=new THREE.MeshBasicMaterial({color:0x0A160A});
+    const slitMat=new THREE.MeshBasicMaterial({color:0x000000});
+    [-0.13,0.13].forEach(xo=>{
+      const eye=new THREE.Mesh(new THREE.SphereGeometry(0.070,8,8),eyeMat);
+      eye.position.set(xo,hb+0.05,0.16); group.add(eye);
+      const slit=new THREE.Mesh(new THREE.BoxGeometry(0.018,0.058,0.04),slitMat);
+      slit.position.set(xo,hb+0.05,0.22); group.add(slit);
+    });
+
+    // ── SNAKE ARMS (short coil segments for dribble/shoot animation) ──
+    [-1,1].forEach(side=>{
+      const arm=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.11,0.46,8),skinMat);
+      arm.rotation.z=side*(Math.PI/2-0.28);
+      arm.position.set(side*0.40,2.09,0.09);
+      arm.castShadow=true; group.add(arm);
+      // forearm angled forward
+      const fore=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.09,0.38,8),shineMat2);
+      fore.rotation.z=side*(Math.PI/2-0.20); fore.rotation.x=0.30;
+      fore.position.set(side*0.52,1.96,0.18);
+      group.add(fore);
+      if(side===-1){group.armL=arm;}else{group.armR=arm;}
+    });
+  }
+
   // ── ALLIGATOR (Kouyate) ──────────────────────────────────────────
   if(isAlligator){
     const SGREEN  = 0x3A3F38; // dark gray scales
@@ -3150,7 +3310,7 @@ function makePlayerMesh(pd, teamColor, team){
     });
   }
 
-  if(!isPanther && !isGoat && !isKomodo && !isGiraffe && !isOstrich && !isRhino && !isHorse && !isBear && !isGorilla && !isLizard && !isBull && !isFireSalamander && !isAlligator && !isChase && !isRipper){
+  if(!isPanther && !isGoat && !isKomodo && !isGiraffe && !isOstrich && !isRhino && !isHorse && !isBear && !isGorilla && !isLizard && !isBull && !isFireSalamander && !isAlligator && !isChase && !isRipper && !isBlackMamba){
     const armGeo = new THREE.BoxGeometry(0.24,0.72,0.24);
     const armMat = new THREE.MeshLambertMaterial({color:tc});
     const armL = new THREE.Mesh(armGeo,armMat);
@@ -3172,7 +3332,7 @@ function makePlayerMesh(pd, teamColor, team){
   const dotGeo = new THREE.SphereGeometry(0.15,8,6);
   const dotMat = new THREE.MeshBasicMaterial({color:0xFFD700,visible:false});
   const ballDot = new THREE.Mesh(dotGeo,dotMat);
-  ballDot.position.set(0, isPanther ? headBase+0.7 : (isKomodo ? headBase+0.6 : (isGoat ? 3.8 : (isGiraffe ? headBase+0.5 : (isOstrich ? headBase+0.5 : (isRhino ? headBase+0.6 : (isHorse ? headBase+0.6 : (isBear ? headBase+0.65 : (isGorilla ? headBase+0.62 : (isLizard ? headBase+0.58 : (isBull ? headBase+0.62 : (isFireSalamander ? headBase+0.58 : (isAlligator ? headBase+0.58 : (isRipper ? headBase+0.58 : 2.75))))))))))))), 0);
+  ballDot.position.set(0, isPanther ? headBase+0.7 : (isKomodo ? headBase+0.6 : (isGoat ? 3.8 : (isGiraffe ? headBase+0.5 : (isOstrich ? headBase+0.5 : (isRhino ? headBase+0.6 : (isHorse ? headBase+0.6 : (isBear ? headBase+0.65 : (isGorilla ? headBase+0.62 : (isLizard ? headBase+0.58 : (isBull ? headBase+0.62 : (isFireSalamander ? headBase+0.58 : (isAlligator ? headBase+0.58 : (isRipper ? headBase+0.58 : (isBlackMamba ? headBase+0.50 : 2.75)))))))))))))), 0);
   group.add(ballDot);
   group.ballDot=ballDot;
 
