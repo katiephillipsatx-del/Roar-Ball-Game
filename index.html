@@ -4709,7 +4709,6 @@ function update(dt){
     ballMesh.rotation.x+=dt*6;
     // Dribble to the right side of the body
     ball3d.position.set(h.position.x+0.55, dribY, h.position.z+0.1);
-    if(h.armR){ h.armR.rotation.x = -0.1+bounce*0.25; h.armR.rotation.z = -0.4-bounce*0.35; }
   }
 
   // Shoot animation
