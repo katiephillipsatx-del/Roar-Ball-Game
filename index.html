@@ -149,7 +149,7 @@ Broadcast  |  2K  |  Follow  |  Overhead
     </div>
   </div>
   <div id="possession">▶ Team 1 Ball</div>
-  <div id="controls-hint">WASD Move · SPACE Shoot · SHIFT Sprint · E Pass · Q Switch/Pass · C Cam</div>
+  <div id="controls-hint">WASD Move · SPACE Shoot · SHIFT Sprint · E Pass · Q Switch/Pass · C Cam · F Sub</div>
   <div id="meter-wrap">
     <div id="meter-label">SHOOT</div>
     <div id="meter-outer">
@@ -158,6 +158,14 @@ Broadcast  |  2K  |  Follow  |  Overhead
     </div>
   </div>
   <div id="toast-area"></div>
+  <!-- Sub panel -->
+  <div id="sub-panel" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#000000cc;border:2px solid #FFD700;border-radius:10px;padding:18px 24px;min-width:260px;z-index:100;font-family:'Arial Black',sans-serif;color:#fff;">
+    <div id="sub-title" style="font-size:14px;color:#FFD700;margin-bottom:4px;text-align:center;">SUBSTITUTION</div>
+    <div id="sub-bench-info" style="font-size:12px;color:#aaa;margin-bottom:12px;text-align:center;"></div>
+    <div style="font-size:12px;color:#FFD700;margin-bottom:8px;text-align:center;">Who do you want to sub out?</div>
+    <div id="sub-buttons" style="display:flex;flex-direction:column;gap:6px;"></div>
+    <div style="text-align:center;margin-top:10px;font-size:10px;color:#666;">Press F to cancel</div>
+  </div>
   <div id="stadium-label" style="position:absolute;bottom:30px;left:50%;transform:translateX(-50%);font-size:12px;font-family:'Arial Black',sans-serif;color:#FFD700;background:#00000099;padding:4px 18px;border-radius:4px;display:none;letter-spacing:1px;pointer-events:none;"></div>
   <div id="qtr-overlay">
     <div class="qo-title" id="qo-title"></div>
@@ -381,6 +389,9 @@ let timeLeft=QTR_SECS, shotClock=24;
 let meterState={on:false,power:0,pNum:0};
 let _lastTime=0;
 let _aiInterval=null;
+let bench1Idx=5; // index in team1Players currently on bench
+let bench2Idx=5; // index in team2Players currently on bench
+let subPanelOpen=false;
 let _clockInterval=null;
 let _camTarget={x:0,y:16,z:20};
 let _camLookTarget={x:0,y:0,z:-1};
@@ -561,6 +572,42 @@ function buildScene(){
   hoop2pos = new THREE.Vector3( 13, RIM_Y, 0);
   buildHoop(-13);
   buildHoop(13);
+
+  // ── Benches (sideline) ──────────────────────────────────────
+  // Team 1 bench: positive-z sideline, Team 2 bench: negative-z sideline
+  buildBench(0, 8.5, TEAMS[GS.team1].color);  // Team 1
+  buildBench(0,-8.5, TEAMS[GS.team2].color);  // Team 2
+}
+
+function buildBench(cx, cz, teamColor){
+  const woodMat=new THREE.MeshLambertMaterial({color:0x7A4F2D});
+  const cushionMat=new THREE.MeshLambertMaterial({color:teamColor});
+  const legMat=new THREE.MeshLambertMaterial({color:0x555555});
+  const g=new THREE.Group();
+  // Seat plank
+  const seat=new THREE.Mesh(new THREE.BoxGeometry(4.5,0.14,0.46),woodMat);
+  seat.position.set(0,0.4,0);
+  g.add(seat);
+  // Cushion on top
+  const cushion=new THREE.Mesh(new THREE.BoxGeometry(4.3,0.07,0.38),cushionMat);
+  cushion.position.set(0,0.48,0);
+  g.add(cushion);
+  // Back rest
+  const back=new THREE.Mesh(new THREE.BoxGeometry(4.5,0.6,0.1),woodMat);
+  back.position.set(0,0.84,0.18);
+  g.add(back);
+  // Legs x4
+  [-1.8,1.8].forEach(lx=>{
+    [-0.12,0.12].forEach(lz=>{
+      const leg=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.4,0.1),legMat);
+      leg.position.set(lx,0.2,lz);
+      g.add(leg);
+    });
+  });
+  g.position.set(cx,0,cz);
+  // Rotate bench so back faces away from court
+  g.rotation.y = cz>0 ? 0 : Math.PI;
+  scene.add(g);
 }
 
 function buildHoop(x){
@@ -3210,40 +3257,78 @@ function makePlayerMesh(pd, teamColor, team){
 
 // ── Spawn players ────────────────────────────────────────────────
 const SPAWN1=[
-  {x:-5,z:0},{x:-8,z:-3},{x:-8,z:3},{x:-11,z:-2},{x:-11,z:2},{x:-6,z:-5}
+  {x:-5,z:0},{x:-8,z:-3},{x:-8,z:3},{x:-11,z:-2},{x:-11,z:2}
 ];
 const SPAWN2=[
-  {x:5,z:0},{x:8,z:3},{x:8,z:-3},{x:11,z:2},{x:11,z:-2},{x:6,z:5}
+  {x:5,z:0},{x:8,z:3},{x:8,z:-3},{x:11,z:2},{x:11,z:-2}
 ];
+// Bench seat positions (3 spots on each bench)
+const BENCH1_SPOTS=[{x:-1,z:8.5},{x:0,z:8.5},{x:1,z:8.5}];
+const BENCH2_SPOTS=[{x:-1,z:-8.5},{x:0,z:-8.5},{x:1,z:-8.5}];
+
+function setBenchPlayer(p, benchZ){
+  p.isBench=true;
+  p.keys=null;
+  // Sit on bench — rotate to face court (inward)
+  p.position.set(p._benchSpot.x, 0.5, benchZ);
+  p.rotation.y = benchZ>0 ? Math.PI : 0;
+  p.vx=0; p.vz=0;
+  // Hide ring
+  if(p.ringMat){p.ringMat.opacity=0;}
+}
+
+function setOnCourt(p){
+  p.isBench=false;
+  p.position.y=0;
+}
 
 function spawnPlayers(){
   // Remove old
   team1Players.forEach(p=>scene.remove(p));
   team2Players.forEach(p=>scene.remove(p));
   team1Players=[];team2Players=[];
+  bench1Idx=5; bench2Idx=5;
 
   const t1=TEAMS[GS.team1], t2=TEAMS[GS.team2];
 
   t1.players.forEach((pd,i)=>{
     const p=makePlayerMesh(pd,t1.color,1);
-    const sp=SPAWN1[i]||{x:-5+i,z:i-2};
-    p.position.set(sp.x,0,sp.z);
-    p.spawnX=sp.x; p.spawnZ=sp.z;
+    p.isBench=false;
+    if(i<5){
+      const sp=SPAWN1[i];
+      p.position.set(sp.x,0,sp.z);
+      p.spawnX=sp.x; p.spawnZ=sp.z;
+    } else {
+      // 6th player starts on bench
+      p._benchSpot=BENCH1_SPOTS[0];
+      setBenchPlayer(p, 8.5);
+      p.spawnX=p._benchSpot.x; p.spawnZ=8.5;
+    }
     scene.add(p);
     team1Players.push(p);
   });
 
   t2.players.forEach((pd,i)=>{
     const p=makePlayerMesh(pd,t2.color,2);
-    const sp=SPAWN2[i]||{x:5-i,z:i-2};
-    p.position.set(sp.x,0,sp.z);
-    p.spawnX=sp.x; p.spawnZ=sp.z;
+    p.isBench=false;
+    if(i<5){
+      const sp=SPAWN2[i];
+      p.position.set(sp.x,0,sp.z);
+      p.spawnX=sp.x; p.spawnZ=sp.z;
+    } else {
+      p._benchSpot=BENCH2_SPOTS[0];
+      setBenchPlayer(p,-8.5);
+      p.spawnX=p._benchSpot.x; p.spawnZ=-8.5;
+    }
     scene.add(p);
     team2Players.push(p);
   });
 
-  setCtrl1(team1Players[GS.p1idx]||team1Players[0]);
-  ctrl2=team2Players[GS.p2idx]||team2Players[0];
+  // Ensure p1idx / p2idx don't point to bench player
+  const p1idx=GS.p1idx<5?GS.p1idx:0;
+  const p2idx=GS.p2idx<5?GS.p2idx:0;
+  setCtrl1(team1Players[p1idx]);
+  ctrl2=team2Players[p2idx];
   if(GS.mode==='2player')setCtrl2(ctrl2);
 }
 
@@ -3464,6 +3549,7 @@ function bounceMiss(pNum){
 function rebound(){
   let best=null,bestD=Infinity;
   allPlayers().forEach(p=>{
+    if(p.isBench)return;
     const dx=p.position.x-ball3d.position.x;
     const dz=p.position.z-ball3d.position.z;
     const d=Math.sqrt(dx*dx+dz*dz);
@@ -3478,7 +3564,7 @@ function passBall(from,teammates){
   if(!from.hasBall)return;
   let best=null,bestD=Infinity;
   teammates.forEach(p=>{
-    if(p===from)return;
+    if(p===from||p.isBench)return;
     const dx=p.position.x-from.position.x;
     const dz=p.position.z-from.position.z;
     const d=Math.sqrt(dx*dx+dz*dz);
@@ -3502,7 +3588,7 @@ function switchDefender(teamNum){
   const ctrl=teamNum===1?ctrl1:ctrl2;
   let best=null,bestD=Infinity;
   team.forEach(p=>{
-    if(p===ctrl||p.hasBall)return;
+    if(p===ctrl||p.hasBall||p.isBench)return;
     const dx=p.position.x-ball3d.position.x;
     const dz=p.position.z-ball3d.position.z;
     const d=Math.sqrt(dx*dx+dz*dz);
@@ -3575,6 +3661,7 @@ function releaseMeter(pNum){
 
 // ── Key handlers ──────────────────────────────────────────────────
 function onKeyDown(e){
+  if(e.code==='KeyF'){e.preventDefault();toggleSubPanel();return;}
   if(!gameActive||transitioning)return;
   if(e.code==='Space'){e.preventDefault();if(ctrl1&&ctrl1.hasBall&&!meterState.on)startMeter(1);}
   if(e.code==='Enter'){e.preventDefault();if(ctrl2&&ctrl2.hasBall&&!meterState.on)startMeter(2);}
@@ -3591,6 +3678,110 @@ function onKeyDown(e){
     GS.camMode=(GS.camMode+1)%CAM_MODES.length;
     document.getElementById('cam-label').textContent='📷 '+CAM_MODES[GS.camMode];
   }
+}
+
+// ── Substitution ─────────────────────────────────────────────────
+function toggleSubPanel(){
+  const panel=document.getElementById('sub-panel');
+  subPanelOpen=!subPanelOpen;
+  if(!subPanelOpen){panel.style.display='none';return;}
+
+  const t1=TEAMS[GS.team1], t2=TEAMS[GS.team2];
+  const benchPlayer1=team1Players[bench1Idx];
+  const benchPlayer2=team2Players[bench2Idx];
+
+  // Build the panel content
+  const title=document.getElementById('sub-title');
+  const info=document.getElementById('sub-bench-info');
+  const btns=document.getElementById('sub-buttons');
+  btns.innerHTML='';
+
+  // Show both teams' bench players
+  title.style.color='#FFD700';
+  title.textContent='SUBSTITUTION';
+  info.innerHTML=
+    `<span style="color:${t1.textColor}">${t1.abbr} BENCH: ${benchPlayer1.pd.emoji} ${benchPlayer1.pd.name}</span><br>`+
+    `<span style="color:${t2.textColor}">${t2.abbr} BENCH: ${benchPlayer2.pd.emoji} ${benchPlayer2.pd.name}</span>`;
+
+  // Team 1 section
+  const t1Label=document.createElement('div');
+  t1Label.style.cssText=`font-size:11px;color:${t1.textColor};margin:6px 0 3px;text-align:center;`;
+  t1Label.textContent=`── ${t1.abbr}: sub out? ──`;
+  btns.appendChild(t1Label);
+
+  team1Players.forEach((p,i)=>{
+    if(i===bench1Idx)return;
+    const btn=document.createElement('button');
+    btn.style.cssText=`background:#1a1a1a;border:1px solid ${t1.textColor};color:#fff;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:12px;font-family:'Arial Black';text-align:left;`;
+    btn.textContent=`${p.pd.emoji} ${p.pd.name}`;
+    btn.onmouseover=()=>btn.style.background=t1.textColor+'44';
+    btn.onmouseout=()=>btn.style.background='#1a1a1a';
+    btn.onclick=()=>{performSub(1,i);closeSubPanel();};
+    btns.appendChild(btn);
+  });
+
+  // Team 2 section
+  const t2Label=document.createElement('div');
+  t2Label.style.cssText=`font-size:11px;color:${t2.textColor};margin:8px 0 3px;text-align:center;`;
+  t2Label.textContent=`── ${t2.abbr}: sub out? ──`;
+  btns.appendChild(t2Label);
+
+  team2Players.forEach((p,i)=>{
+    if(i===bench2Idx)return;
+    const btn=document.createElement('button');
+    btn.style.cssText=`background:#1a1a1a;border:1px solid ${t2.textColor};color:#fff;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:12px;font-family:'Arial Black';text-align:left;`;
+    btn.textContent=`${p.pd.emoji} ${p.pd.name}`;
+    btn.onmouseover=()=>btn.style.background=t2.textColor+'44';
+    btn.onmouseout=()=>btn.style.background='#1a1a1a';
+    btn.onclick=()=>{performSub(2,i);closeSubPanel();};
+    btns.appendChild(btn);
+  });
+
+  panel.style.display='block';
+}
+
+function closeSubPanel(){
+  subPanelOpen=false;
+  document.getElementById('sub-panel').style.display='none';
+}
+
+function performSub(teamNum, courtPlayerIdx){
+  const players = teamNum===1 ? team1Players : team2Players;
+  const benchIdx = teamNum===1 ? bench1Idx : bench2Idx;
+  const benchZ   = teamNum===1 ? 8.5 : -8.5;
+
+  const courtPlayer = players[courtPlayerIdx];
+  const benchPlayer = players[benchIdx];
+
+  // Remember where the court player was standing
+  const cx=courtPlayer.position.x, cz=courtPlayer.position.z;
+
+  // Send court player to bench
+  courtPlayer._benchSpot = teamNum===1 ? BENCH1_SPOTS[0] : BENCH2_SPOTS[0];
+  setBenchPlayer(courtPlayer, benchZ);
+
+  // If the subbed-out player was controlled, switch control to bench player (now on court)
+  const wasCtrl1 = (ctrl1===courtPlayer);
+  const wasCtrl2 = (ctrl2===courtPlayer);
+
+  // Bring bench player onto court
+  benchPlayer.isBench=false;
+  benchPlayer.position.set(cx, 0, cz);
+  benchPlayer.rotation.y=0;
+  benchPlayer.vx=0; benchPlayer.vz=0;
+
+  // Update bench index
+  if(teamNum===1) bench1Idx=courtPlayerIdx;
+  else            bench2Idx=courtPlayerIdx;
+
+  // Transfer control if needed
+  if(wasCtrl1) setCtrl1(benchPlayer);
+  else if(wasCtrl2 && GS.mode==='2player') setCtrl2(benchPlayer);
+
+  // If bench player had the ball (shouldn't happen, but safety)
+  if(courtPlayer.hasBall) giveBall(benchPlayer);
+
+  toast(`SUB: ${benchPlayer.pd.emoji} ${benchPlayer.pd.name} IN!`,'#00FF99');
 }
 
 function onKeyUp(e){
@@ -3673,6 +3864,7 @@ function startAI(){
 function runAI(){
   if(!gameActive)return;
   allPlayers().forEach(p=>{
+    if(p.isBench)return;
     if(p===ctrl1)return;
     if(GS.mode==='2player'&&p===ctrl2)return;
     aiTick(p);
@@ -4088,6 +4280,7 @@ function update(dt){
   // Loose ball pickup
   if(!ball3d.holder&&!ball3d.flying){
     allPlayers().forEach(p=>{
+      if(p.isBench)return;
       const dx=p.position.x-ball3d.position.x;
       const dz=p.position.z-ball3d.position.z;
       const d=Math.sqrt(dx*dx+dz*dz);
