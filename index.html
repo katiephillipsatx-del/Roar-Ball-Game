@@ -1127,6 +1127,7 @@ function makePlayerMesh(pd, teamColor, team){
   const isLizard   = pd && pd.animal === 'Lizard';
   const isBull            = pd && pd.animal === 'Bull';
   const isRosette         = pd && pd.name   === 'Rosette';
+  const isDaskas          = pd && pd.name   === 'Daskas';
   const isFireSalamander  = pd && pd.animal === 'Fire Salamander';
   const isAlligator       = pd && pd.animal === 'Alligator';
 
@@ -2074,25 +2075,46 @@ function makePlayerMesh(pd, teamColor, team){
     const hb      = headBase;
     const bBodyTop= bodyY + bodyH/2;
 
-    // MAGMA jersey — black, #88, gold text, red/orange stripe trim
+    // Jersey texture — SHADOWS (Daskas) or MAGMA (Kong)
     const jCanvas = document.createElement('canvas');
     jCanvas.width=128; jCanvas.height=128;
     const jCtx = jCanvas.getContext('2d');
-    jCtx.fillStyle='#0C0C12'; jCtx.fillRect(0,0,128,128);
-    // side stripes: red outer, orange inner
-    jCtx.fillStyle='#CC1800'; jCtx.fillRect(0,0,14,128); jCtx.fillRect(114,0,14,128);
-    jCtx.fillStyle='#FF6600'; jCtx.fillRect(14,0,7,128); jCtx.fillRect(107,0,7,128);
-    // bottom hem
-    jCtx.fillStyle='#CC1800'; jCtx.fillRect(0,118,128,10);
-    jCtx.fillStyle='#FF6600'; jCtx.fillRect(0,110,128,8);
-    // captain "C"
-    jCtx.fillStyle='#FFD700'; jCtx.font='bold 13px Arial Black';
-    jCtx.textAlign='right'; jCtx.textBaseline='top'; jCtx.fillText('C',115,8);
-    // team name
-    jCtx.fillStyle='#FF8C00'; jCtx.font='bold 22px Arial Black';
-    jCtx.textAlign='center'; jCtx.textBaseline='middle'; jCtx.fillText('MAGMA',64,30);
-    // jersey number
-    jCtx.fillStyle='#FFD700'; jCtx.font='bold 68px Arial Black'; jCtx.fillText('88',64,82);
+    if(isDaskas){
+      // SHADOWS jersey — very dark bg, pink trim, green lightning bolt, #34
+      jCtx.fillStyle='#0D0F18'; jCtx.fillRect(0,0,128,128);
+      // pink side trim
+      jCtx.fillStyle='#E040FB'; jCtx.fillRect(0,0,10,128); jCtx.fillRect(118,0,10,128);
+      jCtx.fillStyle='#FF69B4'; jCtx.fillRect(10,0,5,128); jCtx.fillRect(113,0,5,128);
+      // pink top/bottom border
+      jCtx.fillStyle='#E040FB'; jCtx.fillRect(0,0,128,5); jCtx.fillRect(0,123,128,5);
+      // "SHADOWS" in pink with green outline
+      jCtx.textAlign='center'; jCtx.textBaseline='middle';
+      jCtx.font='bold italic 19px Arial Black';
+      jCtx.strokeStyle='#39FF14'; jCtx.lineWidth=3; jCtx.strokeText('SHADOWS',64,22);
+      jCtx.fillStyle='#E040FB'; jCtx.fillText('SHADOWS',64,22);
+      // green lightning bolt ribbon below text
+      jCtx.fillStyle='#39FF14';
+      jCtx.beginPath();
+      jCtx.moveTo(16,32); jCtx.lineTo(36,38); jCtx.lineTo(56,32); jCtx.lineTo(76,38); jCtx.lineTo(96,32); jCtx.lineTo(112,38);
+      jCtx.lineTo(112,46); jCtx.lineTo(96,40); jCtx.lineTo(76,46); jCtx.lineTo(56,40); jCtx.lineTo(36,46); jCtx.lineTo(16,40);
+      jCtx.closePath(); jCtx.fill();
+      // "34" in pink with green outline
+      jCtx.font='bold 52px Arial Black';
+      jCtx.strokeStyle='#39FF14'; jCtx.lineWidth=4; jCtx.strokeText('34',64,90);
+      jCtx.fillStyle='#FF69B4'; jCtx.fillText('34',64,90);
+    } else {
+      // MAGMA jersey — black, #88, gold text, red/orange stripe trim
+      jCtx.fillStyle='#0C0C12'; jCtx.fillRect(0,0,128,128);
+      jCtx.fillStyle='#CC1800'; jCtx.fillRect(0,0,14,128); jCtx.fillRect(114,0,14,128);
+      jCtx.fillStyle='#FF6600'; jCtx.fillRect(14,0,7,128); jCtx.fillRect(107,0,7,128);
+      jCtx.fillStyle='#CC1800'; jCtx.fillRect(0,118,128,10);
+      jCtx.fillStyle='#FF6600'; jCtx.fillRect(0,110,128,8);
+      jCtx.fillStyle='#FFD700'; jCtx.font='bold 13px Arial Black';
+      jCtx.textAlign='right'; jCtx.textBaseline='top'; jCtx.fillText('C',115,8);
+      jCtx.fillStyle='#FF8C00'; jCtx.font='bold 22px Arial Black';
+      jCtx.textAlign='center'; jCtx.textBaseline='middle'; jCtx.fillText('MAGMA',64,30);
+      jCtx.fillStyle='#FFD700'; jCtx.font='bold 68px Arial Black'; jCtx.fillText('88',64,82);
+    }
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(0.98,1.02),
