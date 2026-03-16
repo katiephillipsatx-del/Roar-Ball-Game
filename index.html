@@ -217,8 +217,8 @@ const TEAMS = [
     floorColor:0x0B101E, lineColor:0x44AACC,
     players:[
       {name:'Kouyate', animal:'Alligator', emoji:'🐊', spd:5,sht:7,drb:6,def:9,str:10, ht:"8'9\""},
-      {name:'Rosette', animal:'Bull',      emoji:'🐂', spd:6,sht:7,drb:6,def:8,str:10},
-      {name:'Daskas',  animal:'Gorilla',   emoji:'🦍', spd:6,sht:8,drb:7,def:8,str:10},
+      {name:'Rosette', animal:'Bull',      emoji:'🐂', spd:6,sht:7,drb:6,def:8,str:10, ht:"9'0\""},
+      {name:'Daskas',  animal:'Gorilla',   emoji:'🦍', spd:6,sht:8,drb:7,def:8,str:10, ht:"9'0\""},
       {name:'Chase',   animal:'Lion',      emoji:'🦁', spd:8,sht:8,drb:8,def:8,str:8},
       {name:'Ripper',  animal:'Jaguar',    emoji:'🐆', spd:9,sht:7,drb:8,def:8,str:7},
       {name:'Viper',   animal:'Black Mamba',emoji:'🐍',spd:10,sht:8,drb:9,def:7,str:4},
@@ -2965,6 +2965,14 @@ function makePlayerMesh(pd, teamColor, team){
   // Kouyate is 8'9" — scale = 105in / 78in ≈ 1.346
   if(pd.name==='Kouyate'){
     group.scale.setScalar(105/78);
+  }
+  // Daskas is 9'0" — scale = 108in / 78in ≈ 1.385
+  if(pd.name==='Daskas'){
+    group.scale.setScalar(108/78);
+  }
+  // Rosette is 9'0" — scale = 108in / 78in ≈ 1.385
+  if(pd.name==='Rosette'){
+    group.scale.setScalar(108/78);
   }
 
   return group;
