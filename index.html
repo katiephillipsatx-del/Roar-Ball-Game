@@ -240,7 +240,7 @@ const TEAMS = [
     players:[
       {name:'Propp',    animal:'Polar Bear',     emoji:'🐻\u200D❄️',spd:10,sht:8,drb:6,def:9,str:10, ht:"10'0\""},
       {name:'Spots',    animal:'Snow Leopard',   emoji:'🐆', spd:10,sht:8,drb:8,def:7,str:7, ht:"10'0\""},
-      {name:'Fang',     animal:'Sabertooth Cat', emoji:'🦁', spd:10,sht:7,drb:7,def:9,str:9},
+      {name:'Fang',     animal:'Sabertooth Cat', emoji:'🦁', spd:10,sht:7,drb:7,def:9,str:9, ht:"9'3\""},
       {name:'Moe',      animal:'Moose',          emoji:'🦌', spd:10,sht:7,drb:5,def:8,str:9},
       {name:'Blizzard', animal:'Arctic Wolf',    emoji:'🐺', spd:10,sht:7,drb:8,def:8,str:7},
       {name:'Tusk',     animal:'Walrus',         emoji:'🦭', spd:10,sht:8,drb:5,def:9,str:10},
@@ -3890,6 +3890,10 @@ function makePlayerMesh(pd, teamColor, team){
   // Spots is 10'0" — scale = 120in / 78in ≈ 1.538
   if(pd.name==='Spots'){
     group.scale.setScalar(120/78);
+  }
+  // Fang is 9'3" — scale = 111in / 78in ≈ 1.423
+  if(pd.name==='Fang'){
+    group.scale.setScalar(111/78);
   }
 
   return group;
