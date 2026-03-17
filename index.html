@@ -1278,15 +1278,17 @@ function makePlayerMesh(pd, teamColor, team){
     const numCanvas = document.createElement('canvas');
     numCanvas.width=128; numCanvas.height=128;
     const numCtx = numCanvas.getContext('2d');
-    numCtx.fillStyle='#1A7A1A';
-    numCtx.fillRect(0,0,128,128);
-    numCtx.fillStyle='#FF6B00';
-    numCtx.font='bold 28px Arial Black';
-    numCtx.textAlign='center';
-    numCtx.textBaseline='middle';
-    numCtx.fillText('THORNS',64,22);
-    numCtx.font='bold 80px Arial Black';
-    numCtx.fillText('3',64,80);
+    numCtx.fillStyle='#2E8B2E'; numCtx.fillRect(0,0,128,128);
+    numCtx.fillStyle='#1A5C1A';
+    [[15,25,22,14],[55,8,28,16],[95,18,26,18],[8,52,24,20],[45,45,30,22],[88,55,26,24],[18,88,32,18],[68,82,28,22],[100,88,22,16]].forEach(([x,y,rx,ry])=>{numCtx.beginPath();numCtx.ellipse(x,y,rx,ry,0,0,Math.PI*2);numCtx.fill();});
+    numCtx.fillStyle='#0D3D0D';
+    [[28,40,14,10],[78,28,16,12],[52,68,18,14],[12,76,14,12],[95,78,16,14]].forEach(([x,y,rx,ry])=>{numCtx.beginPath();numCtx.ellipse(x,y,rx,ry,0,0,Math.PI*2);numCtx.fill();});
+    numCtx.strokeStyle='#CC2200'; numCtx.lineWidth=8; numCtx.strokeRect(4,4,120,120);
+    numCtx.textAlign='center'; numCtx.textBaseline='middle';
+    numCtx.fillStyle='#882200'; numCtx.font='bold 24px Arial Black'; numCtx.fillText('THORNS',65,27);
+    numCtx.fillStyle='#FF8C00'; numCtx.fillText('THORNS',64,26);
+    numCtx.fillStyle='#882200'; numCtx.font='bold 80px Arial Black'; numCtx.fillText('3',65,81);
+    numCtx.fillStyle='#FF8C00'; numCtx.fillText('3',64,80);
     const numTex = new THREE.CanvasTexture(numCanvas);
     const numGeo = new THREE.PlaneGeometry(0.55,0.65);
     const numMat = new THREE.MeshBasicMaterial({map:numTex,transparent:true});
@@ -1313,13 +1315,17 @@ function makePlayerMesh(pd, teamColor, team){
     const numCanvas = document.createElement('canvas');
     numCanvas.width=128; numCanvas.height=128;
     const numCtx = numCanvas.getContext('2d');
-    numCtx.fillStyle='#1A7A1A';
-    numCtx.fillRect(0,0,128,128);
-    numCtx.fillStyle='#FFFFFF';
-    numCtx.font='bold 90px Arial Black';
-    numCtx.textAlign='center';
-    numCtx.textBaseline='middle';
-    numCtx.fillText('0',64,68);
+    numCtx.fillStyle='#2E8B2E'; numCtx.fillRect(0,0,128,128);
+    numCtx.fillStyle='#1A5C1A';
+    [[15,25,22,14],[55,8,28,16],[95,18,26,18],[8,52,24,20],[45,45,30,22],[88,55,26,24],[18,88,32,18],[68,82,28,22],[100,88,22,16]].forEach(([x,y,rx,ry])=>{numCtx.beginPath();numCtx.ellipse(x,y,rx,ry,0,0,Math.PI*2);numCtx.fill();});
+    numCtx.fillStyle='#0D3D0D';
+    [[28,40,14,10],[78,28,16,12],[52,68,18,14],[12,76,14,12],[95,78,16,14]].forEach(([x,y,rx,ry])=>{numCtx.beginPath();numCtx.ellipse(x,y,rx,ry,0,0,Math.PI*2);numCtx.fill();});
+    numCtx.strokeStyle='#CC2200'; numCtx.lineWidth=8; numCtx.strokeRect(4,4,120,120);
+    numCtx.textAlign='center'; numCtx.textBaseline='middle';
+    numCtx.fillStyle='#882200'; numCtx.font='bold 24px Arial Black'; numCtx.fillText('THORNS',65,27);
+    numCtx.fillStyle='#FF8C00'; numCtx.fillText('THORNS',64,26);
+    numCtx.fillStyle='#882200'; numCtx.font='bold 90px Arial Black'; numCtx.fillText('21',65,69);
+    numCtx.fillStyle='#FF8C00'; numCtx.fillText('21',64,68);
     const numTex = new THREE.CanvasTexture(numCanvas);
     const numGeo = new THREE.PlaneGeometry(0.38,0.46);
     const numMat = new THREE.MeshBasicMaterial({map:numTex,transparent:true});
@@ -1499,11 +1505,17 @@ function makePlayerMesh(pd, teamColor, team){
     const jerseyCanvas = document.createElement('canvas');
     jerseyCanvas.width=128; jerseyCanvas.height=128;
     const jCtx = jerseyCanvas.getContext('2d');
-    jCtx.fillStyle='#1A7A1A'; jCtx.fillRect(0,0,128,128);
-    jCtx.fillStyle='#FF6B00';
+    jCtx.fillStyle='#2E8B2E'; jCtx.fillRect(0,0,128,128);
+    jCtx.fillStyle='#1A5C1A';
+    [[15,25,22,14],[55,8,28,16],[95,18,26,18],[8,52,24,20],[45,45,30,22],[88,55,26,24],[18,88,32,18],[68,82,28,22],[100,88,22,16]].forEach(([x,y,rx,ry])=>{jCtx.beginPath();jCtx.ellipse(x,y,rx,ry,0,0,Math.PI*2);jCtx.fill();});
+    jCtx.fillStyle='#0D3D0D';
+    [[28,40,14,10],[78,28,16,12],[52,68,18,14],[12,76,14,12],[95,78,16,14]].forEach(([x,y,rx,ry])=>{jCtx.beginPath();jCtx.ellipse(x,y,rx,ry,0,0,Math.PI*2);jCtx.fill();});
+    jCtx.strokeStyle='#CC2200'; jCtx.lineWidth=8; jCtx.strokeRect(4,4,120,120);
     jCtx.textAlign='center'; jCtx.textBaseline='middle';
-    jCtx.font='bold 24px Arial Black'; jCtx.fillText('THORNS',64,26);
-    jCtx.font='bold 68px Arial Black'; jCtx.fillText('#11',64,82);
+    jCtx.fillStyle='#882200'; jCtx.font='bold 24px Arial Black'; jCtx.fillText('THORNS',65,27);
+    jCtx.fillStyle='#FF8C00'; jCtx.fillText('THORNS',64,26);
+    jCtx.fillStyle='#882200'; jCtx.font='bold 68px Arial Black'; jCtx.fillText('#11',65,83);
+    jCtx.fillStyle='#FF8C00'; jCtx.fillText('#11',64,82);
     const jerseyTex = new THREE.CanvasTexture(jerseyCanvas);
     const jerseyPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(0.56,0.66),
@@ -1632,10 +1644,17 @@ function makePlayerMesh(pd, teamColor, team){
     const jCanvas = document.createElement('canvas');
     jCanvas.width=128; jCanvas.height=128;
     const jCtx = jCanvas.getContext('2d');
-    jCtx.fillStyle='#1A7A1A'; jCtx.fillRect(0,0,128,128);
-    jCtx.fillStyle='#FF6B00'; jCtx.textAlign='center'; jCtx.textBaseline='middle';
-    jCtx.font='bold 22px Arial Black'; jCtx.fillText('THORNS',64,26);
-    jCtx.font='bold 72px Arial Black'; jCtx.fillText('#7',64,82);
+    jCtx.fillStyle='#2E8B2E'; jCtx.fillRect(0,0,128,128);
+    jCtx.fillStyle='#1A5C1A';
+    [[15,25,22,14],[55,8,28,16],[95,18,26,18],[8,52,24,20],[45,45,30,22],[88,55,26,24],[18,88,32,18],[68,82,28,22],[100,88,22,16]].forEach(([x,y,rx,ry])=>{jCtx.beginPath();jCtx.ellipse(x,y,rx,ry,0,0,Math.PI*2);jCtx.fill();});
+    jCtx.fillStyle='#0D3D0D';
+    [[28,40,14,10],[78,28,16,12],[52,68,18,14],[12,76,14,12],[95,78,16,14]].forEach(([x,y,rx,ry])=>{jCtx.beginPath();jCtx.ellipse(x,y,rx,ry,0,0,Math.PI*2);jCtx.fill();});
+    jCtx.strokeStyle='#CC2200'; jCtx.lineWidth=8; jCtx.strokeRect(4,4,120,120);
+    jCtx.textAlign='center'; jCtx.textBaseline='middle';
+    jCtx.fillStyle='#882200'; jCtx.font='bold 22px Arial Black'; jCtx.fillText('THORNS',65,27);
+    jCtx.fillStyle='#FF8C00'; jCtx.fillText('THORNS',64,26);
+    jCtx.fillStyle='#882200'; jCtx.font='bold 72px Arial Black'; jCtx.fillText('#7',65,83);
+    jCtx.fillStyle='#FF8C00'; jCtx.fillText('#7',64,82);
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(0.54,0.52),
@@ -1747,10 +1766,17 @@ function makePlayerMesh(pd, teamColor, team){
     const jCanvas = document.createElement('canvas');
     jCanvas.width=128; jCanvas.height=128;
     const jCtx = jCanvas.getContext('2d');
-    jCtx.fillStyle='#1A7A1A'; jCtx.fillRect(0,0,128,128);
-    jCtx.fillStyle='#FF6B00'; jCtx.textAlign='center'; jCtx.textBaseline='middle';
-    jCtx.font='bold 22px Arial Black'; jCtx.fillText('THORNS',64,26);
-    jCtx.font='bold 66px Arial Black'; jCtx.fillText('#23',64,82);
+    jCtx.fillStyle='#2E8B2E'; jCtx.fillRect(0,0,128,128);
+    jCtx.fillStyle='#1A5C1A';
+    [[15,25,22,14],[55,8,28,16],[95,18,26,18],[8,52,24,20],[45,45,30,22],[88,55,26,24],[18,88,32,18],[68,82,28,22],[100,88,22,16]].forEach(([x,y,rx,ry])=>{jCtx.beginPath();jCtx.ellipse(x,y,rx,ry,0,0,Math.PI*2);jCtx.fill();});
+    jCtx.fillStyle='#0D3D0D';
+    [[28,40,14,10],[78,28,16,12],[52,68,18,14],[12,76,14,12],[95,78,16,14]].forEach(([x,y,rx,ry])=>{jCtx.beginPath();jCtx.ellipse(x,y,rx,ry,0,0,Math.PI*2);jCtx.fill();});
+    jCtx.strokeStyle='#CC2200'; jCtx.lineWidth=8; jCtx.strokeRect(4,4,120,120);
+    jCtx.textAlign='center'; jCtx.textBaseline='middle';
+    jCtx.fillStyle='#882200'; jCtx.font='bold 22px Arial Black'; jCtx.fillText('THORNS',65,27);
+    jCtx.fillStyle='#FF8C00'; jCtx.fillText('THORNS',64,26);
+    jCtx.fillStyle='#882200'; jCtx.font='bold 66px Arial Black'; jCtx.fillText('#23',65,83);
+    jCtx.fillStyle='#FF8C00'; jCtx.fillText('#23',64,82);
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(0.50,0.52),
@@ -1853,12 +1879,17 @@ function makePlayerMesh(pd, teamColor, team){
     const jCanvas = document.createElement('canvas');
     jCanvas.width=128; jCanvas.height=128;
     const jCtx = jCanvas.getContext('2d');
-    jCtx.fillStyle='#1A7A1A'; jCtx.fillRect(0,0,128,128);
-    jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,0,128,12);
-    jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,116,128,12);
-    jCtx.fillStyle='#FF6B00'; jCtx.textAlign='center'; jCtx.textBaseline='middle';
-    jCtx.font='bold 20px Arial Black'; jCtx.fillText('Thorns',64,24);
-    jCtx.font='bold 72px Arial Black'; jCtx.fillText('34',64,82);
+    jCtx.fillStyle='#2E8B2E'; jCtx.fillRect(0,0,128,128);
+    jCtx.fillStyle='#1A5C1A';
+    [[15,25,22,14],[55,8,28,16],[95,18,26,18],[8,52,24,20],[45,45,30,22],[88,55,26,24],[18,88,32,18],[68,82,28,22],[100,88,22,16]].forEach(([x,y,rx,ry])=>{jCtx.beginPath();jCtx.ellipse(x,y,rx,ry,0,0,Math.PI*2);jCtx.fill();});
+    jCtx.fillStyle='#0D3D0D';
+    [[28,40,14,10],[78,28,16,12],[52,68,18,14],[12,76,14,12],[95,78,16,14]].forEach(([x,y,rx,ry])=>{jCtx.beginPath();jCtx.ellipse(x,y,rx,ry,0,0,Math.PI*2);jCtx.fill();});
+    jCtx.strokeStyle='#CC2200'; jCtx.lineWidth=8; jCtx.strokeRect(4,4,120,120);
+    jCtx.textAlign='center'; jCtx.textBaseline='middle';
+    jCtx.fillStyle='#882200'; jCtx.font='bold 20px Arial Black'; jCtx.fillText('THORNS',65,25);
+    jCtx.fillStyle='#FF8C00'; jCtx.fillText('THORNS',64,24);
+    jCtx.fillStyle='#882200'; jCtx.font='bold 72px Arial Black'; jCtx.fillText('34',65,83);
+    jCtx.fillStyle='#FF8C00'; jCtx.fillText('34',64,82);
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(0.82,0.92),
