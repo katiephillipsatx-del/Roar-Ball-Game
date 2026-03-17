@@ -1290,7 +1290,7 @@ function makePlayerMesh(pd, teamColor, team){
     numCtx.fillStyle='#882200'; numCtx.font='bold 80px Arial Black'; numCtx.fillText('3',65,81);
     numCtx.fillStyle='#FF8C00'; numCtx.fillText('3',64,80);
     const numTex = new THREE.CanvasTexture(numCanvas);
-    const numGeo = new THREE.PlaneGeometry(0.68,0.80);
+    const numGeo = new THREE.PlaneGeometry(1.05,1.575);
     const numMat = new THREE.MeshBasicMaterial({map:numTex,transparent:true});
     const numPlane = new THREE.Mesh(numGeo,numMat);
     numPlane.position.set(0, bodyY, 0.28);
@@ -1518,7 +1518,7 @@ function makePlayerMesh(pd, teamColor, team){
     jCtx.fillStyle='#FF8C00'; jCtx.fillText('#11',64,82);
     const jerseyTex = new THREE.CanvasTexture(jerseyCanvas);
     const jerseyPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.70,0.82),
+      new THREE.PlaneGeometry(0.88,1.05),
       new THREE.MeshBasicMaterial({map:jerseyTex,transparent:true})
     );
     jerseyPlane.position.set(0,kBodyY,0.27);
@@ -1657,7 +1657,7 @@ function makePlayerMesh(pd, teamColor, team){
     jCtx.fillStyle='#FF8C00'; jCtx.fillText('#7',64,82);
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.68,0.65),
+      new THREE.PlaneGeometry(0.82,0.78),
       new THREE.MeshBasicMaterial({map:jTex,transparent:true})
     );
     jPlane.position.set(0, bodyY, 0.28);
@@ -1779,7 +1779,7 @@ function makePlayerMesh(pd, teamColor, team){
     jCtx.fillStyle='#FF8C00'; jCtx.fillText('#23',64,82);
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.62,0.65),
+      new THREE.PlaneGeometry(0.76,0.88),
       new THREE.MeshBasicMaterial({map:jTex,transparent:true})
     );
     jPlane.position.set(0,bodyY,0.29); group.add(jPlane);
@@ -1892,7 +1892,7 @@ function makePlayerMesh(pd, teamColor, team){
     jCtx.fillStyle='#FF8C00'; jCtx.fillText('34',64,82);
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.02,1.14),
+      new THREE.PlaneGeometry(1.15,1.30),
       new THREE.MeshBasicMaterial({map:jTex,transparent:true})
     );
     jPlane.position.set(0, bodyY+0.05, 0.58); group.add(jPlane);
