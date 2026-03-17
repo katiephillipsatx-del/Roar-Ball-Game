@@ -4255,196 +4255,176 @@ function makePlayerMesh(pd, teamColor, team){
   }
 
 
-  // ── SCORPION (Sting) ─────────────────────────────────────────────
+  // ── RATTLE — Sandy lizard basketball player (Sandstorms #10) ───────
   if(isScorpion){
-    const CHITIN   = 0x2A1A08; // dark brown exoskeleton
-    const CHITIN2  = 0x3D2410; // lighter chitin segments
-    const CHITIN3  = 0x1A0C04; // very dark shadow chitin
+    const SCALE    = 0xC49A52; // sandy tan base scale color
+    const SCALE2   = 0xA87840; // darker scale shadow
+    const SCALE3   = 0xD4B470; // highlight scale
+    const BELLY    = 0xDEC48A; // lighter belly/underside
     const JGOLD    = 0xFFB800; // Sandstorms gold
     const JBRN     = 0x5C2800; // Sandstorms dark brown
     const hb       = headBase;
 
-    const chitMat  = new THREE.MeshLambertMaterial({color:CHITIN});
-    const chit2Mat = new THREE.MeshLambertMaterial({color:CHITIN2});
-    const chit3Mat = new THREE.MeshLambertMaterial({color:CHITIN3});
+    const scaleMat  = new THREE.MeshLambertMaterial({color:SCALE});
+    const scale2Mat = new THREE.MeshLambertMaterial({color:SCALE2});
+    const scale3Mat = new THREE.MeshLambertMaterial({color:SCALE3});
+    const bellyMat  = new THREE.MeshLambertMaterial({color:BELLY});
 
-    // ── SANDSTORMS jersey (same as Dune, number 7) ──
+    // ── SANDSTORMS jersey — gold, number 10 ──
     const jc = document.createElement('canvas');
-    jc.width=128; jc.height=128;
+    jc.width=256; jc.height=256;
     const jx = jc.getContext('2d');
-    jx.fillStyle='#FFB800'; jx.fillRect(0,0,128,128);
-    jx.fillStyle='#5C2800'; jx.fillRect(0,0,16,128); jx.fillRect(112,0,16,128);
-    jx.fillStyle='#FFFFFF'; jx.fillRect(16,0,4,128); jx.fillRect(108,0,4,128);
-    jx.fillStyle='#CC1800';
-    jx.beginPath(); jx.moveTo(20,52); jx.lineTo(108,60); jx.lineTo(108,70); jx.lineTo(20,62); jx.closePath(); jx.fill();
-    jx.fillStyle='#3A1400'; jx.font='bold 14px Arial Black';
-    jx.textAlign='center'; jx.textBaseline='middle'; jx.fillText('SANDSTORMS',64,30);
-    jx.fillStyle='#3A1400'; jx.font='bold 62px Arial Black'; jx.fillText('7',64,88);
+    // gold base
+    jx.fillStyle='#D4A030'; jx.fillRect(0,0,256,256);
+    // V-neck cutout
+    jx.fillStyle='#5C2800';
+    jx.beginPath(); jx.moveTo(96,0); jx.lineTo(128,52); jx.lineTo(160,0); jx.closePath(); jx.fill();
+    // shoulder trim dark stripes
+    jx.fillStyle='#5C2800'; jx.fillRect(0,0,22,256); jx.fillRect(234,0,22,256);
+    // team name
+    jx.fillStyle='#3A1400'; jx.font='bold 26px Arial Black';
+    jx.textAlign='center'; jx.textBaseline='middle'; jx.fillText('SANDSTORMS',128,70);
+    // number 10
+    jx.fillStyle='#3A1400'; jx.font='bold 110px Arial Black'; jx.fillText('10',128,168);
     const jTex = new THREE.CanvasTexture(jc);
     const jPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.96,1.02),
+      new THREE.PlaneGeometry(1.00,1.06),
       new THREE.MeshBasicMaterial({map:jTex,transparent:true})
     );
     jPlane.position.set(0, bodyY+0.02, 0.33);
     group.add(jPlane);
 
-    // Shorts hem
-    const hemMat = new THREE.MeshLambertMaterial({color:JBRN});
-    const hem = new THREE.Mesh(new THREE.BoxGeometry(0.94,0.12,0.60), hemMat);
+    // Shorts — sandy gold with dark hem band
+    const shortsMat = new THREE.MeshLambertMaterial({color:JGOLD});
+    const hemMat    = new THREE.MeshLambertMaterial({color:JBRN});
+    const hem = new THREE.Mesh(new THREE.BoxGeometry(0.94,0.10,0.60), hemMat);
     hem.position.set(0, legH+0.06, 0); group.add(hem);
 
-    // Armored shoes — dark chitin with claw tips
+    // Bare scaly feet with toe claws
     [-1,1].forEach(side=>{
-      const sole = new THREE.Mesh(new THREE.BoxGeometry(0.34,0.22,0.50), chit2Mat);
-      sole.position.set(side*0.22, 0.11, 0.06); sole.castShadow=true; group.add(sole);
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.30,0.14,0.46), scaleMat);
+      foot.position.set(side*0.22, 0.07, 0.08); foot.castShadow=true; group.add(foot);
+      // three clawed toes
       for(let c=-1;c<=1;c++){
-        const toeClaw = new THREE.Mesh(new THREE.ConeGeometry(0.04,0.14,4),
-          new THREE.MeshLambertMaterial({color:0x0A0603}));
-        toeClaw.rotation.x=-0.5;
-        toeClaw.position.set(side*0.22+c*0.09, 0.10, 0.42); group.add(toeClaw);
+        const toe = new THREE.Mesh(new THREE.BoxGeometry(0.08,0.08,0.14), scale2Mat);
+        toe.position.set(side*0.22+c*0.09, 0.07, 0.40); group.add(toe);
+        const claw = new THREE.Mesh(new THREE.ConeGeometry(0.025,0.10,4),
+          new THREE.MeshLambertMaterial({color:0x3A2808}));
+        claw.rotation.x=-0.3;
+        claw.position.set(side*0.22+c*0.09, 0.06, 0.50); group.add(claw);
       }
     });
 
-    // Short thick neck
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.26,0.34,0.22,8), chitMat);
-    neck.position.set(0, bodyY+bodyH/2+0.11, 0);
+    // Thick scaly neck
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.34,0.26,10), scaleMat);
+    neck.position.set(0, bodyY+bodyH/2+0.13, 0);
     neck.castShadow=true; group.add(neck);
 
-    // ── SCORPION HEAD ──
-    // Armored domed skull
-    const skull = new THREE.Mesh(new THREE.BoxGeometry(0.72,0.46,0.60), chitMat);
-    skull.position.set(0, hb, 0);
+    // ── LIZARD HEAD ──
+    // Main skull — wide, slightly flattened box
+    const skull = new THREE.Mesh(new THREE.BoxGeometry(0.76,0.48,0.66), scaleMat);
+    skull.position.set(0, hb+0.04, 0);
     skull.castShadow=true; group.add(skull);
     group.head = skull;
 
-    // Heavy brow plate
-    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.74,0.10,0.26), chit3Mat);
-    brow.position.set(0, hb+0.24, 0.24); group.add(brow);
+    // Top of skull dome — slightly rounded
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.34,10,6,[0,Math.PI*2,0,Math.PI/2]), scaleMat);
+    dome.position.set(0, hb+0.24, 0); group.add(dome);
 
-    // Armored face plate (lower)
-    const faceplate = new THREE.Mesh(new THREE.BoxGeometry(0.64,0.28,0.22), chit2Mat);
-    faceplate.position.set(0, hb-0.10, 0.30); group.add(faceplate);
+    // Central horn / cranial ridge
+    const hornMat = new THREE.MeshLambertMaterial({color:SCALE2});
+    const horn = new THREE.Mesh(new THREE.ConeGeometry(0.07,0.24,5), hornMat);
+    horn.position.set(0, hb+0.44, 0.04); group.add(horn);
 
-    // Red compound eyes
-    const eyeRedMat = new THREE.MeshBasicMaterial({color:0xDD1100});
-    const eyeGlowMat = new THREE.MeshBasicMaterial({color:0xFF4400});
-    [-0.22,0.22].forEach(xo=>{
-      const eyeBase = new THREE.Mesh(new THREE.SphereGeometry(0.11,8,8), eyeRedMat);
-      eyeBase.position.set(xo, hb+0.12, 0.30); group.add(eyeBase);
-      const eyeGlow = new THREE.Mesh(new THREE.SphereGeometry(0.07,8,8), eyeGlowMat);
-      eyeGlow.position.set(xo, hb+0.12, 0.37); group.add(eyeGlow);
+    // Smaller side brow horns
+    [-0.20,0.20].forEach(xo=>{
+      const bh = new THREE.Mesh(new THREE.ConeGeometry(0.04,0.14,4), hornMat);
+      bh.position.set(xo, hb+0.36, 0.14); group.add(bh);
     });
 
-    // Mandibles / fangs
-    const fangMat = new THREE.MeshLambertMaterial({color:0x0A0603});
-    [-0.14,0.14].forEach(xo=>{
-      const fang = new THREE.Mesh(new THREE.ConeGeometry(0.05,0.22,5), fangMat);
-      fang.rotation.x=0.4;
-      fang.position.set(xo, hb-0.22, 0.38); group.add(fang);
+    // Prominent brow ridge (heavy supraorbital)
+    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.70,0.09,0.20), scale2Mat);
+    brow.position.set(0, hb+0.22, 0.28); group.add(brow);
+
+    // Wide jaw / snout (extends forward)
+    const snout = new THREE.Mesh(new THREE.BoxGeometry(0.62,0.22,0.34), scaleMat);
+    snout.position.set(0, hb-0.08, 0.36); group.add(snout);
+
+    // Lower jaw (slightly open grin)
+    const lowerJaw = new THREE.Mesh(new THREE.BoxGeometry(0.58,0.12,0.30), scale2Mat);
+    lowerJaw.position.set(0, hb-0.22, 0.34); group.add(lowerJaw);
+
+    // Belly/chin lighter patch
+    const chin = new THREE.Mesh(new THREE.BoxGeometry(0.44,0.28,0.10), bellyMat);
+    chin.position.set(0, hb-0.10, 0.44); group.add(chin);
+
+    // ── SINGLE SLIT EYE (center, reptilian) ──
+    const eyeWhiteMat = new THREE.MeshBasicMaterial({color:0xC8A850});
+    const eyeSlitMat  = new THREE.MeshBasicMaterial({color:0x1A1000});
+    const eyeBase = new THREE.Mesh(new THREE.SphereGeometry(0.10,10,10), eyeWhiteMat);
+    eyeBase.position.set(0, hb+0.14, 0.36); group.add(eyeBase);
+    // vertical slit pupil — thin flat box
+    const slit = new THREE.Mesh(new THREE.BoxGeometry(0.025,0.12,0.02), eyeSlitMat);
+    slit.position.set(0, hb+0.14, 0.46); group.add(slit);
+
+    // Scale texture bumps on skull
+    [[0.22,hb+0.10],[-0.22,hb+0.10],[0.30,hb-0.04],[-0.30,hb-0.04]].forEach(([xo,yo])=>{
+      const bump = new THREE.Mesh(new THREE.SphereGeometry(0.04,5,5), scale2Mat);
+      bump.position.set(xo, yo, 0.34); group.add(bump);
     });
 
-    // ── HEADBAND (yellow/black stripes like the image) ──
-    const hbCanvas = document.createElement('canvas');
-    hbCanvas.width=64; hbCanvas.height=16;
-    const hbCtx = hbCanvas.getContext('2d');
-    // alternating yellow/black stripes
-    for(let i=0;i<8;i++){
-      hbCtx.fillStyle = (i%2===0)?'#FFB800':'#1A0A00';
-      hbCtx.fillRect(i*8,0,8,16);
-    }
-    const hbTex = new THREE.CanvasTexture(hbCanvas);
-    const hband = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.38,0.38,0.10,18),
-      new THREE.MeshBasicMaterial({map:hbTex})
-    );
-    hband.position.set(0, hb+0.18, 0); group.add(hband);
-
-    // ── LARGE SCORPION CLAWS (pedipalps) instead of arms ──
+    // ── MUSCULAR SCALY ARMS ──
     [-1,1].forEach(side=>{
-      // Upper arm / shoulder
-      const upper = new THREE.Mesh(new THREE.BoxGeometry(0.32,0.72,0.32), chitMat);
-      upper.position.set(side*0.78, bodyY+0.08, 0);
+      // Upper arm — thick, slightly angled outward
+      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.20,0.24,0.62,8), scaleMat);
+      upper.rotation.z = side * 0.22;
+      upper.position.set(side*0.72, bodyY+0.10, 0.04);
       upper.castShadow=true; group.add(upper);
 
-      // Forearm
-      const fore = new THREE.Mesh(new THREE.BoxGeometry(0.26,0.58,0.26), chit2Mat);
-      fore.position.set(side*0.88, bodyY-0.50, 0.10);
+      // Elbow scale bump
+      const elbow = new THREE.Mesh(new THREE.SphereGeometry(0.19,8,6), scale2Mat);
+      elbow.position.set(side*0.80, bodyY-0.22, 0.06); group.add(elbow);
+
+      // Forearm — tapers toward wrist
+      const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.20,0.56,8), scaleMat);
+      fore.rotation.z = side * 0.18;
+      fore.rotation.x = 0.14;
+      fore.position.set(side*0.88, bodyY-0.56, 0.12);
       fore.castShadow=true; group.add(fore);
 
-      // Claw base (hand)
-      const clawBase = new THREE.Mesh(new THREE.BoxGeometry(0.38,0.22,0.34), chitMat);
-      clawBase.position.set(side*0.90, bodyY-0.88, 0.14); group.add(clawBase);
+      // White wristband on left arm only
+      if(side === -1){
+        const wbMat = new THREE.MeshLambertMaterial({color:0xF0ECD8});
+        const wb = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,0.14,10), wbMat);
+        wb.rotation.z = side * 0.18;
+        wb.position.set(side*0.94, bodyY-0.82, 0.18); group.add(wb);
+      }
 
-      // Upper pincer finger
-      const pincer1 = new THREE.Mesh(new THREE.BoxGeometry(0.10,0.36,0.14), chit3Mat);
-      pincer1.rotation.z = side * (-0.35);
-      pincer1.position.set(side*0.98, bodyY-1.06, 0.18); group.add(pincer1);
+      // Scaly hand
+      const hand = new THREE.Mesh(new THREE.BoxGeometry(0.28,0.20,0.28), scaleMat);
+      hand.position.set(side*0.98, bodyY-0.96, 0.22); group.add(hand);
 
-      // Lower pincer finger (curved down)
-      const pincer2 = new THREE.Mesh(new THREE.BoxGeometry(0.10,0.30,0.12), chit3Mat);
-      pincer2.rotation.z = side * 0.35;
-      pincer2.position.set(side*0.80, bodyY-1.08, 0.22); group.add(pincer2);
-
-      // Claw tip spikes
-      const tipMat = new THREE.MeshLambertMaterial({color:0x0A0603});
-      const tip1 = new THREE.Mesh(new THREE.ConeGeometry(0.04,0.16,4), tipMat);
-      tip1.rotation.z = side * (-0.35);
-      tip1.position.set(side*1.02, bodyY-1.22, 0.20); group.add(tip1);
-      const tip2 = new THREE.Mesh(new THREE.ConeGeometry(0.04,0.14,4), tipMat);
-      tip2.rotation.z = side * 0.40;
-      tip2.position.set(side*0.76, bodyY-1.24, 0.24); group.add(tip2);
+      // Four clawed fingers
+      for(let f=-1;f<=2;f++){
+        const finger = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.14,0.06), scale2Mat);
+        finger.position.set(side*0.98 + (side*f*0.06), bodyY-1.10, 0.26); group.add(finger);
+        const fclaw = new THREE.Mesh(new THREE.ConeGeometry(0.025,0.08,4),
+          new THREE.MeshLambertMaterial({color:0x3A2808}));
+        fclaw.rotation.x = -0.3;
+        fclaw.position.set(side*0.98 + (side*f*0.06), bodyY-1.18, 0.30); group.add(fclaw);
+      }
 
       if(side===-1){group.armL=upper;}else{group.armR=upper;}
     });
 
-    // ── EXTRA SCORPION LEGS (3 more pairs on body sides) ──
-    // Scorpions have 4 pairs total; 1 pair is the main walking legs already built
-    const legAngles = [0.55, 0.35, 0.15];  // going up the body
-    legAngles.forEach((yOff, idx)=>{
-      const yPos = legH*0.5 + idx * 0.28;
-      [-1,1].forEach(side=>{
-        // thigh
-        const thigh = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.42,0.14), chit2Mat);
-        thigh.rotation.z = side * (0.7 + idx*0.1);
-        thigh.position.set(side*(bodyW/2+0.18+idx*0.04), yPos+0.12, 0.04);
-        group.add(thigh);
-        // shin
-        const shin = new THREE.Mesh(new THREE.BoxGeometry(0.10,0.36,0.10), chitMat);
-        shin.rotation.z = side * (1.1 + idx*0.15);
-        shin.position.set(side*(bodyW/2+0.38+idx*0.06), yPos-0.14, 0.04);
-        group.add(shin);
-      });
-    });
-
-    // ── SCORPION TAIL (arching up and over) ──
-    // Segments: starts at back of body, curves upward and forward over head
-    const tailSegs = [
-      {r1:0.20, r2:0.25, len:0.38, y: bodyY-0.10, z:-0.45, rx: Math.PI/2-0.30},
-      {r1:0.17, r2:0.21, len:0.36, y: bodyY+0.24, z:-0.72, rx: Math.PI/2-0.70},
-      {r1:0.14, r2:0.18, len:0.34, y: bodyY+0.62, z:-0.84, rx: Math.PI/2-1.10},
-      {r1:0.11, r2:0.15, len:0.32, y: bodyY+0.98, z:-0.76, rx: Math.PI/2-1.50},
-      {r1:0.08, r2:0.12, len:0.30, y: bodyY+1.28, z:-0.52, rx: Math.PI/2-1.90},
-    ];
-    tailSegs.forEach(s=>{
-      const seg = new THREE.Mesh(new THREE.CylinderGeometry(s.r1,s.r2,s.len,8), chitMat);
-      seg.rotation.x = s.rx;
-      seg.position.set(0, s.y, s.z);
-      seg.castShadow=true; group.add(seg);
-    });
-
-    // Telson (bulbous stinger base)
-    const telson = new THREE.Mesh(new THREE.SphereGeometry(0.12,8,7), chit2Mat);
-    telson.position.set(0, bodyY+1.48, -0.24); group.add(telson);
-
-    // Stinger spike
-    const stinger = new THREE.Mesh(new THREE.ConeGeometry(0.05,0.28,6), chit3Mat);
-    stinger.rotation.x = -0.5;
-    stinger.position.set(0, bodyY+1.62, -0.10); group.add(stinger);
-
-    // Dorsal armor ridges on body
-    [{y:bodyY+0.42,s:0.18},{y:bodyY+0.18,s:0.14},{y:bodyY-0.10,s:0.10}].forEach(d=>{
-      const ridge = new THREE.Mesh(new THREE.ConeGeometry(0.05,d.s,5), chit3Mat);
-      ridge.position.set(0, d.y, -0.34); group.add(ridge);
+    // Scale texture patches on shoulders / body sides
+    [
+      [0.46, bodyY+0.30, 0.30],[-0.46, bodyY+0.30, 0.30],
+      [0.42, bodyY+0.00, 0.32],[-0.42, bodyY+0.00, 0.32],
+      [0.38, bodyY-0.28, 0.30],[-0.38, bodyY-0.28, 0.30],
+    ].forEach(([x,y,z])=>{
+      const patch = new THREE.Mesh(new THREE.SphereGeometry(0.06,5,4), scale2Mat);
+      patch.position.set(x,y,z); group.add(patch);
     });
   }
 
