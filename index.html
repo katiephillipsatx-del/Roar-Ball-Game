@@ -5170,6 +5170,10 @@ function makePlayerMesh(pd, teamColor, team){
   if(pd.name==='Cleo'){
     group.scale.setScalar(105/78);
   }
+  // Sly is 9'1" — scale = 109in / 78in ≈ 1.397
+  if(pd.name==='Sly'){
+    group.scale.setScalar(109/78);
+  }
   // Rattles is 10'0" — scale = 120in / 78in ≈ 1.538
   if(pd.name==='Rattles'){
     group.scale.set(1.54, 1.54, 1.54);
