@@ -1970,14 +1970,14 @@ function makePlayerMesh(pd, teamColor, team){
     jCanvas.width=128; jCanvas.height=128;
     const jCtx = jCanvas.getContext('2d');
     jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,0,128,128);
-    // arm-hole cutouts for sleeveless look
-    jCtx.fillStyle='#1C1A2E';
-    jCtx.fillRect(0,0,26,54); jCtx.fillRect(102,0,26,54);
-    // red trim lines
-    jCtx.fillStyle='#FF5500'; jCtx.fillRect(0,0,128,8); jCtx.fillRect(0,120,128,8);
-    jCtx.fillStyle='#FF6622'; jCtx.textAlign='center'; jCtx.textBaseline='middle';
-    jCtx.font='bold 20px Arial Black'; jCtx.fillText('MAGMA',64,24);
-    jCtx.font='bold 72px Arial Black'; jCtx.fillText('12',64,82);
+    jCtx.fillStyle='#1A0800'; jCtx.fillRect(0,0,22,128); jCtx.fillRect(106,0,22,128);
+    jCtx.fillStyle='#FFD700'; jCtx.fillRect(22,0,4,128); jCtx.fillRect(102,0,4,128);
+    jCtx.strokeStyle='#FFD700'; jCtx.lineWidth=3; jCtx.strokeRect(1,1,126,126);
+    jCtx.textAlign='center'; jCtx.textBaseline='middle';
+    jCtx.fillStyle='#7A3A00'; jCtx.font='bold 22px Arial Black'; jCtx.fillText('MAGMA',65,28);
+    jCtx.fillStyle='#FFD700'; jCtx.fillText('MAGMA',64,27);
+    jCtx.fillStyle='#7A3A00'; jCtx.font='bold 72px Arial Black'; jCtx.fillText('12',65,84);
+    jCtx.fillStyle='#FFD700'; jCtx.fillText('12',64,83);
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(0.72,0.84),
@@ -2077,14 +2077,14 @@ function makePlayerMesh(pd, teamColor, team){
     jCanvas.width=128; jCanvas.height=128;
     const jCtx = jCanvas.getContext('2d');
     jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,0,128,128);
-    // arm-hole cutouts for sleeveless look
-    jCtx.fillStyle='#1C1A2E';
-    jCtx.fillRect(0,0,26,54); jCtx.fillRect(102,0,26,54);
-    // red trim lines top + bottom
-    jCtx.fillStyle='#FF5500'; jCtx.fillRect(0,0,128,8); jCtx.fillRect(0,120,128,8);
-    jCtx.fillStyle='#FF6622'; jCtx.textAlign='center'; jCtx.textBaseline='middle';
-    jCtx.font='bold 20px Arial Black'; jCtx.fillText('MAGMA',64,24);
-    jCtx.font='bold 72px Arial Black'; jCtx.fillText('32',64,82);
+    jCtx.fillStyle='#1A0800'; jCtx.fillRect(0,0,22,128); jCtx.fillRect(106,0,22,128);
+    jCtx.fillStyle='#FFD700'; jCtx.fillRect(22,0,4,128); jCtx.fillRect(102,0,4,128);
+    jCtx.strokeStyle='#FFD700'; jCtx.lineWidth=3; jCtx.strokeRect(1,1,126,126);
+    jCtx.textAlign='center'; jCtx.textBaseline='middle';
+    jCtx.fillStyle='#7A3A00'; jCtx.font='bold 22px Arial Black'; jCtx.fillText('MAGMA',65,28);
+    jCtx.fillStyle='#FFD700'; jCtx.fillText('MAGMA',64,27);
+    jCtx.fillStyle='#7A3A00'; jCtx.font='bold 72px Arial Black'; jCtx.fillText('32',65,84);
+    jCtx.fillStyle='#FFD700'; jCtx.fillText('32',64,83);
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(0.88,0.90),
@@ -2327,17 +2327,16 @@ function makePlayerMesh(pd, teamColor, team){
       jCtx.strokeStyle='#39FF14'; jCtx.lineWidth=4; jCtx.strokeText('34',64,90);
       jCtx.fillStyle='#FF69B4'; jCtx.fillText('34',64,90);
     } else {
-      // MAGMA jersey — black, #88, gold text, red/orange stripe trim
-      jCtx.fillStyle='#0C0C12'; jCtx.fillRect(0,0,128,128);
-      jCtx.fillStyle='#CC1800'; jCtx.fillRect(0,0,14,128); jCtx.fillRect(114,0,14,128);
-      jCtx.fillStyle='#FF6600'; jCtx.fillRect(14,0,7,128); jCtx.fillRect(107,0,7,128);
-      jCtx.fillStyle='#CC1800'; jCtx.fillRect(0,118,128,10);
-      jCtx.fillStyle='#FF6600'; jCtx.fillRect(0,110,128,8);
-      jCtx.fillStyle='#FFD700'; jCtx.font='bold 13px Arial Black';
-      jCtx.textAlign='right'; jCtx.textBaseline='top'; jCtx.fillText('C',115,8);
-      jCtx.fillStyle='#FF8C00'; jCtx.font='bold 22px Arial Black';
-      jCtx.textAlign='center'; jCtx.textBaseline='middle'; jCtx.fillText('MAGMA',64,30);
-      jCtx.fillStyle='#FFD700'; jCtx.font='bold 68px Arial Black'; jCtx.fillText('88',64,82);
+      // MAGMA jersey — red, dark panels, gold trim, #88
+      jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,0,128,128);
+      jCtx.fillStyle='#1A0800'; jCtx.fillRect(0,0,22,128); jCtx.fillRect(106,0,22,128);
+      jCtx.fillStyle='#FFD700'; jCtx.fillRect(22,0,4,128); jCtx.fillRect(102,0,4,128);
+      jCtx.strokeStyle='#FFD700'; jCtx.lineWidth=3; jCtx.strokeRect(1,1,126,126);
+      jCtx.textAlign='center'; jCtx.textBaseline='middle';
+      jCtx.fillStyle='#7A3A00'; jCtx.font='bold 22px Arial Black'; jCtx.fillText('MAGMA',65,28);
+      jCtx.fillStyle='#FFD700'; jCtx.fillText('MAGMA',64,27);
+      jCtx.fillStyle='#7A3A00'; jCtx.font='bold 68px Arial Black'; jCtx.fillText('88',65,84);
+      jCtx.fillStyle='#FFD700'; jCtx.fillText('88',64,83);
     }
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
@@ -3390,23 +3389,18 @@ function makePlayerMesh(pd, teamColor, team){
     const jCanvas = document.createElement('canvas');
     jCanvas.width=128; jCanvas.height=128;
     const jCtx = jCanvas.getContext('2d');
-    jCtx.fillStyle='#0C0B0A'; jCtx.fillRect(0,0,128,128);
-    // side stripes: red outer, orange inner
-    jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,0,13,128); jCtx.fillRect(115,0,13,128);
-    jCtx.fillStyle='#FF6600'; jCtx.fillRect(13,0,6,128); jCtx.fillRect(109,0,6,128);
-    // bottom hem
-    jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,118,128,10);
-    jCtx.fillStyle='#FF6600'; jCtx.fillRect(0,110,128,8);
-    // volcano logo placeholder top-center (small triangle)
-    jCtx.fillStyle='#FF6600'; jCtx.beginPath(); jCtx.moveTo(64,6); jCtx.lineTo(74,20); jCtx.lineTo(54,20); jCtx.closePath(); jCtx.fill();
+    jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,0,128,128);
+    jCtx.fillStyle='#1A0800'; jCtx.fillRect(0,0,22,128); jCtx.fillRect(106,0,22,128);
+    jCtx.fillStyle='#FFD700'; jCtx.fillRect(22,0,4,128); jCtx.fillRect(102,0,4,128);
+    jCtx.strokeStyle='#FFD700'; jCtx.lineWidth=3; jCtx.strokeRect(1,1,126,126);
     // captain C
     jCtx.fillStyle='#FFD700'; jCtx.font='bold 13px Arial Black';
-    jCtx.textAlign='right'; jCtx.textBaseline='top'; jCtx.fillText('C',113,8);
-    // team name
-    jCtx.fillStyle='#FF8C00'; jCtx.font='bold 22px Arial Black';
-    jCtx.textAlign='center'; jCtx.textBaseline='middle'; jCtx.fillText('MAGMA',64,32);
-    // jersey number
-    jCtx.fillStyle='#FFD700'; jCtx.font='bold 66px Arial Black'; jCtx.fillText('88',64,82);
+    jCtx.textAlign='right'; jCtx.textBaseline='top'; jCtx.fillText('C',100,5);
+    jCtx.textAlign='center'; jCtx.textBaseline='middle';
+    jCtx.fillStyle='#7A3A00'; jCtx.font='bold 22px Arial Black'; jCtx.fillText('MAGMA',65,28);
+    jCtx.fillStyle='#FFD700'; jCtx.fillText('MAGMA',64,27);
+    jCtx.fillStyle='#7A3A00'; jCtx.font='bold 66px Arial Black'; jCtx.fillText('88',65,84);
+    jCtx.fillStyle='#FFD700'; jCtx.fillText('88',64,83);
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(0.88,0.96),
@@ -3543,23 +3537,16 @@ function makePlayerMesh(pd, teamColor, team){
       jCtx.textAlign='center'; jCtx.textBaseline='middle'; jCtx.fillText('SHADOWS',64,28);
       jCtx.fillStyle='#FFFFFF'; jCtx.font='bold 52px Arial Black'; jCtx.fillText('33',64,82);
     } else {
-      jCtx.fillStyle='#0C0C12'; jCtx.fillRect(0,0,128,128);
-      // side stripes: red outer, orange inner
-      jCtx.fillStyle='#CC1800'; jCtx.fillRect(0,0,14,128); jCtx.fillRect(114,0,14,128);
-      jCtx.fillStyle='#FF6600'; jCtx.fillRect(14,0,7,128); jCtx.fillRect(107,0,7,128);
-      // bottom hem
-      jCtx.fillStyle='#CC1800'; jCtx.fillRect(0,118,128,10);
-      jCtx.fillStyle='#FF6600'; jCtx.fillRect(0,110,128,8);
-      // volcano logo top-center (small triangle)
-      jCtx.fillStyle='#FF6600'; jCtx.beginPath(); jCtx.moveTo(64,6); jCtx.lineTo(74,20); jCtx.lineTo(54,20); jCtx.closePath(); jCtx.fill();
-      // captain C
-      jCtx.fillStyle='#FFD700'; jCtx.font='bold 13px Arial Black';
-      jCtx.textAlign='right'; jCtx.textBaseline='top'; jCtx.fillText('C',115,8);
-      // team name
-      jCtx.fillStyle='#FF8C00'; jCtx.font='bold 22px Arial Black';
-      jCtx.textAlign='center'; jCtx.textBaseline='middle'; jCtx.fillText('MAGMA',64,30);
-      // jersey number
-      jCtx.fillStyle='#FFD700'; jCtx.font='bold 68px Arial Black'; jCtx.fillText('88',64,82);
+      // MAGMA jersey — red, dark panels, gold trim, #88
+      jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,0,128,128);
+      jCtx.fillStyle='#1A0800'; jCtx.fillRect(0,0,22,128); jCtx.fillRect(106,0,22,128);
+      jCtx.fillStyle='#FFD700'; jCtx.fillRect(22,0,4,128); jCtx.fillRect(102,0,4,128);
+      jCtx.strokeStyle='#FFD700'; jCtx.lineWidth=3; jCtx.strokeRect(1,1,126,126);
+      jCtx.textAlign='center'; jCtx.textBaseline='middle';
+      jCtx.fillStyle='#7A3A00'; jCtx.font='bold 22px Arial Black'; jCtx.fillText('MAGMA',65,28);
+      jCtx.fillStyle='#FFD700'; jCtx.fillText('MAGMA',64,27);
+      jCtx.fillStyle='#7A3A00'; jCtx.font='bold 68px Arial Black'; jCtx.fillText('88',65,84);
+      jCtx.fillStyle='#FFD700'; jCtx.fillText('88',64,83);
     }
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
@@ -3697,23 +3684,18 @@ function makePlayerMesh(pd, teamColor, team){
     const jCanvas = document.createElement('canvas');
     jCanvas.width=128; jCanvas.height=128;
     const jCtx = jCanvas.getContext('2d');
-    jCtx.fillStyle='#0A0909'; jCtx.fillRect(0,0,128,128);
-    // side stripes: deep red outer, lava orange inner
-    jCtx.fillStyle='#BB1500'; jCtx.fillRect(0,0,13,128); jCtx.fillRect(115,0,13,128);
-    jCtx.fillStyle='#FF6600'; jCtx.fillRect(13,0,6,128); jCtx.fillRect(109,0,6,128);
-    // bottom hem
-    jCtx.fillStyle='#BB1500'; jCtx.fillRect(0,118,128,10);
-    jCtx.fillStyle='#FF6600'; jCtx.fillRect(0,110,128,8);
-    // volcano logo top-center
-    jCtx.fillStyle='#FF6600'; jCtx.beginPath(); jCtx.moveTo(64,6); jCtx.lineTo(74,20); jCtx.lineTo(54,20); jCtx.closePath(); jCtx.fill();
+    jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,0,128,128);
+    jCtx.fillStyle='#1A0800'; jCtx.fillRect(0,0,22,128); jCtx.fillRect(106,0,22,128);
+    jCtx.fillStyle='#FFD700'; jCtx.fillRect(22,0,4,128); jCtx.fillRect(102,0,4,128);
+    jCtx.strokeStyle='#FFD700'; jCtx.lineWidth=3; jCtx.strokeRect(1,1,126,126);
     // captain C
     jCtx.fillStyle='#FFD700'; jCtx.font='bold 13px Arial Black';
-    jCtx.textAlign='right'; jCtx.textBaseline='top'; jCtx.fillText('C',113,8);
-    // team name
-    jCtx.fillStyle='#FF8C00'; jCtx.font='bold 22px Arial Black';
-    jCtx.textAlign='center'; jCtx.textBaseline='middle'; jCtx.fillText('MAGMA',64,32);
-    // jersey number
-    jCtx.fillStyle='#FFD700'; jCtx.font='bold 66px Arial Black'; jCtx.fillText('88',64,82);
+    jCtx.textAlign='right'; jCtx.textBaseline='top'; jCtx.fillText('C',100,5);
+    jCtx.textAlign='center'; jCtx.textBaseline='middle';
+    jCtx.fillStyle='#7A3A00'; jCtx.font='bold 22px Arial Black'; jCtx.fillText('MAGMA',65,28);
+    jCtx.fillStyle='#FFD700'; jCtx.fillText('MAGMA',64,27);
+    jCtx.fillStyle='#7A3A00'; jCtx.font='bold 66px Arial Black'; jCtx.fillText('88',65,84);
+    jCtx.fillStyle='#FFD700'; jCtx.fillText('88',64,83);
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(0.92,0.98),
