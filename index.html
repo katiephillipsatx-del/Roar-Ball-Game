@@ -4713,6 +4713,10 @@ function makePlayerMesh(pd, teamColor, team){
   if(pd.name==='Dune'){
     group.scale.setScalar(105/78);
   }
+  // Sting (Rattle) is 10'0" — scale = 120in / 78in ≈ 1.538
+  if(pd.name==='Sting'){
+    group.scale.set(1.54, 1.54, 1.54);
+  }
 
   return group;
 }
