@@ -5075,6 +5075,7 @@ function makePlayerMesh(pd, teamColor, team){
   group.vx=0; group.vz=0;
   group.walkPhase=0;
   group.keys=null;
+  group.consecutiveShots=0; group.onFire=false; group.fireTimer=0;
   group._ringTween=null;
   group.spawnX=0; group.spawnZ=0;
 
@@ -5551,11 +5552,20 @@ function resolveShot(pNum,chance,pts,scorer){
     if(scorer){
       if(pts===3) showScorerLabel(scorer,'THREE POINTER!','#00aaff');
       else        showScorerLabel(scorer,'TWO POINTER!','#00ee55');
+      scorer.consecutiveShots=(scorer.consecutiveShots||0)+1;
+      if(scorer.consecutiveShots>=3&&!scorer.onFire){
+        scorer.onFire=true;
+        scorer.fireTimer=5.0;
+        scorer.consecutiveShots=0;
+        showScorerLabel(scorer,'ON FIRE! 🔥','#FF4400');
+        toast('🔥 ON FIRE! 🔥','#FF4400');
+      }
     }
     const next=pNum===1?2:1;
     setTimeout(()=>startInbound(next),700);
   } else {
     toast('NO GOOD!','#ff4444');
+    if(scorer) scorer.consecutiveShots=0;
     setTimeout(()=>bounceMiss(pNum),50);
   }
 }
@@ -5850,7 +5860,7 @@ function onKeyUp(e){
 function moveHuman(player, keySet, pNum, dt){
   if(!player||player.keys!==keySet)return;
   const sprint = keySet==='p1'?KEYS['ShiftLeft']||KEYS['ShiftRight']:KEYS['ControlLeft']||KEYS['ControlRight'];
-  const topSpd = player.pd.spd*(sprint?0.55:0.38);
+  const topSpd = player.pd.spd*(sprint?0.55:0.38)*(player.onFire?1.6:1);
   let dx=0,dz=0;
 
   if(keySet==='p1'){
@@ -5906,6 +5916,7 @@ function moveHuman(player, keySet, pNum, dt){
     const opp=pNum===1?team2Players:team1Players;
     opp.forEach(op=>{
       if(!op.hasBall)return;
+      if(op.onFire)return;
       const dx2=player.position.x-op.position.x,dz2=player.position.z-op.position.z;
       const d=Math.sqrt(dx2*dx2+dz2*dz2);
       if(d<1.2&&Math.random()<player.pd.def/140){
@@ -6038,7 +6049,7 @@ function aiTick(p){
     tx=guardX; tz=guardZ;
     // steal attempt
     const holder=ball3d.holder;
-    if(holder&&holder.team!==p.team){
+    if(holder&&holder.team!==p.team&&!holder.onFire){
       const dx2=p.position.x-holder.position.x,dz2=p.position.z-holder.position.z;
       const d=Math.sqrt(dx2*dx2+dz2*dz2);
       if(d<1.2&&Math.random()<p.pd.def/160){
@@ -6390,6 +6401,27 @@ function update(dt){
   [ctrl1,ctrl2].forEach((p,i)=>{
     if(!p)return;
     p.ringMat.opacity=0.6+Math.sin(t*3+i)*0.3;
+  });
+
+  // On-fire power-up: tick timer and spawn fire particles
+  allPlayers().forEach(p=>{
+    if(!p.onFire)return;
+    p.fireTimer-=dt;
+    if(p.fireTimer<=0){
+      p.onFire=false; p.fireTimer=0;
+      if(p===ctrl1||p===ctrl2) toast('Fire gone!','#FF8800');
+    }
+    // Spawn rising flame particles around the player
+    if(Math.random()<0.5){
+      const ox=(Math.random()-0.5)*0.6;
+      const oz=(Math.random()-0.5)*0.6;
+      const color=Math.random()>0.4?0xFF4400:0xFFAA00;
+      spawnParticle(
+        p.position.x+ox, 0.3+Math.random()*1.2, p.position.z+oz,
+        (Math.random()-0.5)*0.4, 1.0+Math.random()*1.2, (Math.random()-0.5)*0.4,
+        color, 0.35+Math.random()*0.25, 0.06+Math.random()*0.07
+      );
+    }
   });
 
   updateParticles(dt);
