@@ -5718,6 +5718,9 @@ function onKeyDown(e){
     GS.camMode=(GS.camMode+1)%CAM_MODES.length;
     document.getElementById('cam-label').textContent='📷 '+CAM_MODES[GS.camMode];
   }
+  if(e.code==='KeyR'){
+    if(ctrl1&&!ctrl1.hasBall&&possession!==1) tryBlock(ctrl1,1);
+  }
 }
 
 // ── Substitution ─────────────────────────────────────────────────
@@ -5898,6 +5901,23 @@ function moveHuman(player, keySet, pNum, dt){
       }
     });
   }
+}
+
+// ── Block ─────────────────────────────────────────────────────────
+function tryBlock(player, pNum){
+  if(player.blockCooldown>0) return;
+  player.blockAnim={active:true, t:0, dur:0.5};
+  player.blockCooldown=1.2;
+  const opp=pNum===1?team2Players:team1Players;
+  opp.forEach(op=>{
+    if(!op.hasBall) return;
+    const dx=player.position.x-op.position.x, dz=player.position.z-op.position.z;
+    const d=Math.sqrt(dx*dx+dz*dz);
+    if(d<1.4&&Math.random()<player.pd.def/110){
+      giveBall(player);
+      toast('BLOCKED! 🙌','#FF6600');
+    }
+  });
 }
 
 // ── AI ────────────────────────────────────────────────────────────
@@ -6318,6 +6338,22 @@ function update(dt){
       p.position.y=0;
       if(p.armR){ p.armR.rotation.x=0; p.armR.rotation.z=0; }
       if(p.armL) p.armL.rotation.x=0;
+    }
+  });
+
+  // Block animation
+  allPlayers().forEach(p=>{
+    if(p.blockCooldown>0) p.blockCooldown-=dt;
+    if(!p.blockAnim||!p.blockAnim.active) return;
+    p.blockAnim.t+=dt;
+    const f=Math.min(p.blockAnim.t/p.blockAnim.dur,1);
+    const angle=f<0.5 ? -(f*2)*Math.PI*0.85 : -((1-f)*2)*Math.PI*0.85;
+    if(p.armL) p.armL.rotation.x=angle;
+    if(p.armR) p.armR.rotation.x=angle;
+    if(f>=1){
+      p.blockAnim.active=false;
+      if(p.armL) p.armL.rotation.x=0;
+      if(p.armR) p.armR.rotation.x=0;
     }
   });
 
