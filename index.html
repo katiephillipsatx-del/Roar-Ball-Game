@@ -1327,7 +1327,7 @@ function makePlayerMesh(pd, teamColor, team){
     numCtx.fillStyle='#882200'; numCtx.font='bold 90px Arial Black'; numCtx.fillText('0',65,69);
     numCtx.fillStyle='#FF8C00'; numCtx.fillText('0',64,68);
     const numTex = new THREE.CanvasTexture(numCanvas);
-    const numGeo = new THREE.PlaneGeometry(0.48,0.58);
+    const numGeo = new THREE.PlaneGeometry(0.72,0.90);
     const numMat = new THREE.MeshBasicMaterial({map:numTex,transparent:true});
     const numPlane = new THREE.Mesh(numGeo,numMat);
     numPlane.position.set(0, bodyY, 0.27);
