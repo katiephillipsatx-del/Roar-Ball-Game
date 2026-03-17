@@ -6347,11 +6347,15 @@ function update(dt){
     if(!p.blockAnim||!p.blockAnim.active) return;
     p.blockAnim.t+=dt;
     const f=Math.min(p.blockAnim.t/p.blockAnim.dur,1);
+    // Jump: rise in first half, land in second half
+    p.position.y=Math.sin(f*Math.PI)*1.4;
+    // Arms shoot straight up at peak of jump
     const angle=f<0.5 ? -(f*2)*Math.PI*0.85 : -((1-f)*2)*Math.PI*0.85;
     if(p.armL) p.armL.rotation.x=angle;
     if(p.armR) p.armR.rotation.x=angle;
     if(f>=1){
       p.blockAnim.active=false;
+      p.position.y=0;
       if(p.armL) p.armL.rotation.x=0;
       if(p.armR) p.armR.rotation.x=0;
     }
