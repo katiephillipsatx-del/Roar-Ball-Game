@@ -6241,6 +6241,7 @@ function toast(msg,color='#FFD700'){
 // ── Camera ────────────────────────────────────────────────────────
 const _camSmooth={x:0,y:16,z:20,lx:0,ly:0,lz:-1};
 let _willCelebCam={active:false,timer:0,target:null};
+let _maneCelebCam={active:false,timer:0,target:null};
 let _willThreeCount=0; // tracks how many 3-pointers Will has made (alternates night-night / shimmy)
 function updateCamera(dt){
   // Will Harris night-night celebration: zoom in close on him
@@ -6251,6 +6252,24 @@ function updateCamera(dt){
     const tx=w.position.x+1.2, ty=3.5, tz=w.position.z+4.5;
     const lx=w.position.x,    ly=2.0,  lz=w.position.z;
     const lr=0.14;
+    _camSmooth.x+=(tx-_camSmooth.x)*lr;
+    _camSmooth.y+=(ty-_camSmooth.y)*lr;
+    _camSmooth.z+=(tz-_camSmooth.z)*lr;
+    _camSmooth.lx+=(lx-_camSmooth.lx)*lr;
+    _camSmooth.ly+=(ly-_camSmooth.ly)*lr;
+    _camSmooth.lz+=(lz-_camSmooth.lz)*lr;
+    camera.position.set(_camSmooth.x,_camSmooth.y,_camSmooth.z);
+    camera.lookAt(_camSmooth.lx,_camSmooth.ly,_camSmooth.lz);
+    return;
+  }
+  // Mane Attraction crown celebration: dramatic low-angle hero shot
+  if(_maneCelebCam.active&&_maneCelebCam.target){
+    _maneCelebCam.timer-=dt;
+    if(_maneCelebCam.timer<=0) _maneCelebCam.active=false;
+    const m=_maneCelebCam.target;
+    const tx=m.position.x-1.8, ty=2.2, tz=m.position.z+5.5;
+    const lx=m.position.x,     ly=3.8,  lz=m.position.z;
+    const lr=0.12;
     _camSmooth.x+=(tx-_camSmooth.x)*lr;
     _camSmooth.y+=(ty-_camSmooth.y)*lr;
     _camSmooth.z+=(tz-_camSmooth.z)*lr;
@@ -6400,6 +6419,12 @@ function update(dt){
       p.position.y=0;
       if(p.armR){ p.armR.rotation.x=0; p.armR.rotation.z=0; }
       if(p.armL) p.armL.rotation.x=0;
+      // Mane Attraction: LeBron crown celebration after dunk
+      if(p.pd&&p.pd.name==='Mane Attraction'){
+        p.crownCelebAnim={active:true,t:0,dur:2.2};
+        showScorerLabel(p,'KING! 👑','#FFD700');
+        _maneCelebCam={active:true,timer:2.8,target:p};
+      }
     }
   });
 
@@ -6461,6 +6486,48 @@ function update(dt){
       if(p.armL){p.armL.rotation.x=-0.3; p.armL.rotation.z= 0.5+wave*0.35;}
       if(p.armR){p.armR.rotation.x=-0.3; p.armR.rotation.z=-(0.5+wave*0.35);}
     }
+  });
+
+  // Mane Attraction dunk crown celebration (LeBron King crown gesture)
+  allPlayers().forEach(p=>{
+    if(!p.crownCelebAnim||!p.crownCelebAnim.active)return;
+    const cca=p.crownCelebAnim;
+    cca.t+=dt;
+    if(cca.t>=cca.dur){
+      cca.active=false;
+      p.rotation.z=0;
+      if(p.armL){p.armL.rotation.x=0;p.armL.rotation.z=0;}
+      if(p.armR){p.armR.rotation.x=0;p.armR.rotation.z=0;}
+      return;
+    }
+    const prog=cca.t/cca.dur; // 0→1 over 2.2s
+    const riseEnd=0.22, holdEnd=0.78;
+    let armX=0, armZL=0, armZR=0;
+    if(prog<=riseEnd){
+      // Rise: arms sweep out and up into crown position
+      const r=prog/riseEnd;
+      armX=-Math.PI*0.80*r;
+      armZL=0.70*r;
+      armZR=-0.70*r;
+    } else if(prog<=holdEnd){
+      // Hold crown: subtle pulse like adjusting a crown (2 pulses)
+      const hProg=(prog-riseEnd)/(holdEnd-riseEnd);
+      const pulse=Math.sin(hProg*Math.PI*4)*0.05;
+      armX=-Math.PI*0.80+pulse;
+      armZL=0.70;
+      armZR=-0.70;
+      // Slow regal sway
+      p.rotation.z=Math.sin(hProg*Math.PI*2)*0.06;
+    } else {
+      // Lower arms back down
+      const r=1-(prog-holdEnd)/(1-holdEnd);
+      armX=-Math.PI*0.80*r;
+      armZL=0.70*r;
+      armZR=-0.70*r;
+      p.rotation.z=0;
+    }
+    if(p.armL){p.armL.rotation.x=armX;p.armL.rotation.z=armZL;}
+    if(p.armR){p.armR.rotation.x=armX;p.armR.rotation.z=armZR;}
   });
 
   // Loose ball pickup
