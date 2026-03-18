@@ -6427,18 +6427,10 @@ function update(dt){
   allPlayers().forEach(p=>{
     if(!p.willCelebAnim||!p.willCelebAnim.active)return;
     const wca=p.willCelebAnim;
-    const prevPhase=wca.curPhase;
     wca.t+=dt;
     const cycleDur=1.5;
-    const phaseIdx=Math.floor(wca.t/cycleDur);
     const phaseT=(wca.t%cycleDur)/cycleDur;
-    const curPhase=(phaseIdx+(wca.startPhase||0))%2; // 0=night-night, 1=shimmy; startPhase offsets pattern
-    wca.curPhase=curPhase;
-    // Toast on phase switch
-    if(curPhase!==prevPhase){
-      if(curPhase===1) toast('SHIMMY 🕺','#FFD700');
-      else             toast('NIGHT NIGHT 😴','#FFD700');
-    }
+    const curPhase=wca.startPhase||0; // fixed for the whole celebration — no alternating
     if(wca.t>=wca.dur){
       wca.active=false;
       p.rotation.z=0;
