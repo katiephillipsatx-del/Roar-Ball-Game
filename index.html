@@ -6429,18 +6429,18 @@ function update(dt){
     if(f<=riseEnd){
       // Arms rise up to head
       const r=f/riseEnd;
-      armX=-Math.PI*0.88*r;
+      armX=-Math.PI*1.15*r;
       armZL=+0.55*r;
       armZR=-0.55*r;
     } else if(f<=holdEnd){
       // Hold "night night" pose — hands at temples, tilt palms inward
-      armX=-Math.PI*0.88;
+      armX=-Math.PI*1.15;
       armZL=+0.55;
       armZR=-0.55;
     } else {
       // Arms return to rest
       const r=1-(f-holdEnd)/(1-holdEnd);
-      armX=-Math.PI*0.88*r;
+      armX=-Math.PI*1.15*r;
       armZL=+0.55*r;
       armZR=-0.55*r;
     }
