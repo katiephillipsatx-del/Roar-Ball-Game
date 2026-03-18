@@ -109,7 +109,7 @@ Move ──────  W A S D            Move ──────  Arrow Keys
 Shoot ─────  SPACE (hold→release)   Shoot ─────  ENTER
 Sprint ────  SHIFT              Sprint ────  CTRL
 Pass ──────  E   Switch def ──  Q   Pass/Switch ──  /
-Steal ─────  Z                  Steal ─────  CTRL
+Steal ─────  Z/SHIFT            Steal ─────  CTRL
 
 ──  SHOOTING  ──
 Hold the shoot button — a power meter fills up.
@@ -117,7 +117,7 @@ Release in the GREEN zone for the best shot!
 Red = too weak / too strong → lower chance to score.
 
 ──  FULL CONTACT  ──
-Press Z (P1) / CTRL (P2) near a ball carrier to attempt a steal.
+Press Z or SHIFT (P1) / CTRL (P2) near a ball carrier to attempt a steal.
 On defense, press Q to switch to the closest teammate.
 Control auto-switches to whoever catches the ball.
 
@@ -150,7 +150,7 @@ Broadcast  |  2K  |  Follow  |  Overhead
     </div>
   </div>
   <div id="possession">▶ Team 1 Ball</div>
-  <div id="controls-hint">WASD Move · SPACE Shoot · SHIFT Sprint · Z Steal · E Pass · Q Switch/Pass · C Cam · F Sub</div>
+  <div id="controls-hint">WASD Move · SPACE Shoot · Z/SHIFT Steal · E Pass · Q Switch/Pass · C Cam · F Sub</div>
   <div id="meter-wrap">
     <div id="meter-label">SHOOT</div>
     <div id="meter-outer">
@@ -5928,7 +5928,7 @@ function moveHuman(player, keySet, pNum, dt){
   }
 
   // Steal
-  const steal = keySet==='p1'?KEYS['KeyZ']:KEYS['ControlLeft']||KEYS['ControlRight'];
+  const steal = keySet==='p1'?KEYS['KeyZ']||KEYS['ShiftLeft']||KEYS['ShiftRight']:KEYS['ControlLeft']||KEYS['ControlRight'];
   if(steal&&!player.hasBall){
     const opp=pNum===1?team2Players:team1Players;
     opp.forEach(op=>{
