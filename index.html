@@ -5060,7 +5060,7 @@ function makePlayerMesh(pd, teamColor, team){
   // Shoot animation state
   group.shootAnim={active:false,t:0,dur:0.5};
   group.dunkAnim={active:false,t:0,dur:0.7,pNum:0,ballReleased:false,tx:0,ty:0,tz:0};
-  group.willCelebAnim={active:false,t:0,dur:4.5,curPhase:0};
+  group.willCelebAnim={active:false,t:0,dur:9.0,curPhase:0};
 
   // Ball dot (shows who has ball)
   const dotGeo = new THREE.SphereGeometry(0.15,8,6);
@@ -5563,8 +5563,8 @@ function resolveShot(pNum,chance,pts,scorer){
       if(pts===3) showScorerLabel(scorer,'THREE POINTER!','#00aaff');
       else        showScorerLabel(scorer,'TWO POINTER!','#00ee55');
       if(pts===3&&scorer.pd.name==='Will Harris'){
-        scorer.willCelebAnim={active:true,t:0,dur:4.5,curPhase:0};
-        _willCelebCam={active:true,timer:5.0,target:scorer};
+        scorer.willCelebAnim={active:true,t:0,dur:9.0,curPhase:0};
+        _willCelebCam={active:true,timer:9.5,target:scorer};
         showScorerLabel(scorer,'NIGHT NIGHT 😴','#FFD700');
       }
       scorer.consecutiveShots=(scorer.consecutiveShots||0)+1;
