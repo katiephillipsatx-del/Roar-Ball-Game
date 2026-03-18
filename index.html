@@ -5565,8 +5565,8 @@ function resolveShot(pNum,chance,pts,scorer){
       if(pts===3&&scorer.pd.name==='Will Harris'){
         _willThreeCount++;
         const _willStartPhase=(_willThreeCount%2===1)?0:1; // odd=night night, even=shimmy
-        scorer.willCelebAnim={active:true,t:0,dur:9.0,curPhase:_willStartPhase,startPhase:_willStartPhase};
-        _willCelebCam={active:true,timer:9.5,target:scorer};
+        scorer.willCelebAnim={active:true,t:0,dur:1.0,curPhase:_willStartPhase,startPhase:_willStartPhase};
+        _willCelebCam={active:true,timer:1.5,target:scorer};
         showScorerLabel(scorer,_willStartPhase===0?'NIGHT NIGHT 😴':'SHIMMY 🕺','#FFD700');
       }
       scorer.consecutiveShots=(scorer.consecutiveShots||0)+1;
