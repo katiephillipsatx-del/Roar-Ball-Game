@@ -6504,26 +6504,26 @@ function update(dt){
     const riseEnd=0.22, holdEnd=0.78;
     let armX=0, armZL=0, armZR=0;
     if(prog<=riseEnd){
-      // Rise: arms sweep out and up into crown position
+      // Rise: arms sweep up near head
       const r=prog/riseEnd;
-      armX=-Math.PI*0.80*r;
-      armZL=0.70*r;
-      armZR=-0.70*r;
+      armX=-Math.PI*1.10*r;
+      armZL=0.50*r;
+      armZR=-0.50*r;
     } else if(prog<=holdEnd){
-      // Hold crown: subtle pulse like adjusting a crown (2 pulses)
+      // Hold: arms up near head with subtle pulse
       const hProg=(prog-riseEnd)/(holdEnd-riseEnd);
       const pulse=Math.sin(hProg*Math.PI*4)*0.05;
-      armX=-Math.PI*0.80+pulse;
-      armZL=0.70;
-      armZR=-0.70;
+      armX=-Math.PI*1.10+pulse;
+      armZL=0.50;
+      armZR=-0.50;
       // Slow regal sway
       p.rotation.z=Math.sin(hProg*Math.PI*2)*0.06;
     } else {
       // Lower arms back down
       const r=1-(prog-holdEnd)/(1-holdEnd);
-      armX=-Math.PI*0.80*r;
-      armZL=0.70*r;
-      armZR=-0.70*r;
+      armX=-Math.PI*1.10*r;
+      armZL=0.50*r;
+      armZR=-0.50*r;
       p.rotation.z=0;
     }
     if(p.armL){p.armL.rotation.x=armX;p.armL.rotation.z=armZL;}
