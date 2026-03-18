@@ -5075,7 +5075,7 @@ function makePlayerMesh(pd, teamColor, team){
   group.vx=0; group.vz=0;
   group.walkPhase=0;
   group.keys=null;
-  group.consecutiveShots=0; group.onFire=false; group.fireTimer=0;
+  group.consecutiveShots=0; group.onFire=false; group.fireTimer=0; group.pendingFire=false;
   group._ringTween=null;
   group.spawnX=0; group.spawnZ=0;
 
@@ -5414,6 +5414,14 @@ function giveBall(player){
 
   if(player.team===1)setCtrl1(player);
   else if(GS.mode==='2player')setCtrl2(player);
+
+  if(player.pendingFire){
+    player.pendingFire=false;
+    player.onFire=true;
+    player.fireTimer=5.0;
+    showScorerLabel(player,'ON FIRE! 🔥','#FF4400');
+    toast('🔥 ON FIRE! 🔥','#FF4400');
+  }
 }
 
 // ── Reset / tip-off ───────────────────────────────────────────────
@@ -5553,12 +5561,11 @@ function resolveShot(pNum,chance,pts,scorer){
       if(pts===3) showScorerLabel(scorer,'THREE POINTER!','#00aaff');
       else        showScorerLabel(scorer,'TWO POINTER!','#00ee55');
       scorer.consecutiveShots=(scorer.consecutiveShots||0)+1;
-      if(scorer.consecutiveShots>=3&&!scorer.onFire){
-        scorer.onFire=true;
-        scorer.fireTimer=5.0;
+      if(scorer.consecutiveShots>=3&&!scorer.onFire&&!scorer.pendingFire){
+        scorer.pendingFire=true;
         scorer.consecutiveShots=0;
-        showScorerLabel(scorer,'ON FIRE! 🔥','#FF4400');
-        toast('🔥 ON FIRE! 🔥','#FF4400');
+        showScorerLabel(scorer,'HEATING UP 🔥','#FF8800');
+        toast('🔥 HEATING UP — next possession: ON FIRE!','#FF8800');
       }
     }
     const next=pNum===1?2:1;
