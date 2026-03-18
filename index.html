@@ -5563,9 +5563,11 @@ function resolveShot(pNum,chance,pts,scorer){
       if(pts===3) showScorerLabel(scorer,'THREE POINTER!','#00aaff');
       else        showScorerLabel(scorer,'TWO POINTER!','#00ee55');
       if(pts===3&&scorer.pd.name==='Will Harris'){
-        scorer.willCelebAnim={active:true,t:0,dur:9.0,curPhase:0};
+        _willThreeCount++;
+        const _willStartPhase=(_willThreeCount%2===1)?0:1; // odd=night night, even=shimmy
+        scorer.willCelebAnim={active:true,t:0,dur:9.0,curPhase:_willStartPhase,startPhase:_willStartPhase};
         _willCelebCam={active:true,timer:9.5,target:scorer};
-        showScorerLabel(scorer,'NIGHT NIGHT 😴','#FFD700');
+        showScorerLabel(scorer,_willStartPhase===0?'NIGHT NIGHT 😴':'SHIMMY 🕺','#FFD700');
       }
       scorer.consecutiveShots=(scorer.consecutiveShots||0)+1;
       if(scorer.consecutiveShots>=3&&!scorer.onFire&&!scorer.pendingFire){
@@ -6239,6 +6241,7 @@ function toast(msg,color='#FFD700'){
 // ── Camera ────────────────────────────────────────────────────────
 const _camSmooth={x:0,y:16,z:20,lx:0,ly:0,lz:-1};
 let _willCelebCam={active:false,timer:0,target:null};
+let _willThreeCount=0; // tracks how many 3-pointers Will has made (alternates night-night / shimmy)
 function updateCamera(dt){
   // Will Harris night-night celebration: zoom in close on him
   if(_willCelebCam.active&&_willCelebCam.target){
@@ -6429,7 +6432,7 @@ function update(dt){
     const cycleDur=1.5;
     const phaseIdx=Math.floor(wca.t/cycleDur);
     const phaseT=(wca.t%cycleDur)/cycleDur;
-    const curPhase=phaseIdx%2; // 0=night-night, 1=shimmy
+    const curPhase=(phaseIdx+(wca.startPhase||0))%2; // 0=night-night, 1=shimmy; startPhase offsets pattern
     wca.curPhase=curPhase;
     // Toast on phase switch
     if(curPhase!==prevPhase){
