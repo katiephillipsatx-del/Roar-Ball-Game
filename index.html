@@ -5059,6 +5059,7 @@ function makePlayerMesh(pd, teamColor, team){
   // Shoot animation state
   group.shootAnim={active:false,t:0,dur:0.5};
   group.dunkAnim={active:false,t:0,dur:0.7,pNum:0,ballReleased:false,tx:0,ty:0,tz:0};
+  group.nightNightAnim={active:false,t:0,dur:2.5};
 
   // Ball dot (shows who has ball)
   const dotGeo = new THREE.SphereGeometry(0.15,8,6);
@@ -5560,6 +5561,11 @@ function resolveShot(pNum,chance,pts,scorer){
     if(scorer){
       if(pts===3) showScorerLabel(scorer,'THREE POINTER!','#00aaff');
       else        showScorerLabel(scorer,'TWO POINTER!','#00ee55');
+      if(pts===3&&scorer.pd.name==='Will Harris'){
+        scorer.nightNightAnim={active:true,t:0,dur:2.5};
+        _willCelebCam={active:true,timer:3.0,target:scorer};
+        showScorerLabel(scorer,'NIGHT NIGHT 😴','#FFD700');
+      }
       scorer.consecutiveShots=(scorer.consecutiveShots||0)+1;
       if(scorer.consecutiveShots>=3&&!scorer.onFire&&!scorer.pendingFire){
         scorer.pendingFire=true;
@@ -6230,7 +6236,27 @@ function toast(msg,color='#FFD700'){
 
 // ── Camera ────────────────────────────────────────────────────────
 const _camSmooth={x:0,y:16,z:20,lx:0,ly:0,lz:-1};
+let _willCelebCam={active:false,timer:0,target:null};
 function updateCamera(dt){
+  // Will Harris night-night celebration: zoom in close on him
+  if(_willCelebCam.active&&_willCelebCam.target){
+    _willCelebCam.timer-=dt;
+    if(_willCelebCam.timer<=0) _willCelebCam.active=false;
+    const w=_willCelebCam.target;
+    const tx=w.position.x+1.2, ty=3.5, tz=w.position.z+4.5;
+    const lx=w.position.x,    ly=2.0,  lz=w.position.z;
+    const lr=0.14;
+    _camSmooth.x+=(tx-_camSmooth.x)*lr;
+    _camSmooth.y+=(ty-_camSmooth.y)*lr;
+    _camSmooth.z+=(tz-_camSmooth.z)*lr;
+    _camSmooth.lx+=(lx-_camSmooth.lx)*lr;
+    _camSmooth.ly+=(ly-_camSmooth.ly)*lr;
+    _camSmooth.lz+=(lz-_camSmooth.lz)*lr;
+    camera.position.set(_camSmooth.x,_camSmooth.y,_camSmooth.z);
+    camera.lookAt(_camSmooth.lx,_camSmooth.ly,_camSmooth.lz);
+    return;
+  }
+
   const mode=CAM_MODES[GS.camMode];
   let tx,ty,tz,lx,ly,lz;
 
@@ -6389,6 +6415,41 @@ function update(dt){
       p.position.y=0;
       if(p.armL) p.armL.rotation.x=0;
       if(p.armR) p.armR.rotation.x=0;
+    }
+  });
+
+  // Night-night celebration animation (Will Harris 3PT)
+  allPlayers().forEach(p=>{
+    if(!p.nightNightAnim||!p.nightNightAnim.active)return;
+    p.nightNightAnim.t+=dt;
+    const f=Math.min(p.nightNightAnim.t/p.nightNightAnim.dur,1);
+    const dur=p.nightNightAnim.dur;
+    const riseEnd=0.3/dur, holdEnd=2.1/dur;
+    let armX=0, armZL=0, armZR=0;
+    if(f<=riseEnd){
+      // Arms rise up to head
+      const r=f/riseEnd;
+      armX=-Math.PI*0.88*r;
+      armZL=+0.55*r;
+      armZR=-0.55*r;
+    } else if(f<=holdEnd){
+      // Hold "night night" pose — hands at temples, tilt palms inward
+      armX=-Math.PI*0.88;
+      armZL=+0.55;
+      armZR=-0.55;
+    } else {
+      // Arms return to rest
+      const r=1-(f-holdEnd)/(1-holdEnd);
+      armX=-Math.PI*0.88*r;
+      armZL=+0.55*r;
+      armZR=-0.55*r;
+    }
+    if(p.armL){p.armL.rotation.x=armX; p.armL.rotation.z=armZL;}
+    if(p.armR){p.armR.rotation.x=armX; p.armR.rotation.z=armZR;}
+    if(f>=1){
+      p.nightNightAnim.active=false;
+      if(p.armL){p.armL.rotation.x=0; p.armL.rotation.z=0;}
+      if(p.armR){p.armR.rotation.x=0; p.armR.rotation.z=0;}
     }
   });
 
