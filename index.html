@@ -5563,9 +5563,11 @@ function resolveShot(pNum,chance,pts,scorer){
       if(pts===3) showScorerLabel(scorer,'THREE POINTER!','#00aaff');
       else        showScorerLabel(scorer,'TWO POINTER!','#00ee55');
       if(pts===3&&scorer.pd.name==='Will Harris'){
-        scorer.willCelebAnim={active:true,t:0,dur:3.0,curPhase:0,startPhase:0};
-        _willCelebCam={active:true,timer:3.5,target:scorer};
-        showScorerLabel(scorer,'NIGHT NIGHT 😴','#FFD700');
+        _willThreeCount++;
+        const _sp=(_willThreeCount%2===1)?0:1; // odd=night night, even=shimmy
+        scorer.willCelebAnim={active:true,t:0,dur:1.5,curPhase:_sp,startPhase:_sp};
+        _willCelebCam={active:true,timer:2.0,target:scorer};
+        showScorerLabel(scorer,_sp===0?'NIGHT NIGHT 😴':'SHIMMY 🕺','#FFD700');
       }
       scorer.consecutiveShots=(scorer.consecutiveShots||0)+1;
       if(scorer.consecutiveShots>=3&&!scorer.onFire&&!scorer.pendingFire){
@@ -6425,17 +6427,10 @@ function update(dt){
   allPlayers().forEach(p=>{
     if(!p.willCelebAnim||!p.willCelebAnim.active)return;
     const wca=p.willCelebAnim;
-    const prevPhase=wca.curPhase;
     wca.t+=dt;
     const cycleDur=1.5;
-    const phaseIdx=Math.floor(wca.t/cycleDur);
     const phaseT=(wca.t%cycleDur)/cycleDur;
-    const curPhase=phaseIdx%2; // 0=night-night first, 1=shimmy second
-    wca.curPhase=curPhase;
-    if(curPhase!==prevPhase){
-      if(curPhase===1) toast('SHIMMY 🕺','#FFD700');
-      else             toast('NIGHT NIGHT 😴','#FFD700');
-    }
+    const curPhase=wca.startPhase||0; // fixed for this celebration
     if(wca.t>=wca.dur){
       wca.active=false;
       p.rotation.z=0;
