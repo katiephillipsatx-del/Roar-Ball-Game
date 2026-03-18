@@ -5060,7 +5060,7 @@ function makePlayerMesh(pd, teamColor, team){
   // Shoot animation state
   group.shootAnim={active:false,t:0,dur:0.5};
   group.dunkAnim={active:false,t:0,dur:0.7,pNum:0,ballReleased:false,tx:0,ty:0,tz:0};
-  group.nightNightAnim={active:false,t:0,dur:2.5};
+  group.willCelebAnim={active:false,t:0,dur:4.5,curPhase:0};
 
   // Ball dot (shows who has ball)
   const dotGeo = new THREE.SphereGeometry(0.15,8,6);
@@ -5563,8 +5563,8 @@ function resolveShot(pNum,chance,pts,scorer){
       if(pts===3) showScorerLabel(scorer,'THREE POINTER!','#00aaff');
       else        showScorerLabel(scorer,'TWO POINTER!','#00ee55');
       if(pts===3&&scorer.pd.name==='Will Harris'){
-        scorer.nightNightAnim={active:true,t:0,dur:2.5};
-        _willCelebCam={active:true,timer:3.0,target:scorer};
+        scorer.willCelebAnim={active:true,t:0,dur:4.5,curPhase:0};
+        _willCelebCam={active:true,timer:5.0,target:scorer};
         showScorerLabel(scorer,'NIGHT NIGHT 😴','#FFD700');
       }
       scorer.consecutiveShots=(scorer.consecutiveShots||0)+1;
@@ -6420,38 +6420,51 @@ function update(dt){
     }
   });
 
-  // Night-night celebration animation (Will Harris 3PT)
+  // Will Harris 3PT celebration: night-night ↔ shimmy alternating
   allPlayers().forEach(p=>{
-    if(!p.nightNightAnim||!p.nightNightAnim.active)return;
-    p.nightNightAnim.t+=dt;
-    const f=Math.min(p.nightNightAnim.t/p.nightNightAnim.dur,1);
-    const dur=p.nightNightAnim.dur;
-    const riseEnd=0.3/dur, holdEnd=2.1/dur;
-    let armX=0, armZL=0, armZR=0;
-    if(f<=riseEnd){
-      // Arms rise up to head
-      const r=f/riseEnd;
-      armX=-Math.PI*1.15*r;
-      armZL=+0.55*r;
-      armZR=-0.55*r;
-    } else if(f<=holdEnd){
-      // Hold "night night" pose — hands at temples, tilt palms inward
-      armX=-Math.PI*1.15;
-      armZL=+0.55;
-      armZR=-0.55;
-    } else {
-      // Arms return to rest
-      const r=1-(f-holdEnd)/(1-holdEnd);
-      armX=-Math.PI*1.15*r;
-      armZL=+0.55*r;
-      armZR=-0.55*r;
+    if(!p.willCelebAnim||!p.willCelebAnim.active)return;
+    const wca=p.willCelebAnim;
+    const prevPhase=wca.curPhase;
+    wca.t+=dt;
+    const cycleDur=1.5;
+    const phaseIdx=Math.floor(wca.t/cycleDur);
+    const phaseT=(wca.t%cycleDur)/cycleDur;
+    const curPhase=phaseIdx%2; // 0=night-night, 1=shimmy
+    wca.curPhase=curPhase;
+    // Toast on phase switch
+    if(curPhase!==prevPhase){
+      if(curPhase===1) toast('SHIMMY 🕺','#FFD700');
+      else             toast('NIGHT NIGHT 😴','#FFD700');
     }
-    if(p.armL){p.armL.rotation.x=armX; p.armL.rotation.z=armZL;}
-    if(p.armR){p.armR.rotation.x=armX; p.armR.rotation.z=armZR;}
-    if(f>=1){
-      p.nightNightAnim.active=false;
-      if(p.armL){p.armL.rotation.x=0; p.armL.rotation.z=0;}
-      if(p.armR){p.armR.rotation.x=0; p.armR.rotation.z=0;}
+    if(wca.t>=wca.dur){
+      wca.active=false;
+      p.rotation.z=0;
+      if(p.armL){p.armL.rotation.x=0;p.armL.rotation.z=0;}
+      if(p.armR){p.armR.rotation.x=0;p.armR.rotation.z=0;}
+      return;
+    }
+    if(curPhase===0){
+      // Night night: arms rise to temples
+      const riseEnd=0.2, holdEnd=0.85;
+      let armX=0,armZL=0,armZR=0;
+      if(phaseT<=riseEnd){
+        const r=phaseT/riseEnd;
+        armX=-Math.PI*1.15*r; armZL=0.55*r; armZR=-0.55*r;
+      } else if(phaseT<=holdEnd){
+        armX=-Math.PI*1.15; armZL=0.55; armZR=-0.55;
+      } else {
+        const r=1-(phaseT-holdEnd)/(1-holdEnd);
+        armX=-Math.PI*1.15*r; armZL=0.55*r; armZR=-0.55*r;
+      }
+      p.rotation.z=0;
+      if(p.armL){p.armL.rotation.x=armX;p.armL.rotation.z=armZL;}
+      if(p.armR){p.armR.rotation.x=armX;p.armR.rotation.z=armZR;}
+    } else {
+      // Shimmy: rapid shoulder shake side-to-side
+      const wave=Math.sin(phaseT*Math.PI*2*4); // 4 oscillations per cycle
+      p.rotation.z=wave*0.14;
+      if(p.armL){p.armL.rotation.x=-0.3; p.armL.rotation.z= 0.5+wave*0.35;}
+      if(p.armR){p.armR.rotation.x=-0.3; p.armR.rotation.z=-(0.5+wave*0.35);}
     }
   });
 
