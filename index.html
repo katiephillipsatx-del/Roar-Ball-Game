@@ -1,104 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>Forest Friends Math Adventure</title>
-    <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Forest Friends Math Adventure</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div id="game-container">
+
+  <div id="game-container">
 
     <!-- ══ Start Screen ══ -->
     <div id="start-screen">
-        <h1>🌲 Forest Friends<br>Math Adventure</h1>
-        <p class="subtitle">Heal forest animals by solving math problems!</p>
+      <h1 class="game-title">🌲 Forest Friends<br/><span>Math Adventure</span></h1>
+      <p class="subtitle">Help hurt forest animals by solving math puzzles!<br/>Heal them and they'll join your adventure!</p>
 
-        <div class="start-card">
-            <div class="input-group">
-                <label for="player-name">Your Name</label>
-                <input type="text" id="player-name" placeholder="Enter your name…" maxlength="20" />
-            </div>
-            <div class="input-group">
-                <label for="player-age">Your Age (5–15)</label>
-                <input type="number" id="player-age" placeholder="How old are you?" min="5" max="15" />
-            </div>
-            <button id="start-btn">🚀 Start Adventure!</button>
+      <div class="start-card">
+        <div class="input-group">
+          <label for="player-name">Your Name</label>
+          <input type="text" id="player-name" placeholder="Enter your name…" maxlength="20" autocomplete="off" />
         </div>
+        <div class="input-group">
+          <label for="player-age">Your Age <span class="age-hint">(5–15)</span></label>
+          <input type="number" id="player-age" placeholder="How old are you?" min="5" max="15" />
+        </div>
+        <div id="grade-preview" class="grade-preview"></div>
+        <div id="start-error" class="start-error"></div>
+        <button id="start-btn">🚀 Start Adventure!</button>
+      </div>
 
-        <div class="start-animals">🐰 🦊 🦔 🦌 🐿️ 🦉 🐺 🦄</div>
+      <div class="start-animals">🐰 🦊 🦔 🦌 🐿️ 🦉 🐺 🦄</div>
     </div>
 
     <!-- ══ Game Canvas ══ -->
     <canvas id="game-canvas" width="800" height="600"></canvas>
 
+    <!-- ══ HUD (shown over canvas) ══ -->
+    <div id="hud">
+      <div id="hud-tl">
+        <div id="hud-name">Player</div>
+        <div id="hud-grade">Grade K</div>
+      </div>
+      <div id="hud-tc">
+        <div id="xp-label-row">
+          <span id="xp-label-text">XP</span>
+          <span id="xp-text">0 / 20</span>
+        </div>
+        <div id="xp-bar-bg"><div id="xp-bar-fill"></div></div>
+      </div>
+      <div id="hud-tr">
+        <div id="healed-display">🐾 Healed: <span id="healed-count">0</span></div>
+      </div>
+
+      <!-- Sidekick slots -->
+      <div id="sidekick-bar">
+        <div class="sk-slot" id="sk-slot-0" data-slot="0"><span class="sk-empty">Empty</span></div>
+        <div class="sk-slot" id="sk-slot-1" data-slot="1"><span class="sk-empty">Empty</span></div>
+        <div class="sk-slot" id="sk-slot-2" data-slot="2"><span class="sk-empty">Empty</span></div>
+      </div>
+
+      <button id="inv-open-btn">🎒 Inventory</button>
+    </div>
+
+    <!-- ══ Interact Tooltip ══ -->
+    <div id="interact-tip">Press <b>E</b> or Click to help!</div>
+
     <!-- ══ Quiz Modal ══ -->
     <div id="quiz-modal">
-        <div class="quiz-box">
-            <button class="quiz-close-btn" id="quiz-close-btn" title="Close">✕</button>
+      <div class="quiz-box">
+        <button class="quiz-close-btn" id="quiz-close-btn" title="Give up">✕</button>
+        <canvas id="quiz-animal-canvas" width="110" height="110"></canvas>
 
-            <canvas id="quiz-animal-canvas" class="quiz-animal-art" width="100" height="100"></canvas>
-
-            <div class="quiz-header">
-                <h2 id="quiz-title">Help the Rabbit!</h2>
-                <div class="quiz-stars" id="quiz-stars">⭐</div>
-            </div>
-
-            <div class="quiz-progress-bar-wrap">
-                <div class="quiz-progress-bar" id="quiz-progress-bar" style="width:0%"></div>
-            </div>
-            <div class="quiz-progress-label" id="quiz-progress-label">0 / 5</div>
-
-            <div class="quiz-question">
-                <p id="quiz-question-text">2 + 3 = ?</p>
-            </div>
-
-            <div class="quiz-input-row">
-                <input type="text" id="quiz-answer-input" placeholder="Your answer…" inputmode="numeric" autocomplete="off" />
-                <button id="submit-answer-btn">Submit</button>
-            </div>
-
-            <div class="quiz-feedback" id="quiz-feedback"></div>
+        <div class="quiz-header">
+          <h2 id="quiz-title">Help the Rabbit!</h2>
+          <div id="quiz-stars">⭐</div>
+          <div id="quiz-rarity-label" class="rarity-common">Common</div>
         </div>
+
+        <div class="progress-wrap">
+          <div class="progress-track">
+            <div class="progress-fill" id="quiz-progress-fill" style="width:0%"></div>
+          </div>
+          <span id="quiz-progress-label">0 / 5</span>
+        </div>
+
+        <div class="quiz-question-box">
+          <p id="quiz-question-text">2 + 3 = ?</p>
+        </div>
+
+        <div class="quiz-input-row">
+          <input type="text" id="quiz-answer-input" placeholder="Your answer…" inputmode="decimal" autocomplete="off" />
+          <button id="submit-answer-btn">Submit</button>
+        </div>
+
+        <div class="quiz-feedback" id="quiz-feedback"></div>
+      </div>
     </div>
 
     <!-- ══ Celebration Overlay ══ -->
     <div id="celebration">
-        <div class="celebration-box">
-            <h2 id="celebration-title">🎉 Animal Healed!</h2>
-            <p id="celebration-msg">The Rabbit has joined your team!</p>
-        </div>
+      <div class="celebration-box">
+        <div id="celebration-emoji">✨</div>
+        <h2 id="celebration-title">🎉 Animal Healed!</h2>
+        <p id="celebration-msg">The Rabbit has joined your team!</p>
+        <button id="celebration-ok-btn">Yay! 🌟</button>
+      </div>
     </div>
 
     <!-- ══ Level-Up Overlay ══ -->
     <div id="levelup-overlay">
-        <div class="levelup-box">
-            <h2>🎓 Level Up!</h2>
-            <p id="levelup-msg">You've reached Grade 2!</p>
-        </div>
+      <div class="levelup-box">
+        <div id="levelup-stars">⭐⭐⭐</div>
+        <h2>🎓 Grade Level Up!</h2>
+        <p id="levelup-msg">You've reached Grade 1!</p>
+        <button id="levelup-ok-btn">Awesome! 🎉</button>
+      </div>
     </div>
 
     <!-- ══ Inventory Panel ══ -->
     <div id="inventory-panel">
-        <div class="inventory-box">
-            <h2>🎒 Your Forest Friends</h2>
-            <div class="inventory-grid" id="inventory-grid"></div>
-            <button class="inv-close-btn" id="inv-close-btn">Close</button>
-        </div>
+      <div class="inventory-box">
+        <h2>🎒 Your Forest Friends</h2>
+        <p class="inv-subtitle">All your healed companions</p>
+        <div class="inventory-grid" id="inventory-grid"></div>
+        <button class="inv-close-btn" id="inv-close-btn">Close</button>
+      </div>
     </div>
 
     <!-- ══ Swap Prompt ══ -->
     <div id="swap-prompt">
-        <div class="swap-box">
-            <h3>🎒 Sidekick Slots Full!</h3>
-            <p>Choose a sidekick to swap out, or send the new animal to storage.</p>
-            <div class="swap-slots" id="swap-slots"></div>
-            <button class="swap-storage-btn" id="swap-storage-btn">Send to Storage</button>
-        </div>
+      <div class="swap-box">
+        <h3>🎒 Sidekick Slots Full!</h3>
+        <p>Choose a sidekick to send to storage, or cancel.</p>
+        <div class="swap-slots" id="swap-slots"></div>
+        <button class="swap-cancel-btn" id="swap-cancel-btn">Cancel</button>
+      </div>
     </div>
 
-</div>
+  </div><!-- /#game-container -->
 
-<script src="game.js"></script>
+  <script src="game.js"></script>
 </body>
 </html>
