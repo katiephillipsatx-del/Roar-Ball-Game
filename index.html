@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Forest Friends Math Adventure</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="game-container">
+
+    <!-- ══ Start Screen ══ -->
+    <div id="start-screen">
+        <h1>🌲 Forest Friends<br>Math Adventure</h1>
+        <p class="subtitle">Heal forest animals by solving math problems!</p>
+
+        <div class="start-card">
+            <div class="input-group">
+                <label for="player-name">Your Name</label>
+                <input type="text" id="player-name" placeholder="Enter your name…" maxlength="20" />
+            </div>
+            <div class="input-group">
+                <label for="player-age">Your Age (5–15)</label>
+                <input type="number" id="player-age" placeholder="How old are you?" min="5" max="15" />
+            </div>
+            <button id="start-btn">🚀 Start Adventure!</button>
+        </div>
+
+        <div class="start-animals">🐰 🦊 🦔 🦌 🐿️ 🦉 🐺 🦄</div>
+    </div>
+
+    <!-- ══ Game Canvas ══ -->
+    <canvas id="game-canvas" width="800" height="600"></canvas>
+
+    <!-- ══ Quiz Modal ══ -->
+    <div id="quiz-modal">
+        <div class="quiz-box">
+            <button class="quiz-close-btn" id="quiz-close-btn" title="Close">✕</button>
+
+            <canvas id="quiz-animal-canvas" class="quiz-animal-art" width="100" height="100"></canvas>
+
+            <div class="quiz-header">
+                <h2 id="quiz-title">Help the Rabbit!</h2>
+                <div class="quiz-stars" id="quiz-stars">⭐</div>
+            </div>
+
+            <div class="quiz-progress-bar-wrap">
+                <div class="quiz-progress-bar" id="quiz-progress-bar" style="width:0%"></div>
+            </div>
+            <div class="quiz-progress-label" id="quiz-progress-label">0 / 5</div>
+
+            <div class="quiz-question">
+                <p id="quiz-question-text">2 + 3 = ?</p>
+            </div>
+
+            <div class="quiz-input-row">
+                <input type="text" id="quiz-answer-input" placeholder="Your answer…" inputmode="numeric" autocomplete="off" />
+                <button id="submit-answer-btn">Submit</button>
+            </div>
+
+            <div class="quiz-feedback" id="quiz-feedback"></div>
+        </div>
+    </div>
+
+    <!-- ══ Celebration Overlay ══ -->
+    <div id="celebration">
+        <div class="celebration-box">
+            <h2 id="celebration-title">🎉 Animal Healed!</h2>
+            <p id="celebration-msg">The Rabbit has joined your team!</p>
+        </div>
+    </div>
+
+    <!-- ══ Level-Up Overlay ══ -->
+    <div id="levelup-overlay">
+        <div class="levelup-box">
+            <h2>🎓 Level Up!</h2>
+            <p id="levelup-msg">You've reached Grade 2!</p>
+        </div>
+    </div>
+
+    <!-- ══ Inventory Panel ══ -->
+    <div id="inventory-panel">
+        <div class="inventory-box">
+            <h2>🎒 Your Forest Friends</h2>
+            <div class="inventory-grid" id="inventory-grid"></div>
+            <button class="inv-close-btn" id="inv-close-btn">Close</button>
+        </div>
+    </div>
+
+    <!-- ══ Swap Prompt ══ -->
+    <div id="swap-prompt">
+        <div class="swap-box">
+            <h3>🎒 Sidekick Slots Full!</h3>
+            <p>Choose a sidekick to swap out, or send the new animal to storage.</p>
+            <div class="swap-slots" id="swap-slots"></div>
+            <button class="swap-storage-btn" id="swap-storage-btn">Send to Storage</button>
+        </div>
+    </div>
+
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
