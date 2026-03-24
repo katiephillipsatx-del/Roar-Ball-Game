@@ -78,6 +78,62 @@
     #gameover-screen .go-winner{font-size:48px;font-family:'Arial Black';margin-bottom:8px;}
     #gameover-screen .go-score{font-size:36px;font-family:'Arial Black';color:#fff;margin-bottom:8px;}
     #gameover-screen .go-flavor{font-size:18px;color:#FFD700;margin-bottom:28px;}
+
+  /* ---- RESPONSIVE / MOBILE ---- */
+  @media (max-width: 768px) {
+    .title{font-size:44px;letter-spacing:1px;}
+    .subtitle{font-size:10px;padding:4px 8px;margin-bottom:16px;text-align:center;}
+    .btn{font-size:17px;padding:13px 28px;margin:5px;}
+    .select-header{font-size:20px;}
+    .select-sub{font-size:12px;margin-bottom:14px;}
+    #teamSelect .cards{gap:8px;overflow-y:auto;max-height:calc(100vh - 180px);padding-bottom:8px;}
+    .card{width:140px;padding:10px;}
+    .player-card{width:130px;padding:10px;}
+    .player-card .p-emoji{font-size:26px;}
+    #howto-modal .modal-box{font-size:11px;padding:18px 16px;max-height:80vh;overflow-y:auto;max-width:94vw;}
+    #scoreboard{height:52px;}
+    #scoreboard .team-name-sb{font-size:13px;letter-spacing:0;}
+    #scoreboard .score{font-size:22px;}
+    #scoreboard .sb-center{padding:0 10px;min-width:80px;}
+    #scoreboard .clock{font-size:15px;}
+    #scoreboard .qtr{font-size:10px;}
+    #controls-hint{display:none;}
+    #qtr-overlay .qo-title{font-size:44px;}
+    .toast{font-size:20px;}
+    #gameover-screen .go-title{font-size:34px;}
+    #gameover-screen .go-winner{font-size:28px;}
+    #gameover-screen .go-score{font-size:22px;}
+    #gameover-screen .go-flavor{font-size:13px;margin-bottom:18px;}
+    .back-link{font-size:15px;}
+  }
+  @media (max-width: 480px) {
+    .title{font-size:34px;}
+    .card{width:120px;padding:8px;}
+    .player-card{width:115px;padding:8px;}
+  }
+
+  /* ---- TOUCH / MOBILE CONTROLS ---- */
+  #mobile-controls{display:none;position:absolute;bottom:0;left:0;width:100%;height:230px;pointer-events:none;z-index:20;}
+  body.is-touch #mobile-controls{display:block;}
+  #joystick-zone{position:absolute;left:14px;bottom:62px;width:130px;height:130px;pointer-events:all;touch-action:none;}
+  #joystick-base{position:absolute;inset:0;border-radius:50%;background:rgba(255,255,255,0.10);border:2px solid rgba(255,255,255,0.22);}
+  #joystick-thumb{position:absolute;width:52px;height:52px;border-radius:50%;background:rgba(255,107,53,0.78);border:2px solid #FF6B35;top:39px;left:39px;pointer-events:none;}
+  .touch-btn{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Arial Black',sans-serif;font-weight:900;color:#fff;pointer-events:all;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;border:2px solid rgba(255,255,255,0.28);text-align:center;cursor:pointer;}
+  #touch-shoot{width:76px;height:76px;right:14px;bottom:62px;background:rgba(204,51,0,0.80);border-color:#FF6B35;font-size:11px;}
+  #touch-shoot.pressing{background:rgba(255,107,53,0.92);}
+  #touch-pass{width:62px;height:62px;right:100px;bottom:84px;background:rgba(29,111,164,0.78);border-color:#38BDF8;font-size:10px;}
+  #touch-steal{width:62px;height:62px;right:96px;bottom:154px;background:rgba(0,140,90,0.78);border-color:#00FF88;font-size:10px;}
+  #touch-cam{width:50px;height:50px;right:14px;bottom:150px;background:rgba(50,50,70,0.78);border-color:#888;font-size:9px;}
+  #touch-sprint{width:56px;height:30px;border-radius:15px;left:155px;bottom:86px;background:rgba(50,50,70,0.78);border-color:#888;font-size:9px;}
+  #touch-sprint.active{background:rgba(255,215,0,0.38);border-color:#FFD700;color:#FFD700;}
+  #touch-sub{width:44px;height:44px;right:16px;bottom:210px;background:rgba(50,50,70,0.78);border-color:#888;font-size:9px;}
+
+  /* Portrait orientation nudge */
+  #orient-warn{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000000e8;z-index:999;align-items:center;justify-content:center;flex-direction:column;color:#fff;font-family:'Arial Black',sans-serif;text-align:center;padding:20px;}
+  #orient-warn .ow-icon{font-size:52px;margin-bottom:14px;}
+  #orient-warn .ow-msg{font-size:20px;color:#FFD700;margin-bottom:6px;}
+  #orient-warn .ow-sub{font-size:13px;color:#aaa;margin-bottom:22px;}
+  #orient-warn .ow-skip{background:none;border:2px solid #FF6B35;color:#FF6B35;font-family:'Arial Black';font-size:15px;padding:9px 22px;border-radius:8px;cursor:pointer;}
   </style>
 </head>
 <body>
@@ -172,6 +228,28 @@ Broadcast  |  2K  |  Follow  |  Overhead
     <div class="qo-title" id="qo-title"></div>
     <div class="qo-score" id="qo-score"></div>
   </div>
+
+  <!-- Mobile touch controls (shown on touch devices) -->
+  <div id="mobile-controls">
+    <div id="joystick-zone">
+      <div id="joystick-base"></div>
+      <div id="joystick-thumb"></div>
+    </div>
+    <button id="touch-shoot" class="touch-btn">SHOOT</button>
+    <button id="touch-pass"  class="touch-btn">PASS</button>
+    <button id="touch-steal" class="touch-btn">STEAL</button>
+    <button id="touch-cam"   class="touch-btn">📷 CAM</button>
+    <button id="touch-sprint" class="touch-btn">⚡ SPRINT</button>
+    <button id="touch-sub"   class="touch-btn">SUB</button>
+  </div>
+</div>
+
+<!-- ===== PORTRAIT WARNING (mobile only) ===== -->
+<div id="orient-warn">
+  <div class="ow-icon">📱➡️</div>
+  <div class="ow-msg">Rotate your device!</div>
+  <div class="ow-sub">Landscape mode works best for Roar Ball</div>
+  <button class="ow-skip" onclick="document.getElementById('orient-warn').style.display='none'">PLAY ANYWAY</button>
 </div>
 
 <!-- ===== GAME OVER ===== -->
@@ -407,6 +485,167 @@ let _stadiumObjs=[];
 const KEYS={};
 window.addEventListener('keydown',e=>{KEYS[e.code]=true;onKeyDown(e);});
 window.addEventListener('keyup',  e=>{KEYS[e.code]=false;onKeyUp(e);});
+
+// ── Mobile / Touch controls ──────────────────────────────────────
+(function initTouch(){
+  // Mark touch-capable devices so CSS shows the controls
+  if('ontouchstart' in window || navigator.maxTouchPoints > 0){
+    document.body.classList.add('is-touch');
+  }
+
+  // ── Virtual joystick ──────────────────────────────────────────
+  const JOY = { active:false, id:null };
+  const JOYR = 42; // max thumb travel radius in px
+
+  function joyCenter(){
+    const el = document.getElementById('joystick-zone');
+    const r  = el.getBoundingClientRect();
+    return { x: r.left + r.width/2, y: r.top + r.height/2 };
+  }
+
+  function applyJoystick(clientX, clientY){
+    const c = joyCenter();
+    let dx = clientX - c.x;
+    let dy = clientY - c.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if(dist > JOYR){ dx = dx/dist*JOYR; dy = dy/dist*JOYR; }
+
+    // Move thumb visually
+    const thumb = document.getElementById('joystick-thumb');
+    const base  = document.getElementById('joystick-base');
+    const half  = base.offsetWidth/2 - thumb.offsetWidth/2;
+    thumb.style.left = (half + dx) + 'px';
+    thumb.style.top  = (half + dy) + 'px';
+
+    // Map to WASD keys (threshold 0.3 of max travel)
+    const nx = dx / JOYR, ny = dy / JOYR, thr = 0.30;
+    KEYS['KeyW'] = ny < -thr;
+    KEYS['KeyS'] = ny >  thr;
+    KEYS['KeyA'] = nx < -thr;
+    KEYS['KeyD'] = nx >  thr;
+  }
+
+  function resetJoystick(){
+    JOY.active = false; JOY.id = null;
+    KEYS['KeyW'] = KEYS['KeyS'] = KEYS['KeyA'] = KEYS['KeyD'] = false;
+    const thumb = document.getElementById('joystick-thumb');
+    const base  = document.getElementById('joystick-base');
+    if(!thumb || !base) return;
+    const half = base.offsetWidth/2 - thumb.offsetWidth/2;
+    thumb.style.left = half + 'px';
+    thumb.style.top  = half + 'px';
+  }
+
+  document.addEventListener('touchstart', e=>{
+    const zone = document.getElementById('joystick-zone');
+    if(!zone) return;
+    for(const t of e.changedTouches){
+      if(zone.contains(e.target) || zone === e.target){
+        if(!JOY.active){ JOY.active = true; JOY.id = t.identifier; }
+        if(JOY.id === t.identifier) applyJoystick(t.clientX, t.clientY);
+      }
+    }
+  }, {passive:true});
+
+  document.addEventListener('touchmove', e=>{
+    if(!JOY.active) return;
+    for(const t of e.changedTouches){
+      if(JOY.id === t.identifier) applyJoystick(t.clientX, t.clientY);
+    }
+  }, {passive:true});
+
+  document.addEventListener('touchend', e=>{
+    for(const t of e.changedTouches){
+      if(JOY.active && JOY.id === t.identifier) resetJoystick();
+    }
+  }, {passive:true});
+
+  document.addEventListener('touchcancel', e=>{
+    for(const t of e.changedTouches){
+      if(JOY.active && JOY.id === t.identifier) resetJoystick();
+    }
+  }, {passive:true});
+
+  // ── Action buttons ─────────────────────────────────────────────
+  function touchBtn(id, onDown, onUp){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('touchstart', e=>{
+      e.preventDefault(); e.stopPropagation();
+      onDown && onDown();
+    }, {passive:false});
+    el.addEventListener('touchend', e=>{
+      e.preventDefault(); e.stopPropagation();
+      onUp && onUp();
+    }, {passive:false});
+    el.addEventListener('touchcancel', ()=>{ onUp && onUp(); }, {passive:false});
+  }
+
+  // SHOOT – hold to charge, release to fire (Player 1)
+  touchBtn('touch-shoot',
+    ()=>{
+      const btn = document.getElementById('touch-shoot');
+      if(btn) btn.classList.add('pressing');
+      if(ctrl1 && ctrl1.hasBall && !meterState.on && !inbounding) startMeter(1);
+    },
+    ()=>{
+      const btn = document.getElementById('touch-shoot');
+      if(btn) btn.classList.remove('pressing');
+      if(meterState.on && meterState.pNum === 1) releaseMeter(1);
+    }
+  );
+
+  // PASS – tap to pass (Player 1)
+  touchBtn('touch-pass',
+    ()=>{ if(ctrl1 && ctrl1.hasBall) passBall(ctrl1, team1Players); },
+    null
+  );
+
+  // STEAL – hold to attempt steal (Player 1)
+  touchBtn('touch-steal',
+    ()=>{ KEYS['KeyZ'] = true; },
+    ()=>{ KEYS['KeyZ'] = false; }
+  );
+
+  // CAM – cycle camera views
+  touchBtn('touch-cam',
+    ()=>{
+      GS.camMode = (GS.camMode + 1) % CAM_MODES.length;
+      const lbl = document.getElementById('cam-label');
+      if(lbl) lbl.textContent = '📷 ' + CAM_MODES[GS.camMode];
+    },
+    null
+  );
+
+  // SPRINT – toggle sprint on/off
+  touchBtn('touch-sprint',
+    ()=>{
+      const wasOn = KEYS['ShiftLeft'];
+      KEYS['ShiftLeft'] = !wasOn;
+      const btn = document.getElementById('touch-sprint');
+      if(btn) btn.classList.toggle('active', !wasOn);
+    },
+    null
+  );
+
+  // SUB – open substitution panel
+  touchBtn('touch-sub',
+    ()=>{ toggleSubPanel(); },
+    null
+  );
+
+  // ── Portrait orientation warning ───────────────────────────────
+  function checkOrientation(){
+    const warn = document.getElementById('orient-warn');
+    if(!warn) return;
+    const isTouch = document.body.classList.contains('is-touch');
+    const isPortrait = window.innerHeight > window.innerWidth;
+    warn.style.display = (isTouch && isPortrait) ? 'flex' : 'none';
+  }
+  window.addEventListener('resize', checkOrientation);
+  window.addEventListener('orientationchange', ()=> setTimeout(checkOrientation, 120));
+  setTimeout(checkOrientation, 200);
+})();
 
 function startGame(){
   GS.team1=tsSel.team1; GS.team2=tsSel.team2;
