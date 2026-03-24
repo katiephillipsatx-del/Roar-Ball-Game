@@ -1333,15 +1333,15 @@ function makePlayerMesh(pd, teamColor, team){
     const numPlane = new THREE.Mesh(numGeo,numMat);
     numPlane.position.set(0, bodyY, 0.27);
     group.add(numPlane);
-    // Tan arms — long and lanky, raised up near head
+    // Tan arms — long and lanky
     const armGeo = new THREE.BoxGeometry(0.20,0.85,0.20);
     const armMat = new THREE.MeshLambertMaterial({color:0xC8A46E});
     const armL = new THREE.Mesh(armGeo,armMat);
-    armL.position.set(-0.50, bodyY + bodyH/2 + 0.35, 0);
+    armL.position.set(-0.50, bodyY, 0);
     armL.castShadow=true;
     group.add(armL);
     const armR = new THREE.Mesh(armGeo,armMat);
-    armR.position.set(0.50, bodyY + bodyH/2 + 0.35, 0);
+    armR.position.set(0.50, bodyY, 0);
     armR.castShadow=true;
     group.add(armR);
     group.armL=armL; group.armR=armR;
