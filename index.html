@@ -651,6 +651,10 @@ function startGame(){
   GS.team1=tsSel.team1; GS.team2=tsSel.team2;
   GS.p1idx=tsSel.p1;    GS.p2idx=tsSel.p2;
   GS.score=[0,0];        GS.quarter=1;
+  // Reset 2K26 broadcast-camera establishing shot
+  _estabShotDone=false; _estabShotT=0;
+  _shooterZoomCam={active:false,timer:0,target:null};
+  _screenShake={active:false,str:0,dur:0,t:0};
 
   show('_none_'); // hide all menu screens
   document.getElementById('three-container').style.display='block';
@@ -713,12 +717,32 @@ function initThree(){
   fillLight.position.set(-5,8,-5);
   scene.add(fillLight);
 
-  // Arena spotlights
-  [[-8,12,2],[0,12,2],[8,12,2]].forEach(([x,y,z])=>{
-    const pt = new THREE.PointLight(0xffeedd, 0.8, 35);
-    pt.position.set(x,y,z);
+  // Arena spotlights — 2K26 spot-down indoor lighting rig
+  // Primary court wash: 9 ceiling-down PointLights
+  [[-12,-5],[-12,0],[-12,5],
+   [0,-5],  [0,0],   [0,5],
+   [12,-5], [12,0],  [12,5]].forEach(([x,z])=>{
+    const pt = new THREE.PointLight(0xFFEECC, 1.1, 20);
+    pt.position.set(x, 13, z);
     scene.add(pt);
   });
+  // Rim accent SpotLights — punchy downlight over each basket
+  const rimSpotL = new THREE.SpotLight(0xFFFFFF, 2.8, 18, Math.PI/7, 0.55, 1.8);
+  rimSpotL.position.set(-13, 12, 0);
+  rimSpotL.target.position.set(-13, RIM_Y, 0);
+  rimSpotL.castShadow = false;
+  scene.add(rimSpotL); scene.add(rimSpotL.target);
+  const rimSpotR = new THREE.SpotLight(0xFFFFFF, 2.8, 18, Math.PI/7, 0.55, 1.8);
+  rimSpotR.position.set(13, 12, 0);
+  rimSpotR.target.position.set(13, RIM_Y, 0);
+  rimSpotR.castShadow = false;
+  scene.add(rimSpotR); scene.add(rimSpotR.target);
+  // Court center feature spot
+  const centerSpot = new THREE.SpotLight(0xEEDDFF, 1.8, 22, Math.PI/6, 0.4, 1.5);
+  centerSpot.position.set(0, 15, 0);
+  centerSpot.target.position.set(0, 0, 0);
+  centerSpot.castShadow = false;
+  scene.add(centerSpot); scene.add(centerSpot.target);
 
   window.addEventListener('resize',()=>{
     camera.aspect=window.innerWidth/window.innerHeight;
@@ -737,13 +761,20 @@ function buildScene(){
   const floorColor = t1.floorColor;
   const lineColor  = t1.lineColor;
 
-  // ── Floor ────────────────────────────────────────────────────
+  // ── Floor — MeshStandardMaterial hardwood ──────────────────
   const floorGeo = new THREE.PlaneGeometry(30,15);
-  const floorMat = new THREE.MeshLambertMaterial({color:floorColor});
+  const floorMat = new THREE.MeshStandardMaterial({color:floorColor, roughness:0.52, metalness:0.04});
   const floor    = new THREE.Mesh(floorGeo,floorMat);
   floor.rotation.x=-Math.PI/2;
   floor.receiveShadow=true;
   scene.add(floor);
+  // Hardwood floor sheen — subtle specular layer for floor reflections
+  const sheenGeo = new THREE.PlaneGeometry(28,13.5);
+  const sheenMat = new THREE.MeshStandardMaterial({color:0xFFFFFF,transparent:true,opacity:0.045,roughness:0.08,metalness:0.9,depthWrite:false,side:THREE.FrontSide});
+  const sheen = new THREE.Mesh(sheenGeo,sheenMat);
+  sheen.rotation.x=-Math.PI/2;
+  sheen.position.y=0.016;
+  scene.add(sheen);
 
   // ── Court lines ──────────────────────────────────────────────
   const lc = lineColor;
@@ -804,6 +835,7 @@ function buildScene(){
   // ── Stadium theme + crowd + scoreboard ──────────────────────
   buildStadiumTheme(GS.team1);
   buildCrowd(GS.team1);
+  buildJumbotron();
   // Stadium label
   const _sl=document.getElementById('stadium-label');
   if(_sl){const _si=STADIUM_INFO[GS.team1];_sl.textContent=_si.name.toUpperCase()+' \u2022 '+_si.city.toUpperCase();_sl.style.display='block';}
@@ -818,6 +850,106 @@ function buildScene(){
   // Team 1 bench: positive-z sideline, Team 2 bench: negative-z sideline
   buildBench(0, 8.5, TEAMS[GS.team1].color);  // Team 1
   buildBench(0,-8.5, TEAMS[GS.team2].color);  // Team 2
+}
+
+// ================================================================
+//  JUMBOTRON  —  arena-atmosphere: live scoreboard display
+// ================================================================
+let _jumbotronMeshes=[], _jumbotronTex=null, _jumbotronCtx=null;
+
+function buildJumbotron(){
+  _jumbotronMeshes.forEach(m=>scene.remove(m));
+  _jumbotronMeshes=[];
+
+  // Canvas texture — live score/clock display
+  const W=512,H=256;
+  const jc=document.createElement('canvas');
+  jc.width=W; jc.height=H;
+  _jumbotronCtx=jc.getContext('2d');
+  _jumbotronTex=new THREE.CanvasTexture(jc);
+
+  // Two scoreboards: above each baseline stand (x=±18, y=8)
+  [-18,18].forEach(jx=>{
+    const frameMat=new THREE.MeshLambertMaterial({color:0x111111});
+    const frame=new THREE.Mesh(new THREE.BoxGeometry(7.0,3.6,0.26),frameMat);
+    frame.position.set(jx,9,0);
+    frame.rotation.y=jx<0?0:Math.PI;
+    scene.add(frame);
+    _jumbotronMeshes.push(frame);
+
+    const screenMat=new THREE.MeshBasicMaterial({map:_jumbotronTex,side:THREE.FrontSide});
+    const screen=new THREE.Mesh(new THREE.PlaneGeometry(6.5,3.1),screenMat);
+    screen.position.set(jx+(jx<0?0.15:-0.15),9,0);
+    screen.rotation.y=jx<0?0:Math.PI;
+    scene.add(screen);
+    _jumbotronMeshes.push(screen);
+  });
+
+  // Jumbotron hanging bars / rigging
+  [-2.4,0,2.4].forEach(zOff=>{
+    const bar=new THREE.Mesh(
+      new THREE.BoxGeometry(0.1,2.2,0.1),
+      new THREE.MeshLambertMaterial({color:0x333333})
+    );
+    bar.position.set(-18,10.8,zOff);
+    scene.add(bar);
+    _jumbotronMeshes.push(bar);
+    const bar2=bar.clone();
+    bar2.position.set(18,10.8,zOff);
+    scene.add(bar2);
+    _jumbotronMeshes.push(bar2);
+  });
+
+  updateJumbotron();
+}
+
+function updateJumbotron(){
+  if(!_jumbotronCtx) return;
+  const ctx=_jumbotronCtx;
+  const t1=TEAMS[GS.team1], t2=TEAMS[GS.team2];
+  ctx.fillStyle='#050A14'; ctx.fillRect(0,0,512,256);
+
+  // Subtle gradient header
+  const hg=ctx.createLinearGradient(0,0,0,50);
+  hg.addColorStop(0,'#0A1428'); hg.addColorStop(1,'#050A14');
+  ctx.fillStyle=hg; ctx.fillRect(0,0,512,50);
+
+  // Team 1 side
+  ctx.textAlign='left';
+  ctx.fillStyle=t1.textColor; ctx.font='bold 38px Arial Black';
+  ctx.fillText(t1.abbr,24,48);
+  ctx.fillStyle='#FFFFFF'; ctx.font='bold 90px Arial Black';
+  ctx.fillText(GS.score[0],24,165);
+
+  // Team 2 side
+  ctx.textAlign='right';
+  ctx.fillStyle=t2.textColor; ctx.font='bold 38px Arial Black';
+  ctx.fillText(t2.abbr,488,48);
+  ctx.fillStyle='#FFFFFF'; ctx.font='bold 90px Arial Black';
+  ctx.fillText(GS.score[1],488,165);
+
+  // Center — clock, quarter, shot clock
+  const m=Math.floor((typeof timeLeft!=='undefined'?timeLeft:120)/60);
+  const s=(typeof timeLeft!=='undefined'?timeLeft:120)%60;
+  ctx.textAlign='center';
+  ctx.fillStyle='#FFD700'; ctx.font='bold 32px Arial Black';
+  ctx.fillText(`${m}:${s.toString().padStart(2,'0')}`,256,72);
+  ctx.fillStyle='#AAAACC'; ctx.font='bold 22px Arial Black';
+  ctx.fillText(`Q${typeof GS!=='undefined'?GS.quarter:1}`,256,104);
+  ctx.fillStyle='#FF6B35'; ctx.font='bold 18px Arial Black';
+  ctx.fillText(`SC: ${typeof shotClock!=='undefined'?shotClock:24}`,256,132);
+
+  // Divider
+  ctx.strokeStyle='#223355'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(230,8); ctx.lineTo(230,210); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(282,8); ctx.lineTo(282,210); ctx.stroke();
+
+  // Team name mini labels
+  ctx.fillStyle='#667788'; ctx.font='11px Arial';
+  ctx.textAlign='left'; ctx.fillText(t1.name,24,220);
+  ctx.textAlign='right'; ctx.fillText(t2.name,488,220);
+
+  if(_jumbotronTex) _jumbotronTex.needsUpdate=true;
 }
 
 function buildBench(cx, cz, teamColor){
@@ -5315,6 +5447,7 @@ function makePlayerMesh(pd, teamColor, team){
   group.hasBall=false;
   group.vx=0; group.vz=0;
   group.walkPhase=0;
+  group._breathOffset=Math.random()*Math.PI*2; // random phase for procedural breathing
   group.keys=null;
   group.consecutiveShots=0; group.onFire=false; group.fireTimer=0; group.pendingFire=false;
   group._ringTween=null;
@@ -5745,6 +5878,9 @@ function shootBall(player, pNum, chance){
   ball3d.position.set(sx,sy,sz);
   ball3d.flying=true;
 
+  // Shooter zoom cam — broadcast-camera skill: track the arc
+  _shooterZoomCam={active:true,timer:dur+0.6,target:player};
+
   toast(is3?'3PT! 🏀':'2PT! 🏀','#FFD700');
 
   ballFlyTo(sx,sy,sz,tx,ty,tz,arcH,dur,()=>{
@@ -5761,6 +5897,8 @@ function dunkBall(player, pNum){
   ball3d.flying=true; // prevent loose-ball pickup during animation
   ball3d.position.set(player.position.x, 2.6, player.position.z);
   toast('DUNK! 💥','#FF4500');
+  triggerScreenShake(0.22,0.55);
+  _shooterZoomCam={active:true,timer:1.8,target:player};
   player.dunkAnim={
     active:true, t:0, dur:0.7, pNum, player,
     ballReleased:false,
@@ -5797,6 +5935,7 @@ function resolveShot(pNum,chance,pts,scorer){
   if(Math.random()<chance){
     GS.score[pNum-1]+=pts;
     updateHUDScore();
+    triggerScreenShake(pts===3?0.14:0.07,0.40);
     toast(pts===3?'TRIPLE! +3 🎯':'BUCKET! +2 ✅',pts===3?'#00aaff':'#00ee55');
     if(scorer){
       if(pts===3) showScorerLabel(scorer,'THREE POINTER!','#00aaff');
@@ -6177,6 +6316,7 @@ function moveHuman(player, keySet, pNum, dt){
       const d=Math.sqrt(dx2*dx2+dz2*dz2);
       if(d<1.2&&Math.random()<player.pd.def/140){
         giveBall(player);
+        triggerScreenShake(0.10,0.28);
         toast('STEAL! 🔥','#00ccff');
       }
     });
@@ -6195,6 +6335,7 @@ function tryBlock(player, pNum){
     const d=Math.sqrt(dx*dx+dz*dz);
     if(d<1.4&&Math.random()<player.pd.def/110){
       giveBall(player);
+      triggerScreenShake(0.14,0.35);
       toast('BLOCKED! 🙌','#FF6600');
     }
   });
@@ -6310,6 +6451,7 @@ function aiTick(p){
       const d=Math.sqrt(dx2*dx2+dz2*dz2);
       if(d<1.2&&Math.random()<p.pd.def/160){
         giveBall(p);
+        triggerScreenShake(0.10,0.28);
         toast('STEAL! 🔥','#00ccff');
         return;
       }
@@ -6441,12 +6583,14 @@ function updateHUD(){
 function updateHUDScore(){
   document.getElementById('sb-s1').textContent=GS.score[0];
   document.getElementById('sb-s2').textContent=GS.score[1];
+  updateJumbotron();
 }
 
 function updateClockDisplay(){
   const m=Math.floor(timeLeft/60),s=timeLeft%60;
   document.getElementById('sb-clock').textContent=`${m}:${s.toString().padStart(2,'0')}`;
   document.getElementById('sb-qtr').textContent=`Q${GS.quarter}`;
+  updateJumbotron();
 }
 
 function updateShotClockDisplay(){
@@ -6482,8 +6626,49 @@ const _camSmooth={x:0,y:16,z:20,lx:0,ly:0,lz:-1};
 let _willCelebCam={active:false,timer:0,target:null};
 let _maneCelebCam={active:false,timer:0,target:null};
 let _willThreeCount=0; // tracks how many 3-pointers Will has made (alternates night-night / shimmy)
+
+// ── 2K26 Skill Stack: broadcast-camera / arena-atmosphere / animation-state-machine ──
+let _screenShake={active:false,str:0,dur:0,t:0};
+let _shooterZoomCam={active:false,timer:0,target:null};
+let _estabShotDone=false, _estabShotT=0;
+function triggerScreenShake(str,dur){_screenShake={active:true,str,dur,t:0};}
+function _doShake(){
+  if(!_screenShake.active)return;
+  const shake=_screenShake.str*(1-Math.min(_screenShake.t/_screenShake.dur,1));
+  camera.position.x+=(Math.random()-0.5)*shake;
+  camera.position.y+=(Math.random()-0.5)*shake*0.4;
+  camera.position.z+=(Math.random()-0.5)*shake;
+}
 function updateCamera(dt){
-  // Will Harris night-night celebration: zoom in close on him
+  // ── Tick screen shake ───────────────────────────────────────
+  if(_screenShake.active) _screenShake.t+=dt;
+  if(_screenShake.t>=_screenShake.dur) _screenShake.active=false;
+
+  // ── Establishing shot — cinematic arena reveal at game start ──
+  if(!_estabShotDone){
+    _estabShotT+=dt;
+    const et=Math.min(_estabShotT/4.0,1);
+    if(et>=1){ _estabShotDone=true; }
+    else {
+      // Sweep from low/sideline angle down to broadcast position
+      const ang=Math.PI*0.65+et*Math.PI*0.38;
+      const r=22-et*8;
+      const ex=Math.cos(ang)*r, ez=Math.sin(ang)*r, ey=3+et*14;
+      const lxe=0, lye=et*2, lze=-et*2;
+      const lr2=0.09;
+      _camSmooth.x+=(ex-_camSmooth.x)*lr2;
+      _camSmooth.y+=(ey-_camSmooth.y)*lr2;
+      _camSmooth.z+=(ez-_camSmooth.z)*lr2;
+      _camSmooth.lx+=(lxe-_camSmooth.lx)*lr2;
+      _camSmooth.ly+=(lye-_camSmooth.ly)*lr2;
+      _camSmooth.lz+=(lze-_camSmooth.lz)*lr2;
+      camera.position.set(_camSmooth.x,_camSmooth.y,_camSmooth.z);
+      camera.lookAt(_camSmooth.lx,_camSmooth.ly,_camSmooth.lz);
+      _doShake(); return;
+    }
+  }
+
+  // ── Will Harris night-night celebration ──────────────────────
   if(_willCelebCam.active&&_willCelebCam.target){
     _willCelebCam.timer-=dt;
     if(_willCelebCam.timer<=0) _willCelebCam.active=false;
@@ -6499,9 +6684,10 @@ function updateCamera(dt){
     _camSmooth.lz+=(lz-_camSmooth.lz)*lr;
     camera.position.set(_camSmooth.x,_camSmooth.y,_camSmooth.z);
     camera.lookAt(_camSmooth.lx,_camSmooth.ly,_camSmooth.lz);
-    return;
+    _doShake(); return;
   }
-  // Mane Attraction crown celebration: dramatic low-angle hero shot
+
+  // ── Mane Attraction crown celebration ────────────────────────
   if(_maneCelebCam.active&&_maneCelebCam.target){
     _maneCelebCam.timer-=dt;
     if(_maneCelebCam.timer<=0) _maneCelebCam.active=false;
@@ -6517,22 +6703,50 @@ function updateCamera(dt){
     _camSmooth.lz+=(lz-_camSmooth.lz)*lr;
     camera.position.set(_camSmooth.x,_camSmooth.y,_camSmooth.z);
     camera.lookAt(_camSmooth.lx,_camSmooth.ly,_camSmooth.lz);
-    return;
+    _doShake(); return;
   }
 
+  // ── Shooter zoom cam — 2K side-angle follow on shooter ───────
+  if(_shooterZoomCam.active&&_shooterZoomCam.target){
+    _shooterZoomCam.timer-=dt;
+    if(_shooterZoomCam.timer<=0) _shooterZoomCam.active=false;
+    const sh=_shooterZoomCam.target;
+    const bx=ball3d?ball3d.position.x:sh.position.x;
+    const by=ball3d?ball3d.position.y:3;
+    // Side-angle 2K-style: camera at z+ side, looking at ball arc midpoint
+    const tx=sh.position.x*0.4+bx*0.6, ty=3.8+by*0.5, tz=sh.position.z+9;
+    const lx=bx, ly=by*0.7+1, lz=sh.position.z-1;
+    const lr=0.12;
+    _camSmooth.x+=(tx-_camSmooth.x)*lr;
+    _camSmooth.y+=(ty-_camSmooth.y)*lr;
+    _camSmooth.z+=(tz-_camSmooth.z)*lr;
+    _camSmooth.lx+=(lx-_camSmooth.lx)*lr;
+    _camSmooth.ly+=(ly-_camSmooth.ly)*lr;
+    _camSmooth.lz+=(lz-_camSmooth.lz)*lr;
+    camera.position.set(_camSmooth.x,_camSmooth.y,_camSmooth.z);
+    camera.lookAt(_camSmooth.lx,_camSmooth.ly,_camSmooth.lz);
+    _doShake(); return;
+  }
+
+  // ── Normal camera modes ───────────────────────────────────────
   const mode=CAM_MODES[GS.camMode];
   let tx,ty,tz,lx,ly,lz;
 
   if(mode==='Broadcast'){
-    tx=0;ty=16;tz=20;lx=0;ly=0;lz=-1;
+    // Classic broadcast: slight x-follow on ball, ball-relative sideline view
+    const bx=ball3d?ball3d.position.x*0.18:0;
+    tx=bx;ty=16;tz=20;lx=bx*0.5;ly=0;lz=-1;
   } else if(mode==='2K'){
+    // 2K-style: closer side angle, tighter x tracking on ball
     const bx=ball3d?ball3d.position.x:0;
-    tx=bx*0.3;ty=14;tz=18;lx=bx*0.1;ly=0;lz=-2;
+    tx=bx*0.35;ty=12.5;tz=17;lx=bx*0.15;ly=1;lz=-1;
   } else if(mode==='Follow'){
+    // Follow cam: behind and above controlled player
     const p=ctrl1;
     if(p){
-      tx=p.position.x;ty=6;tz=Math.min(p.position.z+8,7.8);
-      lx=p.position.x;ly=1;lz=p.position.z;
+      const ang=p.rotation.y||0;
+      tx=p.position.x-Math.sin(ang)*3;ty=5.5;tz=p.position.z+Math.cos(ang)*3+5;
+      lx=p.position.x+Math.sin(ang)*2;ly=1.5;lz=p.position.z-Math.cos(ang)*2;
     } else {tx=0;ty=14;tz=18;lx=0;ly=0;lz=-1;}
   } else { // Overhead
     tx=0;ty=28;tz=0.1;lx=0;ly=0;lz=0;
@@ -6548,6 +6762,7 @@ function updateCamera(dt){
 
   camera.position.set(_camSmooth.x,_camSmooth.y,_camSmooth.z);
   camera.lookAt(_camSmooth.lx,_camSmooth.ly,_camSmooth.lz);
+  _doShake();
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -6610,16 +6825,30 @@ function update(dt){
     ball3d.position.set(h.position.x+0.55, dribY, h.position.z+0.1);
   }
 
-  // Shoot animation
+  // Shoot animation — animation-state-machine: wrist snap on release
   allPlayers().forEach(p=>{
     if(!p.shootAnim||!p.shootAnim.active)return;
     p.shootAnim.t+=dt;
     const f=Math.min(p.shootAnim.t/p.shootAnim.dur,1);
-    // Arc: arm raises forward in first half, returns in second half
-    const angle=f<0.5 ? -(f*2)*Math.PI*0.75 : -((1-f)*2)*Math.PI*0.75;
+    // Phase 1 (0→0.45): arm rises into set position
+    // Phase 2 (0.45→0.55): wrist snap — rapid forward flick at release
+    // Phase 3 (0.55→1): follow-through, arm returns
+    let angle;
+    if(f<0.45){
+      angle=-(f/0.45)*Math.PI*0.72;
+    } else if(f<0.55){
+      const snapF=(f-0.45)/0.10;
+      angle=-Math.PI*0.72 - snapF*Math.PI*0.22; // snap wrist forward
+      // wrist rotation Z: flick outward at release point
+      if(p.armR) p.armR.rotation.z=snapF*0.35;
+    } else {
+      const retF=(f-0.55)/0.45;
+      angle=-(1-retF)*Math.PI*0.94;
+      if(p.armR) p.armR.rotation.z=(1-retF)*0.35;
+    }
     if(p.armR) p.armR.rotation.x=angle;
     // Slight body lean into shot
-    if(p.body) p.body.rotation.x=f<0.5 ? -(f*2)*0.25 : -((1-f)*2)*0.25;
+    if(p.body) p.body.rotation.x=f<0.5 ? -(f*2)*0.28 : -((1-f)*2)*0.28;
     if(f>=1){
       p.shootAnim.active=false;
       if(p.armR){ p.armR.rotation.x=0; p.armR.rotation.z=0; }
@@ -6805,6 +7034,42 @@ function update(dt){
         (Math.random()-0.5)*0.4, 1.0+Math.random()*1.2, (Math.random()-0.5)*0.4,
         color, 0.35+Math.random()*0.25, 0.06+Math.random()*0.07
       );
+    }
+  });
+
+  // ── animation-state-machine: procedural breathing + head tracking ──
+  const _breathT=performance.now()/1000;
+  allPlayers().forEach(p=>{
+    if(p.isBench)return;
+    const spd=Math.sqrt(p.vx*p.vx+p.vz*p.vz);
+    const isIdle=spd<0.08;
+
+    // Procedural breathing — idle weight shift: subtle Y bob + body sway
+    if(isIdle&&!p.shootAnim?.active&&!p.dunkAnim?.active&&!p.blockAnim?.active){
+      const breathPhase=_breathT*1.05+p._breathOffset;
+      const breathY=Math.sin(breathPhase)*0.018;
+      p.position.y=Math.max(0,breathY);
+      // Weight shift: subtle body lean side-to-side
+      if(p.body){
+        p.body.rotation.z=Math.sin(_breathT*0.7+p._breathOffset)*0.022;
+      }
+    } else if(!p.dunkAnim?.active&&!p.blockAnim?.active){
+      p.position.y=0;
+      if(p.body) p.body.rotation.z*=0.85;
+    }
+
+    // Head tracking — head turns to look at ball when nearby
+    if(p.head&&ball3d&&!p.hasBall){
+      const bdx=ball3d.position.x-p.position.x;
+      const bdz=ball3d.position.z-p.position.z;
+      const bdist=Math.sqrt(bdx*bdx+bdz*bdz);
+      if(bdist<7){
+        const targetYaw=Math.atan2(bdx,bdz)-p.rotation.y;
+        const clampedYaw=Math.max(-0.7,Math.min(0.7,targetYaw));
+        p.head.rotation.y+=(clampedYaw-p.head.rotation.y)*0.08;
+      } else {
+        p.head.rotation.y*=0.90;
+      }
     }
   });
 
