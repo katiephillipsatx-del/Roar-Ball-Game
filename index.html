@@ -1646,13 +1646,24 @@ function makePlayerMesh(pd, teamColor, team){
 
   const bodyY = isPanther ? legH + bodyH/2 : (isGoat ? legH + 0.6 : (isGiraffe ? legH + bodyH/2 : (isOstrich ? legH + bodyH/2 : (isRhino ? legH + bodyH/2 : ((isBear||isPolarBear) ? legH + bodyH/2 : (isGorilla ? legH + bodyH/2 : (isLizard ? legH + bodyH/2 : (isBull ? legH + bodyH/2 : (isFireSalamander ? legH + bodyH/2 : (isAlligator ? legH + bodyH/2 : (isCamel ? legH + bodyH/2 : (isScorpion ? legH + bodyH/2 : 1.2))))))))))));
 
-  const bodyGeo = new THREE.BoxGeometry(bodyW, bodyH, isGorilla ? 0.78 : (isLizard ? 0.62 : ((isBear||isPolarBear) ? 0.70 : (isBull ? 0.72 : (isFireSalamander ? 0.68 : (isAlligator ? 0.72 : (isCamel ? 0.56 : (isScorpion ? 0.65 : 0.52))))))));
+  const bodyDepth = isGorilla ? 0.78 : (isLizard ? 0.62 : ((isBear||isPolarBear) ? 0.70 : (isBull ? 0.72 : (isFireSalamander ? 0.68 : (isAlligator ? 0.72 : (isCamel ? 0.56 : (isScorpion ? 0.65 : 0.52)))))));
   const bodyColor = isPanther ? 0x1A7A1A : (isGoat ? 0x1A7A1A : (isKomodo ? 0x4A8C3F : (isGiraffe ? 0xF080A0 : (isOstrich ? 0xF5F5F5 : (isRhino ? 0x7A7A7A : (isPolarBear ? 0xEEECE4 : (isBear ? 0xA8A49C : (isGorilla ? 0x1A1820 : (isLizard ? 0x0E0C08 : (isRosette ? 0x2E0A50 : (isBull ? 0x1A1210 : (isFireSalamander ? 0x0D0B09 : (isAlligator ? 0x3A3F38 : (isChase ? 0x9E7428 : (isSnowLeopard ? 0xEAE8E2 : (isFang ? 0xC49A30 : (isMoe ? 0x7A3A18 : (isBlizzard ? 0xF0F0F0 : (isTusk ? 0x6A5850 : (isCamel ? 0xFFB800 : (isScorpion ? 0x3A2010 : (isSandy ? 0xFFB800 : tc))))))))))))))))))))));
   const bodyMat = new THREE.MeshLambertMaterial({color:bodyColor});
-  const body = new THREE.Mesh(bodyGeo,bodyMat);
-  body.position.set(0, bodyY, 0);
+  // Chest (upper torso) — wider, oval cross-section
+  const chestH = bodyH * 0.54;
+  const chestGeo = new THREE.CylinderGeometry(bodyW*0.50, bodyW*0.46, chestH, 10);
+  const body = new THREE.Mesh(chestGeo, bodyMat);
+  body.scale.set(1.0, 1.0, bodyDepth/bodyW);
+  body.position.set(0, bodyY + bodyH*0.23, 0);
   body.castShadow=true;
-  if(!isBlackMamba)group.add(body);
+  // Abdomen (lower torso) — slightly narrower at waist
+  const abdoH = bodyH * 0.50;
+  const abdoGeo = new THREE.CylinderGeometry(bodyW*0.44, bodyW*0.46, abdoH, 10);
+  const abdo = new THREE.Mesh(abdoGeo, bodyMat);
+  abdo.scale.set(1.0, 1.0, bodyDepth/bodyW * 0.88);
+  abdo.position.set(0, bodyY - bodyH*0.26, 0);
+  abdo.castShadow=true;
+  if(!isBlackMamba){group.add(body); group.add(abdo);}
   if(!isBlackMamba)group.body=body;
 
   // Shoulder sphere joints — added before per-character arm code
@@ -1840,20 +1851,22 @@ function makePlayerMesh(pd, teamColor, team){
   // Goat face features — tan muzzle, wild hair, horns, beard
   if(isGoat){
     const hb = headBase;
-    // Long muzzle / snout
-    const snoutGeo = new THREE.BoxGeometry(0.30,0.22,0.34);
+    // Long muzzle / snout — rounded oval cylinder
     const snoutMat = new THREE.MeshLambertMaterial({color:0xD4B483});
+    const snoutGeo = new THREE.CylinderGeometry(0.10,0.13,0.36,10);
     const snout = new THREE.Mesh(snoutGeo,snoutMat);
-    snout.position.set(0, hb-0.08, 0.38);
+    snout.rotation.x = Math.PI/2;
+    snout.scale.set(1.45, 1.0, 1.0);
+    snout.position.set(0, hb-0.06, 0.44);
     group.add(snout);
     // Nostrils
     const nostrilGeo = new THREE.SphereGeometry(0.045,6,6);
     const nostrilMat = new THREE.MeshBasicMaterial({color:0x8B5A2B});
     const nostrilL = new THREE.Mesh(nostrilGeo,nostrilMat);
-    nostrilL.position.set(-0.09, hb-0.12, 0.54);
+    nostrilL.position.set(-0.09, hb-0.09, 0.61);
     group.add(nostrilL);
     const nostrilR = new THREE.Mesh(nostrilGeo,nostrilMat);
-    nostrilR.position.set(0.09, hb-0.12, 0.54);
+    nostrilR.position.set(0.09, hb-0.09, 0.61);
     group.add(nostrilR);
     // White eyes (large)
     const eyeGeo = new THREE.SphereGeometry(0.08,8,8);
@@ -2148,10 +2161,11 @@ function makePlayerMesh(pd, teamColor, team){
     headBox.castShadow=true; group.add(headBox);
     group.head = headBox;
 
-    // Muzzle — slightly darker tan, sticking out front
+    // Muzzle — rounded oval
     const muzzleMat = new THREE.MeshLambertMaterial({color:0xC07828});
-    const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.24,0.20,0.26),muzzleMat);
-    muzzle.position.set(0, headBase-0.06, 0.36); group.add(muzzle);
+    const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.11,0.28,10),muzzleMat);
+    muzzle.rotation.x=Math.PI/2; muzzle.scale.set(1.4,1.0,1.0);
+    muzzle.position.set(0, headBase-0.06, 0.37); group.add(muzzle);
 
     // Nostrils
     const nostrilMat = new THREE.MeshBasicMaterial({color:0x4A2000});
@@ -2460,10 +2474,11 @@ function makePlayerMesh(pd, teamColor, team){
     hHead.position.set(0, headBase, 0); hHead.castShadow=true; group.add(hHead);
     group.head = hHead;
 
-    // Elongated horse muzzle
+    // Elongated horse muzzle — rounded oval
     const muzzleMat = new THREE.MeshLambertMaterial({color:HDARK});
-    const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.32,0.30,0.26),muzzleMat);
-    muzzle.position.set(0, headBase-0.13, 0.35); group.add(muzzle);
+    const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.16,0.30,10),muzzleMat);
+    muzzle.rotation.x=Math.PI/2; muzzle.scale.set(1.15,1.0,1.0);
+    muzzle.position.set(0, headBase-0.13, 0.37); group.add(muzzle);
 
     // Flared nostrils
     const nostrilMat = new THREE.MeshBasicMaterial({color:0x080610});
@@ -2578,10 +2593,11 @@ function makePlayerMesh(pd, teamColor, team){
       group.add(earInner);
     });
 
-    // Muzzle — protruding lighter box + sphere
+    // Muzzle — rounded oval + sphere nose
     const muzzleMat = new THREE.MeshLambertMaterial({color:0xB07840});
-    const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.34,0.28,0.28),muzzleMat);
-    muzzle.position.set(0, hb-0.10, 0.46);
+    const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.15,0.30,10),muzzleMat);
+    muzzle.rotation.x=Math.PI/2; muzzle.scale.set(1.5,1.0,1.0);
+    muzzle.position.set(0, hb-0.10, 0.47);
     group.add(muzzle);
     // Nose — dark shiny
     const noseMat = new THREE.MeshBasicMaterial({color:0x1A0A00});
@@ -2711,10 +2727,11 @@ function makePlayerMesh(pd, teamColor, team){
       group.add(acc);
     });
 
-    // Cream muzzle
+    // Cream muzzle — rounded oval
     const muzzleMat = new THREE.MeshLambertMaterial({color:FUR_BELLY});
-    const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.36,0.30,0.28),muzzleMat);
-    muzzle.position.set(0, hb-0.10, 0.44);
+    const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.16,0.30,10),muzzleMat);
+    muzzle.rotation.x=Math.PI/2; muzzle.scale.set(1.5,1.0,1.0);
+    muzzle.position.set(0, hb-0.10, 0.45);
     group.add(muzzle);
 
     // Big black polar bear nose
@@ -2979,10 +2996,11 @@ function makePlayerMesh(pd, teamColor, team){
       group.add(ear);
     });
 
-    // Lion snout/muzzle
+    // Lion snout/muzzle — rounded oval
     const snoutMat = new THREE.MeshLambertMaterial({color:0xC8A44A});
-    const snout = new THREE.Mesh(new THREE.BoxGeometry(0.30,0.22,0.28),snoutMat);
-    snout.position.set(0, hb-0.10, 0.38);
+    const snout = new THREE.Mesh(new THREE.CylinderGeometry(0.10,0.12,0.30,10),snoutMat);
+    snout.rotation.x=Math.PI/2; snout.scale.set(1.5,1.0,1.0);
+    snout.position.set(0, hb-0.10, 0.40);
     group.add(snout);
 
     // Eyes — amber
@@ -4892,9 +4910,10 @@ function makePlayerMesh(pd, teamColor, team){
       hl.position.set(xo+0.02, hb+0.11, 0.46); group.add(hl);
     });
 
-    // Narrow pointed muzzle (cream)
-    const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.17,0.16,0.22), creamMat);
-    muzzle.position.set(0, hb-0.13, 0.40); group.add(muzzle);
+    // Narrow pointed muzzle (cream) — rounded
+    const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.065,0.085,0.24,8),creamMat);
+    muzzle.rotation.x=Math.PI/2; muzzle.scale.set(1.1,1.0,1.0);
+    muzzle.position.set(0, hb-0.13, 0.41); group.add(muzzle);
 
     // Dark nose
     const nose = new THREE.Mesh(new THREE.SphereGeometry(0.052,8,6),
@@ -5008,9 +5027,10 @@ function makePlayerMesh(pd, teamColor, team){
     skull.castShadow=true; group.add(skull);
     group.head=skull;
 
-    // Elongated droopy muzzle
-    const muzz = new THREE.Mesh(new THREE.BoxGeometry(0.36,0.30,0.50), drkMat);
-    muzz.position.set(0, hb-0.22, 0.52); group.add(muzz);
+    // Elongated droopy muzzle — rounded oval
+    const muzz = new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.16,0.52,10),drkMat);
+    muzz.rotation.x=Math.PI/2; muzz.scale.set(1.5,1.0,1.0);
+    muzz.position.set(0, hb-0.22, 0.54); group.add(muzz);
 
     // Characteristic droopy lower lip
     const lipMat = new THREE.MeshLambertMaterial({color:0xD4A070});
