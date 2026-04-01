@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Roar Ball 3D</title>
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
     body{background:#0d0d1a;font-family:Arial,sans-serif;overflow:hidden;width:100vw;height:100vh;}
@@ -481,6 +482,15 @@ let _scoreboardMesh=null, _scoreboardCanvas=null, _scoreboardCtx=null;
 let _particles=[], _particleTimer=0, _particleTheme=0;
 let _stadiumObjs=[];
 
+// ── GLB asset integration ────────────────────────────────────────
+let _glbShotModel=null;      // the animated shot character (basketball_shot_2.glb)
+let _glbShotMixer=null;      // AnimationMixer for shot model
+let _glbShotAction=null;     // current AnimationAction
+let _glbShotActive=false;    // whether shot overlay is playing
+let _glbShotTimer=0;         // countdown to hide
+const GLB_SHOT_DUR=1.1;      // seconds to display shot overlay
+const GLB_CHAR_SCALE=0.017;  // ~180cm model → ~3 game units
+
 // Keys
 const KEYS={};
 window.addEventListener('keydown',e=>{KEYS[e.code]=true;onKeyDown(e);});
@@ -674,6 +684,65 @@ function startGame(){
   if(_animFrame) cancelAnimationFrame(_animFrame);
   _lastTime=performance.now();
   gameLoop();
+
+  // ── Load GLB assets after scene is ready ──────────────────────
+  // Reset any previous GLB state since scene was rebuilt
+  _glbShotModel=null; _glbShotMixer=null; _glbShotAction=null;
+  _glbShotActive=false; _glbShotTimer=0;
+  loadGLBAssets();
+}
+
+function loadGLBAssets(){
+  if(typeof THREE.GLTFLoader === 'undefined') return;
+  const loader = new THREE.GLTFLoader();
+
+  // ── Load shot animation model ──────────────────────────────────
+  loader.load('basketball_shot_2.glb', (gltf) => {
+    const model = gltf.scene;
+    model.scale.setScalar(GLB_CHAR_SCALE);
+    model.visible = false;
+    // Make all meshes semi-transparent so it works as an overlay
+    model.traverse(c => {
+      if(c.isMesh){
+        c.material = c.material.clone();
+        c.material.transparent = true;
+        c.material.opacity = 0.78;
+        c.castShadow = false;
+      }
+    });
+    scene.add(model);
+    _glbShotModel = model;
+    _glbShotMixer = new THREE.AnimationMixer(model);
+    if(gltf.animations && gltf.animations.length){
+      _glbShotAction = _glbShotMixer.clipAction(gltf.animations[0]);
+      _glbShotAction.setLoop(THREE.LoopOnce, 1);
+      _glbShotAction.clampWhenFinished = true;
+    }
+  }, undefined, (err) => { console.warn('basketball_shot_2.glb load error:', err); });
+
+  // ── Load static character model — place as courtside spectator ──
+  loader.load('basketball_character_3d_model_for_games.glb', (gltf) => {
+    const model = gltf.scene;
+    model.scale.setScalar(GLB_CHAR_SCALE * 1.1);
+    // Position at center-court spectator row, slightly behind the sideline
+    model.position.set(0, 0, 13.5);
+    model.rotation.y = Math.PI; // face the court
+    model.traverse(c => { if(c.isMesh) c.castShadow = true; });
+    scene.add(model);
+  }, undefined, (err) => { console.warn('basketball_character_3d_model_for_games.glb load error:', err); });
+}
+
+function spawnShotOverlay(player){
+  if(!_glbShotModel || !_glbShotMixer || !_glbShotAction) return;
+  // Position and orient at shooter
+  _glbShotModel.position.set(player.position.x, 0, player.position.z);
+  _glbShotModel.rotation.y = player.rotation.y;
+  _glbShotModel.visible = true;
+  // Restart animation
+  _glbShotAction.stop();
+  _glbShotAction.play();
+  _glbShotActive = true;
+  _glbShotTimer = GLB_SHOT_DUR;
 }
 
 function initThree(){
@@ -6315,6 +6384,9 @@ function shootBall(player, pNum, chance){
   ball3d.position.set(sx,sy,sz);
   ball3d.flying=true;
 
+  // Spawn GLB shot animation overlay — new skill: realistic 3D shot form
+  spawnShotOverlay(player);
+
   // Shooter zoom cam — broadcast-camera skill: track the arc
   _shooterZoomCam={active:true,timer:dur+0.6,target:player};
 
@@ -7509,6 +7581,16 @@ function update(dt){
       }
     }
   });
+
+  // ── GLB shot overlay tick ─────────────────────────────────────
+  if(_glbShotActive && _glbShotMixer){
+    _glbShotMixer.update(dt);
+    _glbShotTimer -= dt;
+    if(_glbShotTimer <= 0){
+      _glbShotActive = false;
+      if(_glbShotModel) _glbShotModel.visible = false;
+    }
+  }
 
   updateParticles(dt);
   _updateFloatLabels();
