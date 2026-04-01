@@ -487,13 +487,42 @@ let _stadiumObjs=[];
 let _glbPlayerTemplate=null; // loaded gltf — cloned per player in makePlayerMesh
 const GLB_CHAR_SCALE=0.017;  // ~180cm CC model (in cm) → ~3.06 game units
 
-// Pre-load player template as soon as scripts are ready
-window.addEventListener('DOMContentLoaded', ()=>{
+// Start loading the player GLB immediately (scripts already evaluated above)
+(function preloadGLB(){
   if(typeof THREE==='undefined'||typeof THREE.GLTFLoader==='undefined') return;
   const loader=new THREE.GLTFLoader();
-  loader.load('basketball_shot_2.glb',(gltf)=>{ _glbPlayerTemplate=gltf; },
-    undefined,(err)=>console.warn('GLB player load error:',err));
-});
+  loader.load('basketball_shot_2.glb',(gltf)=>{
+    _glbPlayerTemplate=gltf;
+    // If players were already spawned with fallback capsules, swap them now
+    if(gameActive) _respawnPlayersWithGLB();
+  }, undefined,(err)=>console.warn('GLB player load error:',err));
+}());
+
+function _respawnPlayersWithGLB(){
+  // Called when GLB finishes loading mid-game — swaps fallback capsules for real model
+  if(typeof THREE.SkeletonUtils==='undefined') return;
+  [...team1Players,...team2Players].forEach(p=>{
+    if(p._glbModel) return; // already using GLB
+    if(p._fallbackGroup){ p.remove(p._fallbackGroup); p._fallbackGroup=null; }
+    const model=THREE.SkeletonUtils.clone(_glbPlayerTemplate.scene);
+    model.scale.setScalar(GLB_CHAR_SCALE);
+    const teamCol=new THREE.Color(p.team===1?TEAMS[GS.team1].color:TEAMS[GS.team2].color);
+    model.traverse(c=>{
+      if(c.isMesh){c.material=c.material.clone();c.material.color.lerp(teamCol,0.30);c.castShadow=true;}
+    });
+    p.add(model);
+    p._glbModel=model;
+    model.traverse(obj=>{
+      const n=obj.name;
+      if(n==='upperarm_r_044')    p.armR=obj;
+      else if(n==='upperarm_l_021') p.armL=obj;
+      else if(n==='spine_02_05')    p.body=obj;
+      else if(n==='head_09')        p.head=obj;
+      else if(n==='thigh_l_071')    p.legL=obj;
+      else if(n==='thigh_r_086')    p.legR=obj;
+    });
+  });
+}
 
 // Keys
 const KEYS={};
@@ -1618,24 +1647,27 @@ function makePlayerMesh(pd, teamColor, team){
       else if(n === 'thigh_r_086')    group.legR = obj;
     });
   } else {
-    // Fallback capsule while GLB is still loading
+    // Fallback capsule while GLB is still loading — grouped so _respawnPlayersWithGLB can remove cleanly
+    const fallGroup = new THREE.Group();
+    group._fallbackGroup = fallGroup;
+    group.add(fallGroup);
     const fallMat = new THREE.MeshStandardMaterial({color:teamColor,roughness:0.65,metalness:0.1});
     const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.35,1.4,4,8), fallMat);
-    torso.position.y=1.4; torso.castShadow=true; group.add(torso);
+    torso.position.y=1.4; torso.castShadow=true; fallGroup.add(torso);
     group.body = torso;
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.28,8,6), fallMat);
-    head.position.y=2.5; head.castShadow=true; group.add(head);
+    head.position.y=2.5; head.castShadow=true; fallGroup.add(head);
     group.head = head;
     const armGeo = new THREE.CapsuleGeometry(0.1,0.6,4,6);
     const armL = new THREE.Mesh(armGeo, fallMat);
-    armL.position.set(-0.55,1.8,0); armL.castShadow=true; group.add(armL); group.armL=armL;
+    armL.position.set(-0.55,1.8,0); armL.castShadow=true; fallGroup.add(armL); group.armL=armL;
     const armR = new THREE.Mesh(armGeo, fallMat);
-    armR.position.set( 0.55,1.8,0); armR.castShadow=true; group.add(armR); group.armR=armR;
+    armR.position.set( 0.55,1.8,0); armR.castShadow=true; fallGroup.add(armR); group.armR=armR;
     const legGeo = new THREE.CapsuleGeometry(0.12,0.7,4,6);
     const legL = new THREE.Mesh(legGeo, fallMat);
-    legL.position.set(-0.22,0.6,0); legL.castShadow=true; group.add(legL); group.legL=legL;
+    legL.position.set(-0.22,0.6,0); legL.castShadow=true; fallGroup.add(legL); group.legL=legL;
     const legR = new THREE.Mesh(legGeo, fallMat);
-    legR.position.set( 0.22,0.6,0); legR.castShadow=true; group.add(legR); group.legR=legR;
+    legR.position.set( 0.22,0.6,0); legR.castShadow=true; fallGroup.add(legR); group.legR=legR;
   }
 
   // Ball possession indicator dot (shown above head when player has ball)
