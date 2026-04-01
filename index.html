@@ -1555,6 +1555,160 @@ function updateParticles(dt){
   }
 }
 
+// ── Animal skin texture generator ────────────────────────────────
+function makeAnimalTexture(animal, name, baseColorInt){
+  const canvas = document.createElement('canvas');
+  canvas.width = 128; canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+
+  function hexToRgb(c){ return {r:(c>>16)&0xFF, g:(c>>8)&0xFF, b:c&0xFF}; }
+  function lighter(c,f){ return {r:Math.min(255,Math.round(c.r*f)),g:Math.min(255,Math.round(c.g*f)),b:Math.min(255,Math.round(c.b*f))}; }
+  function darker(c,f){ return {r:Math.round(c.r*f),g:Math.round(c.g*f),b:Math.round(c.b*f)}; }
+  function rgb(c){ return `rgb(${c.r},${c.g},${c.b})`; }
+  function rgba(c,a){ return `rgba(${c.r},${c.g},${c.b},${a})`; }
+
+  const base = hexToRgb(baseColorInt);
+  const light = lighter(base, 1.28);
+  const dark  = darker(base, 0.68);
+
+  const isScaled  = ['Komodo Dragon','Lizard','Alligator','Black Mamba','Fire Salamander','Scorpion'].includes(animal) || name==='Rattles';
+  const isGiraffe = animal==='Giraffe';
+  const isSpotted = animal==='Jaguar' || name==='Ripper' || animal==='Snow Leopard' || name==='Spots';
+  const isFeather = animal==='Ostrich';
+  const isHide    = animal==='Rhino' || (name==='Tusk' && animal!=='Bear');
+  const isFur     = !isScaled && !isGiraffe && !isSpotted && !isFeather && !isHide;
+
+  // Fill base
+  ctx.fillStyle = rgb(base);
+  ctx.fillRect(0, 0, 128, 128);
+
+  if(isScaled){
+    // Reptile / amphibian scales
+    const scaleSize = 11;
+    const outline = darker(base, 0.50);
+    const shine   = lighter(base, 1.40);
+    for(let row=0; row<14; row++){
+      for(let col=0; col<13; col++){
+        const ox = (row%2===0) ? 0 : scaleSize*0.5;
+        const x  = col*scaleSize + ox;
+        const y  = row*scaleSize*0.78;
+        ctx.beginPath();
+        ctx.arc(x+scaleSize*0.5, y+scaleSize*0.65, scaleSize*0.58, Math.PI, 0, false);
+        ctx.closePath();
+        const grad = ctx.createRadialGradient(x+scaleSize*0.5,y+scaleSize*0.20,1, x+scaleSize*0.5,y+scaleSize*0.65,scaleSize*0.58);
+        grad.addColorStop(0, rgb(shine));
+        grad.addColorStop(1, rgb(base));
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.strokeStyle = rgb(outline); ctx.lineWidth = 1.0; ctx.stroke();
+      }
+    }
+  } else if(isGiraffe){
+    // Large irregular giraffe patches
+    const patch = {r:0x7B,g:0x3A,b:0x10};
+    const outline2 = darker(patch, 0.75);
+    const patches = [[18,12,20],[72,18,17],[112,8,15],[6,52,18],[52,48,22],[96,46,17],[130,50,15],
+                     [28,92,19],[80,88,16],[118,84,18],[44,126,15],[96,124,20],[12,130,14]];
+    patches.forEach(([cx,cy,r])=>{
+      ctx.beginPath();
+      const sides = 5+Math.floor(Math.random()*3);
+      for(let i=0;i<sides;i++){
+        const ang = (i/sides)*Math.PI*2 + Math.random()*0.5;
+        const rr  = r*(0.65+Math.random()*0.55);
+        const px  = cx+Math.cos(ang)*rr;
+        const py  = cy+Math.sin(ang)*rr;
+        if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = rgb(patch); ctx.fill();
+      ctx.strokeStyle = rgb(outline2); ctx.lineWidth = 1.4; ctx.stroke();
+    });
+  } else if(isSpotted){
+    // Rosette spots (jaguar / snow leopard)
+    const isLight  = (animal==='Snow Leopard'||name==='Spots');
+    const ringCol  = isLight ? darker(base,0.55) : darker(base,0.42);
+    const dotCol   = isLight ? darker(base,0.68) : darker(base,0.55);
+    for(let i=0;i<14;i++){
+      const sx = Math.random()*128;
+      const sy = Math.random()*128;
+      const r  = 7+Math.random()*6;
+      const numDots = 4+Math.floor(Math.random()*3);
+      // Ring of dots
+      for(let d=0;d<numDots;d++){
+        const ang = (d/numDots)*Math.PI*2;
+        ctx.beginPath();
+        ctx.arc(sx+Math.cos(ang)*r, sy+Math.sin(ang)*r, 2.5+Math.random()*1.5, 0, Math.PI*2);
+        ctx.fillStyle = rgb(ringCol); ctx.fill();
+      }
+      // Center spot
+      ctx.beginPath();
+      ctx.arc(sx, sy, 2.0+Math.random()*1.5, 0, Math.PI*2);
+      ctx.fillStyle = rgb(dotCol); ctx.fill();
+    }
+  } else if(isFeather){
+    // Ostrich feather barbs
+    const quill  = darker(base, 0.72);
+    const barb   = lighter(base, 1.22);
+    for(let i=0;i<36;i++){
+      const x   = Math.random()*128;
+      const y   = Math.random()*128;
+      const ang = Math.random()*Math.PI*2;
+      const len = 13+Math.random()*9;
+      ctx.strokeStyle = rgb(quill); ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(x,y);
+      ctx.lineTo(x+Math.cos(ang)*len, y+Math.sin(ang)*len); ctx.stroke();
+      ctx.lineWidth = 0.7;
+      for(let b=1;b<=7;b++){
+        const t  = b/8;
+        const bx = x+Math.cos(ang)*len*t;
+        const by = y+Math.sin(ang)*len*t;
+        const bl = 4+Math.random()*3;
+        const ba = ang+Math.PI/2;
+        ctx.strokeStyle = rgba(barb, 0.55+Math.random()*0.35);
+        ctx.beginPath();
+        ctx.moveTo(bx+Math.cos(ba)*bl, by+Math.sin(ba)*bl);
+        ctx.lineTo(bx-Math.cos(ba)*bl, by-Math.sin(ba)*bl);
+        ctx.stroke();
+      }
+    }
+  } else if(isHide){
+    // Thick wrinkled hide (Rhino, Walrus)
+    const crack = darker(base, 0.58);
+    for(let i=0;i<30;i++){
+      const x1  = Math.random()*128;
+      const y1  = Math.random()*128;
+      const ang = Math.random()*Math.PI;
+      const len = 12+Math.random()*22;
+      const cx1 = x1+Math.cos(ang)*len*0.4+(Math.random()-0.5)*10;
+      const cy1 = y1+Math.sin(ang)*len*0.4+(Math.random()-0.5)*10;
+      ctx.strokeStyle = rgb(crack); ctx.lineWidth = 0.9;
+      ctx.globalAlpha = 0.35+Math.random()*0.35;
+      ctx.beginPath();
+      ctx.moveTo(x1,y1);
+      ctx.quadraticCurveTo(cx1,cy1, x1+Math.cos(ang)*len, y1+Math.sin(ang)*len);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  } else if(isFur){
+    // Short dense fur strokes (all furry mammals)
+    for(let i=0;i<260;i++){
+      const x   = Math.random()*128;
+      const y   = Math.random()*128;
+      const len = 3+Math.random()*5;
+      const ang = (Math.random()-0.5)*0.7 + Math.PI*1.5; // roughly upward
+      const useLt = Math.random()>0.48;
+      ctx.strokeStyle = rgba(useLt ? light : dark, 0.30+Math.random()*0.42);
+      ctx.lineWidth   = 0.9;
+      ctx.beginPath();
+      ctx.moveTo(x,y);
+      ctx.lineTo(x+Math.cos(ang)*len, y+Math.sin(ang)*len);
+      ctx.stroke();
+    }
+  }
+
+  return new THREE.CanvasTexture(canvas);
+}
+
 // ── Player model ─────────────────────────────────────────────────
 function makePlayerMesh(pd, teamColor, team){
   const group = new THREE.Group();
@@ -1612,7 +1766,7 @@ function makePlayerMesh(pd, teamColor, team){
   const legH = isPanther ? 1.05 : (isGoat ? 1.0 : (isGiraffe ? 1.25 : (isOstrich ? 0.85 : (isRhino ? 0.80 : ((isBear||isPolarBear) ? 0.62 : (isGorilla ? 0.62 : (isLizard ? 0.68 : (isBull ? 0.65 : (isFireSalamander ? 0.68 : (isAlligator ? 0.72 : (isCamel ? 0.74 : (isScorpion ? 0.72 : 0.7))))))))))));
   const legW = isGoat ? 0.22 : (isGiraffe ? 0.13 : (isOstrich ? 0.10 : (isRhino ? 0.38 : ((isBear||isPolarBear) ? 0.36 : (isGorilla ? 0.38 : (isLizard ? 0.30 : (isBull ? 0.34 : (isFireSalamander ? 0.32 : (isAlligator ? 0.34 : (isCamel ? 0.26 : (isScorpion ? 0.30 : 0.28)))))))))));
   const legColor = isPanther ? 0x0A0A0A : (isGoat ? 0x1A6B1A : (isKomodo ? 0x4A8C3F : (isGiraffe ? 0xD4963C : (isOstrich ? 0xE8DFC8 : (isRhino ? 0x7A7A7A : (isHorse ? 0x888898 : (isPolarBear ? 0xDDDBD3 : (isBear ? 0x5C3015 : (isGorilla ? 0x3A2828 : (isLizard ? 0x1E1A14 : (isRosette ? 0x2E0A50 : (isBull ? 0x1A1210 : (isFireSalamander ? 0x0D0B09 : (isAlligator ? 0x3A3F38 : (isChase ? 0x8B6520 : (isRipper ? 0xA07020 : (isSnowLeopard ? 0xE2E0DA : (isFang ? 0xB88A28 : (isMoe ? 0x5C2E10 : (isBlizzard ? 0xE8E8E8 : (isTusk ? 0x5A4A42 : (isCamel ? 0xC87020 : (isScorpion ? 0x3A2010 : (isSandy ? 0xC4842A : (isCleo ? 0xC87030 : (isRattles ? 0xC49A52 : (isSly ? 0xC8963C : 0x222222)))))))))))))))))))))))))));
-  const legMat = new THREE.MeshLambertMaterial({color:legColor});
+  const legMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture(pd?pd.animal:'',pd?pd.name:'',legColor)});
   const thighH = legH * 0.52;
   const shinH  = legH * 0.48;
   const legR0  = legW * 0.48;  // top radius of thigh
@@ -1672,7 +1826,7 @@ function makePlayerMesh(pd, teamColor, team){
 
   const bodyDepth = isGorilla ? 0.78 : (isLizard ? 0.62 : ((isBear||isPolarBear) ? 0.70 : (isBull ? 0.72 : (isFireSalamander ? 0.68 : (isAlligator ? 0.72 : (isCamel ? 0.56 : (isScorpion ? 0.65 : 0.52)))))));
   const bodyColor = isPanther ? 0x1A7A1A : (isGoat ? 0x1A7A1A : (isKomodo ? 0x4A8C3F : (isGiraffe ? 0xF080A0 : (isOstrich ? 0xF5F5F5 : (isRhino ? 0x7A7A7A : (isPolarBear ? 0xEEECE4 : (isBear ? 0xA8A49C : (isGorilla ? 0x1A1820 : (isLizard ? 0x0E0C08 : (isRosette ? 0x2E0A50 : (isBull ? 0x1A1210 : (isFireSalamander ? 0x0D0B09 : (isAlligator ? 0x3A3F38 : (isChase ? 0x9E7428 : (isSnowLeopard ? 0xEAE8E2 : (isFang ? 0xC49A30 : (isMoe ? 0x7A3A18 : (isBlizzard ? 0xF0F0F0 : (isTusk ? 0x6A5850 : (isCamel ? 0xFFB800 : (isScorpion ? 0x3A2010 : (isSandy ? 0xFFB800 : tc))))))))))))))))))))));
-  const bodyMat = new THREE.MeshLambertMaterial({color:bodyColor});
+  const bodyMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture(pd?pd.animal:'',pd?pd.name:'',bodyColor)});
   // Chest (upper torso) — wider, oval cross-section
   const chestH = bodyH * 0.54;
   const chestGeo = new THREE.CylinderGeometry(bodyW*0.50, bodyW*0.46, chestH, 10);
@@ -1694,7 +1848,7 @@ function makePlayerMesh(pd, teamColor, team){
   if(!isBlackMamba && !isScorpion && !isOstrich){
     const shoulderR = legW * 0.55;
     const shoulderColor = bodyColor;
-    const shoulderMat = new THREE.MeshLambertMaterial({color:shoulderColor});
+    const shoulderMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture(pd?pd.animal:'',pd?pd.name:'',shoulderColor)});
     const shoulderXOff = isPanther ? 0.56 : (isGoat ? 0.40 : ((isBear||isPolarBear) ? 0.60 : (isGorilla ? 0.70 : (isRhino ? 0.65 : (isHorse ? 0.62 : (isBull ? 0.62 : 0.52))))));
     const shoulderY = bodyY + bodyH*0.42;
     [-shoulderXOff, shoulderXOff].forEach(xOff=>{
@@ -1728,7 +1882,7 @@ function makePlayerMesh(pd, teamColor, team){
     numPlane.position.set(0, bodyY, 0.28);
     group.add(numPlane);
     // Arms — black panther skin, two-segment cylindrical
-    const armMat = new THREE.MeshLambertMaterial({color:0x0A0A0A});
+    const armMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Panther',pd?pd.name:'',0x0A0A0A)});
     const pawMat = new THREE.MeshLambertMaterial({color:0x1A1A1A});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.12,0.52,8),armMat);
@@ -1774,7 +1928,7 @@ function makePlayerMesh(pd, teamColor, team){
     numPlane.position.set(0, bodyY, 0.27);
     group.add(numPlane);
     // Tan arms — long and lanky, two-segment cylindrical
-    const armMat = new THREE.MeshLambertMaterial({color:0xC8A46E});
+    const armMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Goat',pd?pd.name:'',0xC8A46E)});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.08,0.44,8),armMat);
       upper.position.set(side*0.50, bodyY+0.18, 0);
@@ -1802,7 +1956,7 @@ function makePlayerMesh(pd, teamColor, team){
   if(!isKomodo && !isGiraffe && !isHorse && !isLizard && !isFireSalamander && !isAlligator && !isBlackMamba && !isPolarBear && !isSnowLeopard && !isFang && !isMoe && !isBlizzard && !isTusk && !isCamel && !isScorpion && !isSandy && !isCleo && !isRattles && !isSly){
     const headColor = isPanther ? 0x0D0D0D : (isGoat ? 0xC8A46E : (isBear ? 0x7A4A28 : (isGorilla ? 0x2E1E1E : (isRosette ? 0x2E0A50 : (isBull ? 0x1A1210 : (isChase ? 0xC8982A : (isRipper ? 0xC4922A : 0xFF8C00)))))));
     const headGeo = new THREE.SphereGeometry(isGorilla ? 0.54 : (isBear ? 0.50 : (isBull ? 0.50 : 0.42)),10,8);
-    const headMat = new THREE.MeshLambertMaterial({color:headColor});
+    const headMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture(pd?pd.animal:'',pd?pd.name:'',headColor)});
     const head = new THREE.Mesh(headGeo,headMat);
     head.position.set(0, headBase, 0);
     head.castShadow=true;
@@ -2005,8 +2159,8 @@ function makePlayerMesh(pd, teamColor, team){
     });
 
     // --- ARMS + CLAWS ---
-    const armMat  = new THREE.MeshLambertMaterial({color:SKIN});
-    const foreMat = new THREE.MeshLambertMaterial({color:SKIN_DARK});
+    const armMat  = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Komodo Dragon',pd?pd.name:'',SKIN)});
+    const foreMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Komodo Dragon',pd?pd.name:'',SKIN_DARK)});
     const clawMat = new THREE.MeshLambertMaterial({color:0xD4C890});
     [-1,1].forEach((side,i)=>{
       const xOff = side*0.65;
@@ -2033,7 +2187,7 @@ function makePlayerMesh(pd, teamColor, team){
     });
 
     // --- HEAD: box skull ---
-    const skullMat = new THREE.MeshLambertMaterial({color:SKIN});
+    const skullMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Komodo Dragon',pd?pd.name:'',SKIN)});
     const darkMat  = new THREE.MeshLambertMaterial({color:SKIN_DARK});
     const skull = new THREE.Mesh(new THREE.BoxGeometry(0.72,0.52,0.68),skullMat);
     skull.position.set(0,hb,0); skull.castShadow=true; group.add(skull);
@@ -2143,7 +2297,7 @@ function makePlayerMesh(pd, teamColor, team){
     });
 
     // Arms — tan, slim
-    const armMat = new THREE.MeshLambertMaterial({color:TAN});
+    const armMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Giraffe',pd?pd.name:'',TAN)});
     [-1,1].forEach((side,i)=>{
       const xOff = side*0.58;
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.095,0.085,0.42,8),armMat);
@@ -2179,7 +2333,7 @@ function makePlayerMesh(pd, teamColor, team){
     });
 
     // Head — slightly elongated box (giraffe head is long and flat)
-    const headMat = new THREE.MeshLambertMaterial({color:TAN});
+    const headMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Giraffe',pd?pd.name:'',TAN)});
     const headBox = new THREE.Mesh(new THREE.BoxGeometry(0.34,0.28,0.52),headMat);
     headBox.position.set(0, headBase, 0.10);
     headBox.castShadow=true; group.add(headBox);
@@ -2267,7 +2421,7 @@ function makePlayerMesh(pd, teamColor, team){
     jPlane.position.set(0,bodyY,0.29); group.add(jPlane);
 
     // Wings — large pink, spread outward (used as armL/armR for animation)
-    const wingMat = new THREE.MeshLambertMaterial({color:OPINK});
+    const wingMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Ostrich',pd?pd.name:'',OPINK)});
     const wingTipMat = new THREE.MeshLambertMaterial({color:0xF090CC});
     [-1,1].forEach(side=>{
       const wing = new THREE.Mesh(new THREE.BoxGeometry(0.65,0.12,0.42),wingMat);
@@ -2380,7 +2534,7 @@ function makePlayerMesh(pd, teamColor, team){
     jPlane.position.set(0, bodyY+0.05, 0.58); group.add(jPlane);
 
     // Massive muscular arms
-    const armMat = new THREE.MeshLambertMaterial({color:RGRAY});
+    const armMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Rhino',pd?pd.name:'',RGRAY)});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.20,0.17,0.58,8),armMat);
       upper.position.set(side*0.84, bodyY+0.26, 0);
@@ -2401,7 +2555,7 @@ function makePlayerMesh(pd, teamColor, team){
     neck.position.set(0, rBodyTop+0.16, 0); neck.castShadow=true; group.add(neck);
 
     // Large boxy rhino head
-    const rHeadMat = new THREE.MeshLambertMaterial({color:RGRAY});
+    const rHeadMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Rhino',pd?pd.name:'',RGRAY)});
     const rHead = new THREE.Mesh(new THREE.BoxGeometry(0.82,0.62,0.72),rHeadMat);
     rHead.position.set(0, headBase, 0); rHead.castShadow=true; group.add(rHead);
     group.head = rHead;
@@ -2472,7 +2626,7 @@ function makePlayerMesh(pd, teamColor, team){
     jPlane.position.set(0, bodyY+0.02, 0.27); group.add(jPlane);
 
     // Massive muscular arms — dark skin
-    const armMat = new THREE.MeshLambertMaterial({color:HSKIN});
+    const armMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Andalusian Horse',pd?pd.name:'',HSKIN)});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.15,0.58,8),armMat);
       upper.position.set(side*0.80, bodyY+0.24, 0);
@@ -2493,7 +2647,7 @@ function makePlayerMesh(pd, teamColor, team){
     neck.position.set(0, hBodyTop+0.15, 0); neck.castShadow=true; group.add(neck);
 
     // Head — humanoid box, dark blue-gray
-    const hHeadMat = new THREE.MeshLambertMaterial({color:HSKIN});
+    const hHeadMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Andalusian Horse',pd?pd.name:'',HSKIN)});
     const hHead = new THREE.Mesh(new THREE.BoxGeometry(0.50,0.54,0.48),hHeadMat);
     hHead.position.set(0, headBase, 0); hHead.castShadow=true; group.add(hHead);
     group.head = hHead;
@@ -2583,7 +2737,7 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(jPlane);
 
     // Thick furry arms
-    const armFurMat = new THREE.MeshLambertMaterial({color:FUR_DARK});
+    const armFurMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Bear',pd?pd.name:'',FUR_DARK)});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.16,0.60,8),armFurMat);
       upper.position.set(side*0.78, bodyY+0.22, 0);
@@ -2698,7 +2852,7 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(jPlane);
 
     // Thick white furry arms
-    const armFurMat = new THREE.MeshLambertMaterial({color:FUR_DARK});
+    const armFurMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Polar Bear',pd?pd.name:'',FUR_DARK)});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.16,0.60,8),armFurMat);
       upper.position.set(side*0.78, bodyY+0.22, 0);
@@ -2708,7 +2862,7 @@ function makePlayerMesh(pd, teamColor, team){
       const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.155,0.13,0.50,8),armFurMat);
       fore.position.set(side*0.76, bodyY-0.35, 0.05);
       fore.castShadow=true; group.add(fore);
-      const paw = new THREE.Mesh(new THREE.SphereGeometry(0.145,8,6),new THREE.MeshLambertMaterial({color:FUR}));
+      const paw = new THREE.Mesh(new THREE.SphereGeometry(0.145,8,6),new THREE.MeshLambertMaterial({map:makeAnimalTexture('Polar Bear',pd?pd.name:'',FUR)}));
       paw.position.set(side*0.74, bodyY-0.65, 0.07);
       group.add(paw);
       if(side===-1) group.armL=upper; else group.armR=upper;
@@ -2721,7 +2875,7 @@ function makePlayerMesh(pd, teamColor, team){
     neck.castShadow=true; group.add(neck);
 
     // Round head
-    const headMat2 = new THREE.MeshLambertMaterial({color:FUR});
+    const headMat2 = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Polar Bear',pd?pd.name:'',FUR)});
     const head2 = new THREE.Mesh(new THREE.SphereGeometry(0.50,10,8),headMat2);
     head2.position.set(0, hb, 0);
     head2.castShadow=true; group.add(head2);
@@ -2842,8 +2996,8 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(jPlane);
 
     // Long powerful gorilla arms — reach well below knees
-    const armUpperMat = new THREE.MeshLambertMaterial({color:FUR});
-    const armLowerMat = new THREE.MeshLambertMaterial({color:FUR_MID});
+    const armUpperMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Gorilla',pd?pd.name:'',FUR)});
+    const armLowerMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Gorilla',pd?pd.name:'',FUR_MID)});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.20,0.17,0.76,8),armUpperMat);
       upper.position.set(side*0.90, bodyY+0.04, 0);
@@ -2974,7 +3128,7 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(jPlane);
 
     // Lion arms
-    const armMat = new THREE.MeshLambertMaterial({color:FUR});
+    const armMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Lion','Chase',FUR)});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.145,0.125,0.66,8),armMat);
       upper.position.set(side*0.58, bodyY+0.02, 0);
@@ -3085,7 +3239,7 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(jPlane);
 
     // Lion arms — golden fur, large muscular
-    const armMat = new THREE.MeshLambertMaterial({color:FUR});
+    const armMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Lion','Fang',FUR)});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.155,0.135,0.68,8),armMat);
       upper.position.set(side*0.60, bodyY+0.02, 0);
@@ -3102,7 +3256,7 @@ function makePlayerMesh(pd, teamColor, team){
     });
 
     // Round head — warm golden fur
-    const headMat = new THREE.MeshLambertMaterial({color:FUR});
+    const headMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Lion','Fang',FUR)});
     const headSph = new THREE.Mesh(new THREE.SphereGeometry(0.46,12,10),headMat);
     headSph.position.set(0, hb, 0);
     headSph.castShadow=true; group.add(headSph);
@@ -3251,7 +3405,7 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(jPlane);
 
     // Muscular moose arms
-    const armMat = new THREE.MeshLambertMaterial({color:FUR});
+    const armMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Moose','Moe',FUR)});
     const hoofMat = new THREE.MeshLambertMaterial({color:FUR_DARK});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.165,0.145,0.70,8),armMat);
@@ -3269,7 +3423,7 @@ function makePlayerMesh(pd, teamColor, team){
     });
 
     // Round moose head
-    const headMat = new THREE.MeshLambertMaterial({color:FUR});
+    const headMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Moose','Moe',FUR)});
     const headSph = new THREE.Mesh(new THREE.SphereGeometry(0.42,12,10),headMat);
     headSph.position.set(0, hb, 0);
     headSph.castShadow=true; group.add(headSph);
@@ -3382,7 +3536,7 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(jPlane);
 
     // White fluffy arms with clawed paws
-    const armMat = new THREE.MeshLambertMaterial({color:WHITE});
+    const armMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Arctic Wolf','Blizzard',WHITE)});
     const pawMat = new THREE.MeshLambertMaterial({color:WHITE_SOFT});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.135,0.115,0.64,8),armMat);
@@ -3414,7 +3568,7 @@ function makePlayerMesh(pd, teamColor, team){
     ruff.position.set(0, bBodyTop+0.04, 0.18); group.add(ruff);
 
     // Round fluffy wolf head
-    const headMat = new THREE.MeshLambertMaterial({color:WHITE});
+    const headMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Arctic Wolf','Blizzard',WHITE)});
     const headSph = new THREE.Mesh(new THREE.SphereGeometry(0.42,12,10),headMat);
     headSph.position.set(0, hb, 0);
     headSph.castShadow=true; group.add(headSph);
@@ -3503,7 +3657,7 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(jPlane);
 
     // Extra-wide arms — thick walrus flippers
-    const armMat = new THREE.MeshLambertMaterial({color:BROWN});
+    const armMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Walrus','Tusk',BROWN)});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.19,0.58,8),armMat);
       upper.position.set(side*0.72, bodyY+0.08, 0);
@@ -3534,7 +3688,7 @@ function makePlayerMesh(pd, teamColor, team){
     });
 
     // Massive round walrus head — large and heavy
-    const headMat = new THREE.MeshLambertMaterial({color:BROWN});
+    const headMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Walrus','Tusk',BROWN)});
     const headSph = new THREE.Mesh(new THREE.SphereGeometry(0.64,12,10),headMat);
     headSph.scale.set(1.0,0.88,0.92);
     headSph.position.set(0, hb, 0);
@@ -3633,7 +3787,7 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(jPlane);
 
     // Spotted arms — tan fur with dark rosette blobs, very dark paws
-    const armFurMat = new THREE.MeshLambertMaterial({color:FUR});
+    const armFurMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Jaguar','Ripper',FUR)});
     const spotMat   = new THREE.MeshLambertMaterial({color:SPOT});
     const pawMat    = new THREE.MeshLambertMaterial({color:PAW});
     [-1,1].forEach(side=>{
@@ -3770,8 +3924,8 @@ function makePlayerMesh(pd, teamColor, team){
     });
 
     // Spotted fur arms
-    const armFurMat = new THREE.MeshLambertMaterial({color:FUR});
-    const armGreyMat = new THREE.MeshLambertMaterial({color:FUR_GREY});
+    const armFurMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Snow Leopard','Spots',FUR)});
+    const armGreyMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Snow Leopard','Spots',FUR_GREY)});
     const spotMat   = new THREE.MeshLambertMaterial({color:SPOT});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.145,0.125,0.42,8),armFurMat);
@@ -3922,8 +4076,8 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(jPlane);
 
     // Thick scaly arms
-    const armScaleMat = new THREE.MeshLambertMaterial({color:SCALE});
-    const armMidMat   = new THREE.MeshLambertMaterial({color:SCALE_MID});
+    const armScaleMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Lizard',pd?pd.name:'',SCALE)});
+    const armMidMat   = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Lizard',pd?pd.name:'',SCALE_MID)});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.175,0.155,0.70,8),armScaleMat);
       upper.position.set(side*0.82, bodyY+0.06, 0);
@@ -3946,7 +4100,7 @@ function makePlayerMesh(pd, teamColor, team){
     neck.castShadow=true; group.add(neck);
 
     // ── HEAD: box skull + crocodilian snout ──
-    const skullMat  = new THREE.MeshLambertMaterial({color:SCALE});
+    const skullMat  = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Lizard',pd?pd.name:'',SCALE)});
     const snoutMat  = new THREE.MeshLambertMaterial({color:SCALE_MID});
 
     // Skull box
@@ -4071,8 +4225,8 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(jPlane);
 
     // Thick muscular bull arms
-    const armFurMat = new THREE.MeshLambertMaterial({color:FUR});
-    const armMidMat = new THREE.MeshLambertMaterial({color:FUR_MID});
+    const armFurMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Bull',pd?pd.name:'',FUR)});
+    const armMidMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Bull',pd?pd.name:'',FUR_MID)});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.16,0.72,8),armFurMat);
       upper.position.set(side*0.88, bodyY+0.04, 0);
@@ -4221,7 +4375,7 @@ function makePlayerMesh(pd, teamColor, team){
     group.add(jPlane);
 
     // Muscular arms — thick and rocky
-    const armMat  = new THREE.MeshLambertMaterial({color:LAVA_DARK});
+    const armMat  = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Fire Salamander',pd?pd.name:'',LAVA_DARK)});
     const armMidM = new THREE.MeshLambertMaterial({color:LAVA_MID});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.16,0.72,8),armMat);
@@ -4269,7 +4423,7 @@ function makePlayerMesh(pd, teamColor, team){
     });
 
     // ── HEAD: blocky croc skull ──
-    const skullMat = new THREE.MeshLambertMaterial({color:LAVA_DARK});
+    const skullMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Fire Salamander',pd?pd.name:'',LAVA_DARK)});
     const snoutMat = new THREE.MeshLambertMaterial({color:LAVA_MID});
 
     const skull = new THREE.Mesh(new THREE.BoxGeometry(0.80,0.56,0.64),skullMat);
@@ -4403,8 +4557,8 @@ function makePlayerMesh(pd, teamColor, team){
     const TONGUE_C = 0xCC1020; // bright red forked tongue
     const hb       = headBase; // 3.1
 
-    const skinMat    = new THREE.MeshLambertMaterial({color:MAMBA});
-    const shineMat2  = new THREE.MeshLambertMaterial({color:SHINE});
+    const skinMat    = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Black Mamba',pd?pd.name:'',MAMBA)});
+    const shineMat2  = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Black Mamba',pd?pd.name:'',SHINE)});
     const bellyMat2  = new THREE.MeshLambertMaterial({color:BELLY});
     const mouthMat2  = new THREE.MeshBasicMaterial({color:MOUTH_C});
     const fangMat    = new THREE.MeshLambertMaterial({color:FANG_C});
@@ -4654,7 +4808,7 @@ function makePlayerMesh(pd, teamColor, team){
     hbStripe.position.set(0, hb+0.22, 0); group.add(hbStripe);
 
     // ── ARMS — slim, sandy fur, brown wristbands ──
-    const armMat   = new THREE.MeshLambertMaterial({color:FUR});
+    const armMat   = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Fennec Fox','Sandy',FUR)});
     const wristMat = new THREE.MeshLambertMaterial({color:JBRN});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.095,0.36,8), armMat);
@@ -4682,7 +4836,7 @@ function makePlayerMesh(pd, teamColor, team){
     const JBRN       = 0x5C2800; // Sandstorms dark brown
     const hb         = headBase;
 
-    const furMat    = new THREE.MeshLambertMaterial({color:CAT_FUR});
+    const furMat    = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Sand Cat','Cleo',CAT_FUR)});
     const stripeMat = new THREE.MeshLambertMaterial({color:CAT_STRIPE});
     const creamMat  = new THREE.MeshLambertMaterial({color:CAT_CREAM});
 
@@ -4848,8 +5002,8 @@ function makePlayerMesh(pd, teamColor, team){
     const JBRN     = 0x5C2800; // jersey dark brown trim
     const hb       = headBase;
 
-    const furMat   = new THREE.MeshLambertMaterial({color:MK_FUR});
-    const darkMat  = new THREE.MeshLambertMaterial({color:MK_DARK});
+    const furMat   = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Meerkat','Sly',MK_FUR)});
+    const darkMat  = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Meerkat','Sly',MK_DARK)});
     const creamMat = new THREE.MeshLambertMaterial({color:MK_CREAM});
 
     // ── SANDSTORMS jersey canvas — sandy tan, #10 ──
@@ -4987,7 +5141,7 @@ function makePlayerMesh(pd, teamColor, team){
     const JBRN    = 0x5C2800; // jersey dark brown panels
     const hb      = headBase;
 
-    const furMat  = new THREE.MeshLambertMaterial({color:FUR});
+    const furMat  = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Camel',pd?pd.name:'',FUR)});
     const drkMat  = new THREE.MeshLambertMaterial({color:FUR_DRK});
 
     // ── SANDSTORMS jersey canvas ──
@@ -5119,8 +5273,8 @@ function makePlayerMesh(pd, teamColor, team){
     const JBRN     = 0x5C2800; // Sandstorms dark brown
     const hb       = headBase;
 
-    const chitMat  = new THREE.MeshLambertMaterial({color:CHITIN});
-    const chit2Mat = new THREE.MeshLambertMaterial({color:CHITIN2});
+    const chitMat  = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Scorpion',pd?pd.name:'',CHITIN)});
+    const chit2Mat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Scorpion',pd?pd.name:'',CHITIN2)});
     const chit3Mat = new THREE.MeshLambertMaterial({color:CHITIN3});
 
     // ── SANDSTORMS jersey (same as Dune, number 7) ──
@@ -5295,8 +5449,8 @@ function makePlayerMesh(pd, teamColor, team){
     const JBRN     = 0x5C2800; // Sandstorms dark brown
     const hb       = headBase;
 
-    const scaleMat  = new THREE.MeshLambertMaterial({color:SCALE});
-    const scale2Mat = new THREE.MeshLambertMaterial({color:SCALE2});
+    const scaleMat  = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Sidewinder','Rattles',SCALE)});
+    const scale2Mat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Sidewinder','Rattles',SCALE2)});
     const bellyMat  = new THREE.MeshLambertMaterial({color:BELLY});
 
     // ── SANDSTORMS jersey — gold, number 10 ──
@@ -5464,7 +5618,7 @@ function makePlayerMesh(pd, teamColor, team){
     jPlane.position.set(0, bodyY+0.02, 0.37);
     group.add(jPlane);
 
-    const skinMat = new THREE.MeshLambertMaterial({color:SGREEN});
+    const skinMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Alligator',pd?pd.name:'',SGREEN)});
     const midMat  = new THREE.MeshLambertMaterial({color:SMID});
 
     // Thick short neck
@@ -5522,7 +5676,7 @@ function makePlayerMesh(pd, teamColor, team){
     });
 
     // ── HEAD: wide flat alligator skull ──
-    const skullMat = new THREE.MeshLambertMaterial({color:SGREEN});
+    const skullMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture('Alligator',pd?pd.name:'',SGREEN)});
     const snoutMat = new THREE.MeshLambertMaterial({color:SMID});
 
     const skull = new THREE.Mesh(new THREE.BoxGeometry(0.88,0.52,0.72),skullMat);
@@ -5586,7 +5740,7 @@ function makePlayerMesh(pd, teamColor, team){
   }
 
   if(!isPanther && !isGoat && !isKomodo && !isGiraffe && !isOstrich && !isRhino && !isHorse && !isBear && !isPolarBear && !isGorilla && !isLizard && !isBull && !isFireSalamander && !isAlligator && !isChase && !isRipper && !isBlackMamba && !isSnowLeopard && !isFang && !isMoe && !isBlizzard && !isTusk && !isCamel && !isScorpion && !isSandy && !isCleo && !isRattles && !isSly){
-    const armMat = new THREE.MeshLambertMaterial({color:tc});
+    const armMat = new THREE.MeshLambertMaterial({map:makeAnimalTexture(pd?pd.animal:'',pd?pd.name:'',tc)});
     [-1,1].forEach(side=>{
       const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.115,0.10,0.40,8),armMat);
       upper.position.set(side*0.62, 1.38, 0);
