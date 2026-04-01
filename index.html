@@ -761,14 +761,14 @@ function initThree(){
   document.getElementById('three-container').appendChild(renderer.domElement);
 
   scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x050510, 30, 80);
+  scene.fog = new THREE.Fog(0x0A1020, 35, 90);
 
   camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 200);
   camera.position.set(0,16,20);
   camera.lookAt(0,0,-1);
 
   // Lights
-  const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+  const ambient = new THREE.AmbientLight(0xffffff, 0.8);
   scene.add(ambient);
 
   const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
@@ -814,6 +814,26 @@ function initThree(){
   centerSpot.target.position.set(0, 0, 0);
   centerSpot.castShadow = false;
   scene.add(centerSpot); scene.add(centerSpot.target);
+
+  // Arena perimeter lights — illuminate stands like an indoor arena
+  // Baseline stand banks (front/back): warm-white floods pointing inward
+  [[-8,-16],[0,-16],[8,-16],[-8,16],[0,16],[8,16]].forEach(([x,z])=>{
+    const pl = new THREE.PointLight(0xFFE8CC, 1.4, 22);
+    pl.position.set(x, 10, z);
+    scene.add(pl);
+  });
+  // Side stand banks (left/right): matching floods
+  [[-19,-5],[-19,0],[-19,5],[19,-5],[19,0],[19,5]].forEach(([x,z])=>{
+    const pl = new THREE.PointLight(0xFFE8CC, 1.4, 22);
+    pl.position.set(x, 10, z);
+    scene.add(pl);
+  });
+  // Ceiling wash over stands — broad soft fill from arena ceiling trusses
+  [[-14,-13],[14,-13],[-14,13],[14,13]].forEach(([x,z])=>{
+    const pl = new THREE.PointLight(0xFFF4E8, 1.0, 28);
+    pl.position.set(x, 16, z);
+    scene.add(pl);
+  });
 
   window.addEventListener('resize',()=>{
     camera.aspect=window.innerWidth/window.innerHeight;
@@ -1096,7 +1116,7 @@ function buildHoop(x){
 //  STADIUM ENVIRONMENTS
 // ================================================================
 
-const STAND_COLORS=[0x1A2B0A,0x1A0500,0x050518,0x0A1828,0x1A1000];
+const STAND_COLORS=[0x2E4A18,0x3A1008,0x0E1A3A,0x122440,0x2E1E08];
 const STAND_CFG=[[0,-13,28,4,5],[0,13,28,4,5],[-17,0,4,4,15],[17,0,4,4,15]];
 
 function _addSO(obj){scene.add(obj);_stadiumObjs.push(obj);return obj;}
