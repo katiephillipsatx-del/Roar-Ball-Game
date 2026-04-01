@@ -291,7 +291,7 @@ const TEAMS = [
     players:[
       {name:'Mane Attraction', animal:'Andalusian Horse',emoji:'🐎', spd:10,sht:10,drb:7,def:6,str:8},
       {name:'Grizz',           animal:'Bear',            emoji:'🐻', spd:10,sht:7,drb:6,def:9,str:10},
-      {name:'Kong',            animal:'Gorilla',         emoji:'🦍', spd:10,sht:8,drb:7,def:8,str:10},
+      {name:'Kong',            animal:'Gorilla',         emoji:'🦍', spd:10,sht:8,drb:7,def:8,str:10, ht:"10'2\""},
       {name:'Lary',            animal:'Lizard',          emoji:'🦎', spd:10,sht:6,drb:8,def:7,str:5},
       {name:'Bill',            animal:'Bull',            emoji:'🐂', spd:10,sht:7,drb:6,def:8,str:10},
       {name:'Cinder',          animal:'Fire Salamander', emoji:'🔥', spd:10,sht:8,drb:8,def:7,str:6, ht:"9'5\""},
@@ -3075,16 +3075,26 @@ function makePlayerMesh(pd, teamColor, team){
       jCtx.strokeStyle='#39FF14'; jCtx.lineWidth=4; jCtx.strokeText('34',64,90);
       jCtx.fillStyle='#FF69B4'; jCtx.fillText('34',64,90);
     } else {
-      // MAGMA jersey — red, dark panels, gold trim, #88
-      jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,0,128,128);
-      jCtx.fillStyle='#1A0800'; jCtx.fillRect(0,0,22,128); jCtx.fillRect(106,0,22,128);
-      jCtx.fillStyle='#FFD700'; jCtx.fillRect(22,0,4,128); jCtx.fillRect(102,0,4,128);
-      jCtx.strokeStyle='#FFD700'; jCtx.lineWidth=3; jCtx.strokeRect(1,1,126,126);
+      // MAGMA jersey — black base, red/gold triple side stripes, #88 (matches reference)
+      jCtx.fillStyle='#110608'; jCtx.fillRect(0,0,128,128);
+      // Triple side stripes: red, gold, red
+      jCtx.fillStyle='#CC2200'; jCtx.fillRect(0,0,14,128);  jCtx.fillRect(114,0,14,128);
+      jCtx.fillStyle='#FFD700'; jCtx.fillRect(14,0,7,128);  jCtx.fillRect(107,0,7,128);
+      jCtx.fillStyle='#CC2200'; jCtx.fillRect(21,0,6,128);  jCtx.fillRect(101,0,6,128);
+      // Gold collar/border trim
+      jCtx.strokeStyle='#FFD700'; jCtx.lineWidth=4; jCtx.strokeRect(2,2,124,124);
+      // "MAGMA" text in orange
       jCtx.textAlign='center'; jCtx.textBaseline='middle';
-      jCtx.fillStyle='#7A3A00'; jCtx.font='bold 22px Arial Black'; jCtx.fillText('MAGMA',65,28);
-      jCtx.fillStyle='#FFD700'; jCtx.fillText('MAGMA',64,27);
-      jCtx.fillStyle='#7A3A00'; jCtx.font='bold 68px Arial Black'; jCtx.fillText('88',65,84);
-      jCtx.fillStyle='#FFD700'; jCtx.fillText('88',64,83);
+      jCtx.font='bold italic 20px Arial Black';
+      jCtx.strokeStyle='#7A2000'; jCtx.lineWidth=3; jCtx.strokeText('MAGMA',64,24);
+      jCtx.fillStyle='#FF8C00'; jCtx.fillText('MAGMA',64,24);
+      // "#88" large in gold with orange shadow
+      jCtx.font='bold 66px Arial Black';
+      jCtx.strokeStyle='#7A2000'; jCtx.lineWidth=5; jCtx.strokeText('88',64,84);
+      jCtx.fillStyle='#FFD700'; jCtx.fillText('88',64,84);
+      // Captain "C" badge
+      jCtx.font='bold 13px Arial Black';
+      jCtx.fillStyle='#FFD700'; jCtx.fillText('C',98,12);
     }
     const jTex = new THREE.CanvasTexture(jCanvas);
     const jPlane = new THREE.Mesh(
