@@ -1076,18 +1076,42 @@ function _buildThorns(){
     });
   }
 
-  // Foliage clusters on sidelines
+  // Foliage clusters on sidelines — multi-blob trees for organic silhouette
   const fMats=[
     new THREE.MeshLambertMaterial({color:0x2A7010}),
     new THREE.MeshLambertMaterial({color:0x1E5508}),
-    new THREE.MeshLambertMaterial({color:0x4A9020})
+    new THREE.MeshLambertMaterial({color:0x4A9020}),
+    new THREE.MeshLambertMaterial({color:0x357A18}),
+    new THREE.MeshLambertMaterial({color:0x508C28})
   ];
+  const trunkMat=new THREE.MeshLambertMaterial({color:0x5C3A1A});
   for(let x=-12;x<=12;x+=2.5){
-    [-9.8,-9.2,9.2,9.8].forEach(z=>{
-      const r=0.45+Math.random()*0.55;
-      const m=new THREE.Mesh(new THREE.SphereGeometry(r,7,6),fMats[Math.floor(Math.random()*3)]);
-      m.position.set(x+(Math.random()-0.5)*0.8,r*0.5+Math.random()*0.3,z);
-      _addSO(m);
+    [-9.8,9.8].forEach(z=>{
+      const baseX=x+(Math.random()-0.5)*0.6;
+      const baseZ=z+(Math.random()-0.5)*0.3;
+      const treeR=0.55+Math.random()*0.45;
+      const treeH=1.8+Math.random()*1.2;
+      // Trunk
+      const trunkH=treeH*0.55;
+      const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.14,trunkH,7),trunkMat);
+      trunk.position.set(baseX,trunkH/2,baseZ);
+      _addSO(trunk);
+      // Main canopy blob
+      const blobs=[
+        {dx:0,dy:treeH,dz:0,s:1.0},
+        {dx:(Math.random()-0.5)*treeR*0.9,dy:treeH-treeR*0.5,dz:(Math.random()-0.5)*treeR*0.9,s:0.72+Math.random()*0.2},
+        {dx:(Math.random()-0.5)*treeR*0.8,dy:treeH+treeR*0.4,dz:(Math.random()-0.5)*treeR*0.8,s:0.6+Math.random()*0.2},
+        {dx:(Math.random()-0.5)*treeR*1.0,dy:treeH-treeR*0.3,dz:(Math.random()-0.5)*treeR*1.0,s:0.55+Math.random()*0.2}
+      ];
+      blobs.forEach(b=>{
+        const r=treeR*b.s;
+        const mat=fMats[Math.floor(Math.random()*fMats.length)];
+        const blob=new THREE.Mesh(new THREE.SphereGeometry(r,10,8),mat);
+        // Squish slightly for a flatter, more natural crown
+        blob.scale.set(1.0+Math.random()*0.25, 0.75+Math.random()*0.3, 1.0+Math.random()*0.25);
+        blob.position.set(baseX+b.dx, b.dy, baseZ+b.dz);
+        _addSO(blob);
+      });
     });
   }
 
