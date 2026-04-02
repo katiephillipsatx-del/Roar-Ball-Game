@@ -1076,6 +1076,7 @@ function buildScene(){
   // ── Stadium theme + crowd + scoreboard ──────────────────────
   buildStadiumTheme(GS.team1);
   buildCrowd(GS.team1);
+  buildCommentators();
   buildJumbotron();
   // Stadium label
   const _sl=document.getElementById('stadium-label');
@@ -1722,6 +1723,186 @@ function buildCrowd(teamIdx){
   }
 }
 
+
+// ================================================================
+//  COMMENTATORS
+// ================================================================
+function buildCommentators(){
+  // Two donkey commentators seated at a desk on the far sideline (z=-9),
+  // facing the court and camera.  Snout / face details point in +z (toward camera).
+
+  // ── Commentary desk ─────────────────────────────────────────
+  const deskMat  = new THREE.MeshLambertMaterial({color:0x3A2510});
+  const legMat   = new THREE.MeshLambertMaterial({color:0x2A1808});
+  const plateMat = new THREE.MeshLambertMaterial({color:0x111111});
+  const DZ = -9.0; // desk center z
+  const deskTop = new THREE.Mesh(new THREE.BoxGeometry(3.0,0.1,0.8),deskMat);
+  deskTop.position.set(0,0.7,DZ);
+  _addSO(deskTop);
+  [[-1.3,0.3],[-1.3,-0.3],[1.3,0.3],[1.3,-0.3]].forEach(([ox,oz])=>{
+    const leg=new THREE.Mesh(new THREE.BoxGeometry(0.09,0.7,0.09),legMat);
+    leg.position.set(ox,0.35,DZ+oz);
+    _addSO(leg);
+  });
+  // small nameplate strip on front of desk
+  const plate=new THREE.Mesh(new THREE.BoxGeometry(1.4,0.14,0.04),plateMat);
+  plate.position.set(0,0.76,DZ-0.43);
+  _addSO(plate);
+
+  // ── Single donkey builder ────────────────────────────────────
+  function makeDonkey(cx,cz,jacketHex,hatHex){
+    const headCol  = 0x7A6A58;
+    const muzzCol  = 0xAA9A86;
+    const earInCol = 0xCC7777;
+    const hm  = new THREE.MeshLambertMaterial({color:headCol});
+    const mm  = new THREE.MeshLambertMaterial({color:muzzCol});
+    const jm  = new THREE.MeshLambertMaterial({color:jacketHex});
+    const hHat= new THREE.MeshLambertMaterial({color:hatHex});
+    const eim = new THREE.MeshLambertMaterial({color:earInCol});
+    const gm  = new THREE.MeshLambertMaterial({color:0x111111});
+    const lm  = new THREE.MeshLambertMaterial({color:0x88BBDD,transparent:true,opacity:0.38,depthWrite:false});
+    const wm  = new THREE.MeshLambertMaterial({color:0xEEEEEE});
+    const bandM = new THREE.MeshLambertMaterial({color:0xBB9933});
+    const featM = new THREE.MeshLambertMaterial({color:0xDDCC88});
+    const micM  = new THREE.MeshLambertMaterial({color:0x333333});
+    const chairM= new THREE.MeshLambertMaterial({color:0x111111});
+    const nosM  = new THREE.MeshLambertMaterial({color:0x332222});
+    const eyeM  = new THREE.MeshLambertMaterial({color:0x0A0A0A});
+    const hiM   = new THREE.MeshLambertMaterial({color:0xFFFFFF});
+
+    // Chair
+    const seat=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.09,0.46),chairM);
+    seat.position.set(cx,0.5,cz-0.22);
+    _addSO(seat);
+    const back=new THREE.Mesh(new THREE.BoxGeometry(0.52,0.5,0.08),chairM);
+    back.position.set(cx,0.77,cz-0.44);
+    _addSO(back);
+    [[-0.22,0.18],[-0.22,-0.18],[0.22,0.18],[0.22,-0.18]].forEach(([ox,oz])=>{
+      const cl=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.5,0.07),chairM);
+      cl.position.set(cx+ox,0.25,cz+oz-0.22);
+      _addSO(cl);
+    });
+
+    // Torso / jacket
+    const torso=new THREE.Mesh(new THREE.BoxGeometry(0.56,0.62,0.36),jm);
+    torso.position.set(cx,0.82,cz);
+    _addSO(torso);
+
+    // Collar
+    const collar=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.12,0.2),wm);
+    collar.position.set(cx,1.07,cz+0.1);
+    _addSO(collar);
+
+    // Neck
+    const neck=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.13,0.18,7),hm);
+    neck.position.set(cx,1.22,cz);
+    _addSO(neck);
+
+    // Head
+    const head=new THREE.Mesh(new THREE.SphereGeometry(0.27,10,8),hm);
+    head.position.set(cx,1.5,cz);
+    _addSO(head);
+
+    // Donkey muzzle / snout — extends toward +z (toward camera)
+    const snout=new THREE.Mesh(new THREE.BoxGeometry(0.21,0.17,0.28),mm);
+    snout.position.set(cx,1.43,cz+0.22);
+    _addSO(snout);
+
+    // Nostrils
+    [-0.06,0.06].forEach(ox=>{
+      const nos=new THREE.Mesh(new THREE.SphereGeometry(0.03,5,4),nosM);
+      nos.position.set(cx+ox,1.4,cz+0.35);
+      _addSO(nos);
+    });
+
+    // Eyes
+    [-0.12,0.12].forEach(ox=>{
+      const eye=new THREE.Mesh(new THREE.SphereGeometry(0.055,6,5),eyeM);
+      eye.position.set(cx+ox,1.54,cz+0.21);
+      _addSO(eye);
+      const hi=new THREE.Mesh(new THREE.SphereGeometry(0.02,4,3),hiM);
+      hi.position.set(cx+ox+0.02,1.56,cz+0.25);
+      _addSO(hi);
+    });
+
+    // Tall donkey ears
+    [-0.18,0.18].forEach(ox=>{
+      const ear=new THREE.Mesh(new THREE.BoxGeometry(0.11,0.36,0.08),hm);
+      ear.position.set(cx+ox,1.87,cz);
+      ear.rotation.z = ox>0 ? 0.12 : -0.12;
+      _addSO(ear);
+      const iEar=new THREE.Mesh(new THREE.BoxGeometry(0.065,0.25,0.04),eim);
+      iEar.position.set(cx+ox,1.87,cz+0.02);
+      iEar.rotation.z = ox>0 ? 0.12 : -0.12;
+      _addSO(iEar);
+    });
+
+    // Glasses — lenses face +z (toward camera)
+    const bridge=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.025,0.025),gm);
+    bridge.position.set(cx,1.48,cz+0.28);
+    _addSO(bridge);
+    [-0.1,0.1].forEach(ox=>{
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(0.072,0.018,5,10),gm);
+      ring.rotation.y=Math.PI/2;
+      ring.position.set(cx+ox,1.48,cz+0.28);
+      _addSO(ring);
+      const lens=new THREE.Mesh(new THREE.CircleGeometry(0.065,8),lm);
+      lens.rotation.y=Math.PI/2;
+      lens.position.set(cx+ox,1.48,cz+0.29);
+      _addSO(lens);
+      // temple arms extending back
+      const temple=new THREE.Mesh(new THREE.BoxGeometry(0.018,0.018,0.2),gm);
+      temple.position.set(cx+ox,1.48,cz+0.18);
+      _addSO(temple);
+    });
+
+    // Hat brim
+    const brim=new THREE.Mesh(new THREE.CylinderGeometry(0.37,0.37,0.046,8),hHat);
+    brim.position.set(cx,1.76,cz);
+    _addSO(brim);
+    // Hat crown
+    const crown=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.25,0.28,8),hHat);
+    crown.position.set(cx,1.9,cz);
+    _addSO(crown);
+    // Hat band
+    const band=new THREE.Mesh(new THREE.CylinderGeometry(0.235,0.235,0.052,8),bandM);
+    band.position.set(cx,1.785,cz);
+    _addSO(band);
+    // Feather
+    const feat=new THREE.Mesh(new THREE.BoxGeometry(0.046,0.3,0.046),featM);
+    feat.position.set(cx+0.16,2.08,cz);
+    feat.rotation.z=0.28;
+    _addSO(feat);
+
+    // Arms resting on desk (angled forward toward +z)
+    const armL=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.12,0.44),jm);
+    armL.position.set(cx-0.22,0.68,cz+0.14);
+    _addSO(armL);
+    const armR=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.12,0.44),jm);
+    armR.position.set(cx+0.22,0.68,cz+0.14);
+    _addSO(armR);
+    // Hands
+    const handM=mm;
+    [-0.22,0.22].forEach(ox=>{
+      const hand=new THREE.Mesh(new THREE.SphereGeometry(0.09,6,5),handM);
+      hand.position.set(cx+ox,0.69,cz+0.35);
+      _addSO(hand);
+    });
+
+    // Microphone on desk
+    const mStand=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,0.42,6),micM);
+    mStand.position.set(cx,0.91,cz+0.32);
+    _addSO(mStand);
+    const mHead=new THREE.Mesh(new THREE.SphereGeometry(0.065,7,6),micM);
+    mHead.position.set(cx,1.12,cz+0.32);
+    _addSO(mHead);
+  }
+
+  // Commentator 1 — blue sports jacket, dark green hat
+  makeDonkey(-0.9, -9.68, 0x1A3A7A, 0x1E4A1E);
+  // Commentator 2 — maroon jacket, deep navy hat
+  makeDonkey( 0.9, -9.68, 0x6A1828, 0x1A1A5A);
+}
 
 // ================================================================
 //  PARTICLES
