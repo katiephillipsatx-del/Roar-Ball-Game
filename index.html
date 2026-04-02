@@ -488,6 +488,7 @@ let _glbShotMixer=null;      // AnimationMixer for shot model
 let _glbShotAction=null;     // current AnimationAction
 let _glbShotActive=false;    // whether shot overlay is playing
 let _glbShotTimer=0;         // countdown to hide
+let _glbShotLoading=false;   // true while basketball_shot_2.glb is in-flight (prevents duplicate fetches)
 const GLB_SHOT_DUR=1.1;      // seconds to display shot overlay
 const GLB_CHAR_SCALE=0.017;  // ~180cm model → ~3 game units
 let _glbCharTemplate=null;   // cloneable template for in-game player characters
@@ -685,7 +686,7 @@ function startGame(){
   // ── Load GLB assets after scene is ready ──────────────────────
   // Reset any previous GLB state since scene was rebuilt
   _glbShotModel=null; _glbShotMixer=null; _glbShotAction=null;
-  _glbShotActive=false; _glbShotTimer=0;
+  _glbShotActive=false; _glbShotTimer=0; _glbShotLoading=false;
   loadGLBAssets();
 }
 
@@ -693,12 +694,41 @@ function loadGLBAssets(){
   if(typeof THREE.GLTFLoader === 'undefined') return;
   const loader = new THREE.GLTFLoader();
 
-  // ── Load shot animation model ──────────────────────────────────
+  // ── Load character model eagerly — only 200 KB ─────────────────
+  loader.load('basketball_character_3d_model_for_games.glb', (gltf) => {
+    _glbCharTemplate = gltf.scene;
+    // Courtside spectator instance
+    const spectator = _glbCharTemplate.clone(true);
+    spectator.scale.setScalar(GLB_CHAR_SCALE * 1.1);
+    spectator.position.set(0, 0, 13.5);
+    spectator.rotation.y = Math.PI;
+    spectator.traverse(c => { if(c.isMesh) c.castShadow = true; });
+    scene.add(spectator);
+    // Hot-swap any already-spawned procedural players to GLB
+    if(team1Players.length){
+      upgradePlayersToGLB(team1Players, TEAMS[GS.team1].color);
+      upgradePlayersToGLB(team2Players, TEAMS[GS.team2].color);
+    }
+  }, (xhr) => {
+    if(xhr.lengthComputable){
+      const pct = Math.round(xhr.loaded / xhr.total * 100);
+      console.debug(`character model: ${pct}%`);
+    }
+  }, (err) => { console.warn('basketball_character_3d_model_for_games.glb load error:', err); });
+
+  // basketball_shot_2.glb (6.9 MB) is loaded on-demand in loadShotGLBOnDemand()
+}
+
+// ── Lazy-load the 6.9 MB shot animation on first shot attempt ────
+function loadShotGLBOnDemand(){
+  if(_glbShotModel || _glbShotLoading) return; // already loaded or in-flight
+  if(typeof THREE.GLTFLoader === 'undefined') return;
+  _glbShotLoading = true;
+  const loader = new THREE.GLTFLoader();
   loader.load('basketball_shot_2.glb', (gltf) => {
     const model = gltf.scene;
     model.scale.setScalar(GLB_CHAR_SCALE);
     model.visible = false;
-    // Make all meshes semi-transparent so it works as an overlay
     model.traverse(c => {
       if(c.isMesh){
         c.material = c.material.clone();
@@ -715,24 +745,11 @@ function loadGLBAssets(){
       _glbShotAction.setLoop(THREE.LoopOnce, 1);
       _glbShotAction.clampWhenFinished = true;
     }
-  }, undefined, (err) => { console.warn('basketball_shot_2.glb load error:', err); });
-
-  // ── Load character model — template for players + courtside spectator ──
-  loader.load('basketball_character_3d_model_for_games.glb', (gltf) => {
-    _glbCharTemplate = gltf.scene;
-    // Courtside spectator instance
-    const spectator = _glbCharTemplate.clone(true);
-    spectator.scale.setScalar(GLB_CHAR_SCALE * 1.1);
-    spectator.position.set(0, 0, 13.5);
-    spectator.rotation.y = Math.PI;
-    spectator.traverse(c => { if(c.isMesh) c.castShadow = true; });
-    scene.add(spectator);
-    // Hot-swap any already-spawned procedural players to GLB
-    if(team1Players.length){
-      upgradePlayersToGLB(team1Players, TEAMS[GS.team1].color);
-      upgradePlayersToGLB(team2Players, TEAMS[GS.team2].color);
-    }
-  }, undefined, (err) => { console.warn('basketball_character_3d_model_for_games.glb load error:', err); });
+    _glbShotLoading = false;
+  }, undefined, (err) => {
+    console.warn('basketball_shot_2.glb load error:', err);
+    _glbShotLoading = false;
+  });
 }
 
 // ── Upgrade procedural player meshes → GLB clones ────────────────
@@ -863,7 +880,10 @@ function applyPlayerScale(group, pd){
 }
 
 function spawnShotOverlay(player){
-  if(!_glbShotModel || !_glbShotMixer || !_glbShotAction) return;
+  if(!_glbShotModel || !_glbShotMixer || !_glbShotAction){
+    loadShotGLBOnDemand(); // kick off lazy load on first shot
+    return;
+  }
   // Position and orient at shooter
   _glbShotModel.position.set(player.position.x, 0, player.position.z);
   _glbShotModel.rotation.y = player.rotation.y;
