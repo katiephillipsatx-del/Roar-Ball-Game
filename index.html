@@ -490,6 +490,7 @@ let _glbShotActive=false;    // whether shot overlay is playing
 let _glbShotTimer=0;         // countdown to hide
 const GLB_SHOT_DUR=1.1;      // seconds to display shot overlay
 const GLB_CHAR_SCALE=0.017;  // ~180cm model → ~3 game units
+let _glbCharTemplate=null;   // cloneable template for in-game player characters
 
 // Keys
 const KEYS={};
@@ -720,16 +721,149 @@ function loadGLBAssets(){
     }
   }, undefined, (err) => { console.warn('basketball_shot_2.glb load error:', err); });
 
-  // ── Load static character model — place as courtside spectator ──
+  // ── Load character model — template for players + courtside spectator ──
   loader.load('basketball_character_3d_model_for_games.glb', (gltf) => {
-    const model = gltf.scene;
-    model.scale.setScalar(GLB_CHAR_SCALE * 1.1);
-    // Position at center-court spectator row, slightly behind the sideline
-    model.position.set(0, 0, 13.5);
-    model.rotation.y = Math.PI; // face the court
-    model.traverse(c => { if(c.isMesh) c.castShadow = true; });
-    scene.add(model);
+    _glbCharTemplate = gltf.scene;
+    // Courtside spectator instance
+    const spectator = _glbCharTemplate.clone(true);
+    spectator.scale.setScalar(GLB_CHAR_SCALE * 1.1);
+    spectator.position.set(0, 0, 13.5);
+    spectator.rotation.y = Math.PI;
+    spectator.traverse(c => { if(c.isMesh) c.castShadow = true; });
+    scene.add(spectator);
+    // Hot-swap any already-spawned procedural players to GLB
+    if(team1Players.length){
+      upgradePlayersToGLB(team1Players, TEAMS[GS.team1].color);
+      upgradePlayersToGLB(team2Players, TEAMS[GS.team2].color);
+    }
   }, undefined, (err) => { console.warn('basketball_character_3d_model_for_games.glb load error:', err); });
+}
+
+// ── Upgrade procedural player meshes → GLB clones ────────────────
+function upgradePlayersToGLB(players, teamColor){
+  if(!_glbCharTemplate) return;
+  players.forEach(p => {
+    // Remove all non-indicator children (keep shadow, ring, ballDot)
+    const toRemove = p.children.filter(c => !c._isIndicator && c !== p.ballDot);
+    toRemove.forEach(c => p.remove(c));
+    // Clone GLB and apply team color tint
+    const clone = _glbCharTemplate.clone(true);
+    clone.scale.setScalar(GLB_CHAR_SCALE * 1.1);
+    clone.traverse(c => {
+      if(c.isMesh){
+        c.castShadow = true;
+        c.material = c.material.clone();
+        c.material.color.setHex(teamColor);
+      }
+    });
+    p.add(clone);
+    p._glbChar = clone;
+    // Replace limb refs with dummy objects so animation code won't throw
+    p.legL = new THREE.Object3D();
+    p.legR = new THREE.Object3D();
+    p.armR = new THREE.Object3D();
+    p.body = new THREE.Object3D();
+  });
+}
+
+// ── Build a player group backed by the GLB character template ────
+function makePlayerMeshGLB(pd, teamColor, team){
+  const group = new THREE.Group();
+
+  // Ground shadow
+  const shadow = new THREE.Mesh(
+    new THREE.CircleGeometry(0.65,32),
+    new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.35,depthWrite:false})
+  );
+  shadow.rotation.x=-Math.PI/2; shadow.position.y=0.01;
+  shadow._isIndicator=true;
+  group.add(shadow);
+
+  // Ground ring (selection indicator)
+  const ringMat = new THREE.MeshBasicMaterial({color:0x888800,transparent:true,opacity:0.2,side:THREE.DoubleSide,depthWrite:false});
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.55,0.7,32), ringMat);
+  ring.rotation.x=-Math.PI/2; ring.position.y=0.02;
+  ring._isIndicator=true;
+  group.add(ring);
+  group.ring=ring; group.ringMat=ringMat;
+
+  // GLB character clone with team color
+  const clone = _glbCharTemplate.clone(true);
+  clone.scale.setScalar(GLB_CHAR_SCALE * 1.1);
+  clone.traverse(c => {
+    if(c.isMesh){
+      c.castShadow = true;
+      c.material = c.material.clone();
+      c.material.color.setHex(teamColor);
+    }
+  });
+  group.add(clone);
+  group._glbChar = clone;
+
+  // Dummy limb refs — animation code writes to these but they have no visual effect
+  group.legL = new THREE.Object3D();
+  group.legR = new THREE.Object3D();
+  group.armR = new THREE.Object3D();
+  group.body = new THREE.Object3D();
+
+  // Ball-possession dot (floats above the model)
+  const dotMat = new THREE.MeshBasicMaterial({color:0xFFD700,visible:false});
+  const ballDot = new THREE.Mesh(new THREE.SphereGeometry(0.15,8,6), dotMat);
+  ballDot.position.set(0, 2.8, 0);
+  ballDot._isIndicator=true;
+  group.add(ballDot);
+  group.ballDot=ballDot;
+
+  // Animation state
+  group.shootAnim={active:false,t:0,dur:0.5};
+  group.dunkAnim={active:false,t:0,dur:0.7,pNum:0,ballReleased:false,tx:0,ty:0,tz:0};
+  group.willCelebAnim={active:false,t:0,dur:9.0,curPhase:0};
+
+  // Game state
+  group.pd=pd; group.team=team;
+  group.hasBall=false; group.vx=0; group.vz=0;
+  group.walkPhase=0;
+  group._breathOffset=Math.random()*Math.PI*2;
+  group.keys=null;
+  group.consecutiveShots=0; group.onFire=false; group.fireTimer=0; group.pendingFire=false;
+  group._ringTween=null; group.spawnX=0; group.spawnZ=0;
+
+  applyPlayerScale(group, pd);
+  return group;
+}
+
+// ── Per-player height scaling ─────────────────────────────────────
+function applyPlayerScale(group, pd){
+  if(!pd) return;
+  const n=pd.name;
+  if(n==='Ripper')          group.scale.setScalar(117/78);
+  if(n==='Sandy')           group.scale.setScalar(104/78);
+  if(n==='Chase')           group.scale.setScalar(107/78);
+  if(n==='Will Harris')     group.scale.setScalar(67/78);
+  if(n==='Grizz')           group.scale.setScalar(120/78);
+  if(n==='Kong')            group.scale.setScalar(108/78);
+  if(n==='Bill')            group.scale.setScalar(117/78);
+  if(n==='Lary')            group.scale.setScalar(120/78);
+  if(n==='Modo Olachenko')  group.scale.setScalar(142/78);
+  if(n==='Lenny Williamson')group.scale.setScalar(1.693);
+  if(n==='Olivia Burke')    group.scale.setScalar(1.058);
+  if(n==='Archie Everhardt')group.scale.setScalar(1.164);
+  if(n==='Mane Attraction') group.scale.setScalar(1.538);
+  if(n==='Cinder')          group.scale.setScalar(113/78);
+  if(n==='Kouyate')         group.scale.setScalar(105/78);
+  if(n==='Daskas')          group.scale.setScalar(108/78);
+  if(n==='Rosette')         group.scale.setScalar(108/78);
+  if(n==='Viper')           group.scale.setScalar(120/78);
+  if(n==='Propp')           group.scale.setScalar(120/78);
+  if(n==='Spots')           group.scale.setScalar(120/78);
+  if(n==='Fang')            group.scale.setScalar(111/78);
+  if(n==='Moe')             group.scale.setScalar(116/78);
+  if(n==='Blizzard')        group.scale.setScalar(102/78);
+  if(n==='Tusk')            group.scale.set(1.55,1.41,1.55);
+  if(n==='Dune')            group.scale.setScalar(119/78);
+  if(n==='Cleo')            group.scale.setScalar(105/78);
+  if(n==='Sly')             group.scale.setScalar(109/78);
+  if(n==='Rattles')         group.scale.set(1.54,1.54,1.54);
 }
 
 function spawnShotOverlay(player){
@@ -1899,6 +2033,9 @@ function makeAnimalTexture(animal, name, baseColorInt){
 
 // ── Player model ─────────────────────────────────────────────────
 function makePlayerMesh(pd, teamColor, team){
+  // Use GLB-backed path when the template is already loaded (subsequent game starts)
+  if(_glbCharTemplate) return makePlayerMeshGLB(pd, teamColor, team);
+
   const group = new THREE.Group();
   const tc = teamColor;
   const isPanther  = pd && pd.animal === 'Panther';
@@ -1938,6 +2075,7 @@ function makePlayerMesh(pd, teamColor, team){
   const shadow = new THREE.Mesh(shadowGeo,shadowMat);
   shadow.rotation.x=-Math.PI/2;
   shadow.position.y=0.01;
+  shadow._isIndicator=true;
   group.add(shadow);
 
   // Ground ring (indicator)
@@ -1946,6 +2084,7 @@ function makePlayerMesh(pd, teamColor, team){
   const ring = new THREE.Mesh(ringGeo,ringMat);
   ring.rotation.x=-Math.PI/2;
   ring.position.y=0.02;
+  ring._isIndicator=true;
   group.add(ring);
   group.ring=ring;
   group.ringMat=ringMat;
