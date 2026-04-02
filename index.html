@@ -662,10 +662,6 @@ function startGame(){
   GS.team1=tsSel.team1; GS.team2=tsSel.team2;
   GS.p1idx=tsSel.p1;    GS.p2idx=tsSel.p2;
   GS.score=[0,0];        GS.quarter=1;
-  // Reset 2K26 broadcast-camera establishing shot
-  _estabShotDone=false; _estabShotT=0;
-  _shooterZoomCam={active:false,timer:0,target:null};
-  _screenShake={active:false,str:0,dur:0,t:0};
 
   show('_none_'); // hide all menu screens
   document.getElementById('three-container').style.display='block';
@@ -6546,9 +6542,6 @@ function shootBall(player, pNum, chance){
   // Spawn GLB shot animation overlay — new skill: realistic 3D shot form
   spawnShotOverlay(player);
 
-  // Shooter zoom cam — broadcast-camera skill: track the arc
-  _shooterZoomCam={active:true,timer:dur+0.6,target:player};
-
   toast(is3?'3PT! 🏀':'2PT! 🏀','#FFD700');
 
   ballFlyTo(sx,sy,sz,tx,ty,tz,arcH,dur,()=>{
@@ -6565,8 +6558,6 @@ function dunkBall(player, pNum){
   ball3d.flying=true; // prevent loose-ball pickup during animation
   ball3d.position.set(player.position.x, 2.6, player.position.z);
   toast('DUNK! 💥','#FF4500');
-  triggerScreenShake(0.22,0.55);
-  _shooterZoomCam={active:true,timer:1.8,target:player};
   player.dunkAnim={
     active:true, t:0, dur:0.7, pNum, player,
     ballReleased:false,
@@ -6603,7 +6594,6 @@ function resolveShot(pNum,chance,pts,scorer){
   if(Math.random()<chance){
     GS.score[pNum-1]+=pts;
     updateHUDScore();
-    triggerScreenShake(pts===3?0.14:0.07,0.40);
     toast(pts===3?'TRIPLE! +3 🎯':'BUCKET! +2 ✅',pts===3?'#00aaff':'#00ee55');
     if(scorer){
       if(pts===3) showScorerLabel(scorer,'THREE POINTER!','#00aaff');
@@ -6984,7 +6974,6 @@ function moveHuman(player, keySet, pNum, dt){
       const d=Math.sqrt(dx2*dx2+dz2*dz2);
       if(d<1.2&&Math.random()<player.pd.def/140){
         giveBall(player);
-        triggerScreenShake(0.10,0.28);
         toast('STEAL! 🔥','#00ccff');
       }
     });
@@ -7003,7 +6992,6 @@ function tryBlock(player, pNum){
     const d=Math.sqrt(dx*dx+dz*dz);
     if(d<1.4&&Math.random()<player.pd.def/110){
       giveBall(player);
-      triggerScreenShake(0.14,0.35);
       toast('BLOCKED! 🙌','#FF6600');
     }
   });
@@ -7119,7 +7107,6 @@ function aiTick(p){
       const d=Math.sqrt(dx2*dx2+dz2*dz2);
       if(d<1.2&&Math.random()<p.pd.def/160){
         giveBall(p);
-        triggerScreenShake(0.10,0.28);
         toast('STEAL! 🔥','#00ccff');
         return;
       }
@@ -7295,48 +7282,8 @@ let _willCelebCam={active:false,timer:0,target:null};
 let _maneCelebCam={active:false,timer:0,target:null};
 let _willThreeCount=0; // tracks how many 3-pointers Will has made (alternates night-night / shimmy)
 
-// ── 2K26 Skill Stack: broadcast-camera / arena-atmosphere / animation-state-machine ──
-let _screenShake={active:false,str:0,dur:0,t:0};
-let _shooterZoomCam={active:false,timer:0,target:null};
-let _estabShotDone=false, _estabShotT=0;
-function triggerScreenShake(str,dur){_screenShake={active:true,str,dur,t:0};}
-function _doShake(){
-  if(!_screenShake.active)return;
-  const shake=_screenShake.str*(1-Math.min(_screenShake.t/_screenShake.dur,1));
-  camera.position.x+=(Math.random()-0.5)*shake;
-  camera.position.y+=(Math.random()-0.5)*shake*0.4;
-  camera.position.z+=(Math.random()-0.5)*shake;
-}
 function updateCamera(dt){
-  // ── Tick screen shake ───────────────────────────────────────
-  if(_screenShake.active) _screenShake.t+=dt;
-  if(_screenShake.t>=_screenShake.dur) _screenShake.active=false;
-
-  // ── Establishing shot — cinematic arena reveal at game start ──
-  if(!_estabShotDone){
-    _estabShotT+=dt;
-    const et=Math.min(_estabShotT/4.0,1);
-    if(et>=1){ _estabShotDone=true; }
-    else {
-      // Sweep from low/sideline angle down to broadcast position
-      const ang=Math.PI*0.65+et*Math.PI*0.38;
-      const r=22-et*8;
-      const ex=Math.cos(ang)*r, ez=Math.sin(ang)*r, ey=3+et*14;
-      const lxe=0, lye=et*2, lze=-et*2;
-      const lr2=0.09;
-      _camSmooth.x+=(ex-_camSmooth.x)*lr2;
-      _camSmooth.y+=(ey-_camSmooth.y)*lr2;
-      _camSmooth.z+=(ez-_camSmooth.z)*lr2;
-      _camSmooth.lx+=(lxe-_camSmooth.lx)*lr2;
-      _camSmooth.ly+=(lye-_camSmooth.ly)*lr2;
-      _camSmooth.lz+=(lze-_camSmooth.lz)*lr2;
-      camera.position.set(_camSmooth.x,_camSmooth.y,_camSmooth.z);
-      camera.lookAt(_camSmooth.lx,_camSmooth.ly,_camSmooth.lz);
-      _doShake(); return;
-    }
-  }
-
-  // ── Will Harris night-night celebration ──────────────────────
+  // Will Harris night-night celebration: zoom in close on him
   if(_willCelebCam.active&&_willCelebCam.target){
     _willCelebCam.timer-=dt;
     if(_willCelebCam.timer<=0) _willCelebCam.active=false;
@@ -7352,10 +7299,10 @@ function updateCamera(dt){
     _camSmooth.lz+=(lz-_camSmooth.lz)*lr;
     camera.position.set(_camSmooth.x,_camSmooth.y,_camSmooth.z);
     camera.lookAt(_camSmooth.lx,_camSmooth.ly,_camSmooth.lz);
-    _doShake(); return;
+    return;
   }
 
-  // ── Mane Attraction crown celebration ────────────────────────
+  // Mane Attraction crown celebration: dramatic low-angle hero shot
   if(_maneCelebCam.active&&_maneCelebCam.target){
     _maneCelebCam.timer-=dt;
     if(_maneCelebCam.timer<=0) _maneCelebCam.active=false;
@@ -7371,50 +7318,22 @@ function updateCamera(dt){
     _camSmooth.lz+=(lz-_camSmooth.lz)*lr;
     camera.position.set(_camSmooth.x,_camSmooth.y,_camSmooth.z);
     camera.lookAt(_camSmooth.lx,_camSmooth.ly,_camSmooth.lz);
-    _doShake(); return;
+    return;
   }
 
-  // ── Shooter zoom cam — 2K side-angle follow on shooter ───────
-  if(_shooterZoomCam.active&&_shooterZoomCam.target){
-    _shooterZoomCam.timer-=dt;
-    if(_shooterZoomCam.timer<=0) _shooterZoomCam.active=false;
-    const sh=_shooterZoomCam.target;
-    const bx=ball3d?ball3d.position.x:sh.position.x;
-    const by=ball3d?ball3d.position.y:3;
-    // Side-angle 2K-style: camera at z+ side, looking at ball arc midpoint
-    const tx=sh.position.x*0.4+bx*0.6, ty=3.8+by*0.5, tz=sh.position.z+9;
-    const lx=bx, ly=by*0.7+1, lz=sh.position.z-1;
-    const lr=0.12;
-    _camSmooth.x+=(tx-_camSmooth.x)*lr;
-    _camSmooth.y+=(ty-_camSmooth.y)*lr;
-    _camSmooth.z+=(tz-_camSmooth.z)*lr;
-    _camSmooth.lx+=(lx-_camSmooth.lx)*lr;
-    _camSmooth.ly+=(ly-_camSmooth.ly)*lr;
-    _camSmooth.lz+=(lz-_camSmooth.lz)*lr;
-    camera.position.set(_camSmooth.x,_camSmooth.y,_camSmooth.z);
-    camera.lookAt(_camSmooth.lx,_camSmooth.ly,_camSmooth.lz);
-    _doShake(); return;
-  }
-
-  // ── Normal camera modes ───────────────────────────────────────
   const mode=CAM_MODES[GS.camMode];
   let tx,ty,tz,lx,ly,lz;
 
   if(mode==='Broadcast'){
-    // Classic broadcast: slight x-follow on ball, ball-relative sideline view
-    const bx=ball3d?ball3d.position.x*0.18:0;
-    tx=bx;ty=16;tz=20;lx=bx*0.5;ly=0;lz=-1;
+    tx=0;ty=16;tz=20;lx=0;ly=0;lz=-1;
   } else if(mode==='2K'){
-    // 2K-style: closer side angle, tighter x tracking on ball
     const bx=ball3d?ball3d.position.x:0;
-    tx=bx*0.35;ty=12.5;tz=17;lx=bx*0.15;ly=1;lz=-1;
+    tx=bx*0.3;ty=14;tz=18;lx=bx*0.1;ly=0;lz=-2;
   } else if(mode==='Follow'){
-    // Follow cam: behind and above controlled player
     const p=ctrl1;
     if(p){
-      const ang=p.rotation.y||0;
-      tx=p.position.x-Math.sin(ang)*3;ty=5.5;tz=p.position.z+Math.cos(ang)*3+5;
-      lx=p.position.x+Math.sin(ang)*2;ly=1.5;lz=p.position.z-Math.cos(ang)*2;
+      tx=p.position.x;ty=6;tz=Math.min(p.position.z+8,7.8);
+      lx=p.position.x;ly=1;lz=p.position.z;
     } else {tx=0;ty=14;tz=18;lx=0;ly=0;lz=-1;}
   } else { // Overhead
     tx=0;ty=28;tz=0.1;lx=0;ly=0;lz=0;
@@ -7430,7 +7349,6 @@ function updateCamera(dt){
 
   camera.position.set(_camSmooth.x,_camSmooth.y,_camSmooth.z);
   camera.lookAt(_camSmooth.lx,_camSmooth.ly,_camSmooth.lz);
-  _doShake();
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
