@@ -1731,6 +1731,75 @@ function buildCommentators(){
   // Two donkey commentators seated at a desk on the far sideline (z=-9),
   // facing the court and camera.  Snout / face details point in +z (toward camera).
 
+  // ── Commentator booth enclosure ──────────────────────────────
+  // A broadcast-style box booth sitting behind the far sideline, open toward court
+  const BX = 0;      // booth center x
+  const BZ = -9.8;   // booth center z (slightly behind desk)
+  const BW = 4.2;    // booth width (x)
+  const BD = 2.0;    // booth depth (z)
+  const BH = 2.4;    // booth wall height
+  const boothWallMat  = new THREE.MeshLambertMaterial({color:0x1A1A2E}); // dark navy
+  const boothAccentMat= new THREE.MeshLambertMaterial({color:0x0D0D1A}); // very dark trim
+  const windowMat     = new THREE.MeshLambertMaterial({color:0x223344,transparent:true,opacity:0.55}); // tinted glass
+  const counterMat    = new THREE.MeshLambertMaterial({color:0x2A2A3A});
+  const roofMat       = new THREE.MeshLambertMaterial({color:0x111120});
+
+  // Back wall
+  const backWall = new THREE.Mesh(new THREE.BoxGeometry(BW,BH,0.12),boothWallMat);
+  backWall.position.set(BX, BH/2, BZ - BD/2);
+  _addSO(backWall);
+
+  // Left side wall
+  const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.12,BH,BD),boothWallMat);
+  leftWall.position.set(BX - BW/2, BH/2, BZ);
+  _addSO(leftWall);
+
+  // Right side wall
+  const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.12,BH,BD),boothWallMat);
+  rightWall.position.set(BX + BW/2, BH/2, BZ);
+  _addSO(rightWall);
+
+  // Roof
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(BW+0.24,0.12,BD+0.12),roofMat);
+  roof.position.set(BX, BH+0.06, BZ);
+  _addSO(roof);
+
+  // Slight roof overhang lip (facing court)
+  const overhang = new THREE.Mesh(new THREE.BoxGeometry(BW+0.24,0.08,0.45),boothAccentMat);
+  overhang.position.set(BX, BH, BZ + BD/2 + 0.22);
+  _addSO(overhang);
+
+  // Front counter (lower half of front opening — desk-height ledge)
+  const counter = new THREE.Mesh(new THREE.BoxGeometry(BW,0.08,0.18),counterMat);
+  counter.position.set(BX, 0.88, BZ + BD/2);
+  _addSO(counter);
+  // Counter face panel
+  const counterFace = new THREE.Mesh(new THREE.BoxGeometry(BW,0.88,0.1),boothWallMat);
+  counterFace.position.set(BX, 0.44, BZ + BD/2 + 0.04);
+  _addSO(counterFace);
+
+  // Tinted glass window above counter (upper half of front opening)
+  const glass = new THREE.Mesh(new THREE.BoxGeometry(BW-0.24, BH-1.0, 0.06),windowMat);
+  glass.position.set(BX, 1.44, BZ + BD/2);
+  _addSO(glass);
+
+  // Broadcast logo panel on back wall (dark rectangle)
+  const logoBg = new THREE.Mesh(new THREE.BoxGeometry(1.6,0.5,0.04),boothAccentMat);
+  logoBg.position.set(BX, 1.6, BZ - BD/2 + 0.08);
+  _addSO(logoBg);
+
+  // Accent stripe along bottom of side walls
+  [-1,1].forEach(side=>{
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.06,BD),new THREE.MeshLambertMaterial({color:0xFF6600}));
+    stripe.position.set(BX + side*(BW/2), 0.03, BZ);
+    _addSO(stripe);
+  });
+
+  // Accent stripe along top of front counter edge
+  const counterStripe = new THREE.Mesh(new THREE.BoxGeometry(BW,0.04,0.04),new THREE.MeshLambertMaterial({color:0xFF6600}));
+  counterStripe.position.set(BX, 0.92, BZ + BD/2 + 0.07);
+  _addSO(counterStripe);
+
   // ── Commentary desk ─────────────────────────────────────────
   const deskMat  = new THREE.MeshLambertMaterial({color:0x3A2510});
   const legMat   = new THREE.MeshLambertMaterial({color:0x2A1808});
