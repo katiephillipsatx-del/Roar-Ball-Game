@@ -1130,7 +1130,7 @@ function buildJumbotron(){
   // Jumbotron hanging bars / rigging
   [-2.4,0,2.4].forEach(zOff=>{
     const bar=new THREE.Mesh(
-      new THREE.BoxGeometry(0.1,2.2,0.1),
+      new THREE.CylinderGeometry(0.05,0.05,2.2,6),
       new THREE.MeshLambertMaterial({color:0x333333})
     );
     bar.position.set(-18,10.8,zOff);
@@ -1214,7 +1214,7 @@ function buildBench(cx, cz, teamColor){
   // Legs x4
   [-1.8,1.8].forEach(lx=>{
     [-0.12,0.12].forEach(lz=>{
-      const leg=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.4,0.1),legMat);
+      const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.4,6),legMat);
       leg.position.set(lx,0.2,lz);
       g.add(leg);
     });
@@ -1638,14 +1638,14 @@ function buildCrowd(teamIdx){
     const headMat=new THREE.MeshLambertMaterial({color:hcol});
 
     // Body (jersey)
-    const body=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.52,0.32),
+    const body=new THREE.Mesh(new THREE.CapsuleGeometry(0.16,0.24,4,8),
       new THREE.MeshLambertMaterial({color:jerseyHex}));
     body.position.set(x,y+0.26,z);
     _addSO(body);
     // Legs
     const legMat=new THREE.MeshLambertMaterial({color:0x1A1A1A});
     [-0.1,0.1].forEach(ox=>{
-      const leg=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.28,0.14),legMat);
+      const leg=new THREE.Mesh(new THREE.CapsuleGeometry(0.06,0.16,4,6),legMat);
       leg.position.set(x+ox,y+0.0,z);
       _addSO(leg);
     });
@@ -1679,18 +1679,20 @@ function buildCrowd(teamIdx){
     } else if(type===3){
       // Long ears — rabbit / donkey
       [-0.11,0.11].forEach(ox=>{
-        const ear=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.3,0.05),headMat);
+        const ear=new THREE.Mesh(new THREE.CapsuleGeometry(0.04,0.22,4,6),headMat);
         ear.position.set(x+ox,y+1.06,z);
         _addSO(ear);
       });
     } else {
       // Snout — horse / gator / croc
-      const snout=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.1,0.14),headMat);
+      const snout=new THREE.Mesh(new THREE.SphereGeometry(0.10,6,4),headMat);
+      snout.scale.set(1.6,1.0,1.4);
       snout.position.set(x,y+0.7,z-0.2);
       _addSO(snout);
       // small ears
       [-0.11,0.11].forEach(ox=>{
-        const ear=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.1,0.04),headMat);
+        const ear=new THREE.Mesh(new THREE.SphereGeometry(0.07,5,4),headMat);
+        ear.scale.set(1.0,1.4,0.6);
         ear.position.set(x+ox,y+0.94,z);
         _addSO(ear);
       });
@@ -1809,7 +1811,7 @@ function buildCommentators(){
   deskTop.position.set(0,0.7,DZ);
   _addSO(deskTop);
   [[-1.3,0.3],[-1.3,-0.3],[1.3,0.3],[1.3,-0.3]].forEach(([ox,oz])=>{
-    const leg=new THREE.Mesh(new THREE.BoxGeometry(0.09,0.7,0.09),legMat);
+    const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,0.7,6),legMat);
     leg.position.set(ox,0.35,DZ+oz);
     _addSO(leg);
   });
@@ -1828,7 +1830,7 @@ function buildCommentators(){
     bk.position.set(cx,0.78,cz-0.46);
     _addSO(bk);
     [[-0.25,0.2],[-0.25,-0.2],[0.25,0.2],[0.25,-0.2]].forEach(([ox,oz])=>{
-      const lg=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.5,0.07),chairM);
+      const lg=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.5,6),chairM);
       lg.position.set(cx+ox,0.25,cz+oz-0.22);
       _addSO(lg);
     });
@@ -1862,8 +1864,9 @@ function buildCommentators(){
     mkChair(cx,cz);
 
     // Torso (slimmer than buffalo)
-    const torso=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.58,0.33),jm);
-    torso.position.set(cx,0.82,cz);
+    const torso=new THREE.Mesh(new THREE.CapsuleGeometry(0.22,0.20,4,8),jm);
+    torso.scale.set(1.0,1.0,0.75);
+    torso.position.set(cx,0.88,cz);
     _addSO(torso);
     // Collar
     const collar=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.1,0.18),wm);
