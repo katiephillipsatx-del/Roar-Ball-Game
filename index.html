@@ -2944,9 +2944,9 @@ function makePlayerMesh(pd, teamColor, team){
     const pupilMat = new THREE.MeshBasicMaterial({color:0x0A0A0A});
     [-0.25,0.25].forEach(xOff=>{
       const eye = new THREE.Mesh(new THREE.SphereGeometry(0.10,8,8),eyeMat);
-      eye.position.set(xOff,hb+0.14,0.35); group.add(eye);
+      eye.position.set(xOff,hb+0.14,0.62); group.add(eye);
       const pupil = new THREE.Mesh(new THREE.BoxGeometry(0.04,0.11,0.04),pupilMat);
-      pupil.position.set(xOff,hb+0.14,0.44); group.add(pupil);
+      pupil.position.set(xOff,hb+0.14,0.70); group.add(pupil);
     });
 
     // Head crest spikes
