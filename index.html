@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Forest Animal Math</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      background:#1a3a1a;
+      font-family:'Arial Rounded MT Bold',Arial,sans-serif;
+      min-height:100vh;
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden;
+    }
+    /* Animated forest background */
+    body::before{
+      content:'';
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      background: linear-gradient(180deg,#0d1f0d 0%,#1a3a1a 40%,#2d5a2d 100%);
+      z-index:0;
+    }
+    .trees{
+      position:fixed;bottom:0;left:0;width:100%;height:200px;
+      display:flex;align-items:flex-end;justify-content:space-around;
+      z-index:1;pointer-events:none;
+    }
+    .tree{font-size:80px;line-height:1;opacity:0.5;animation:sway 4s ease-in-out infinite;}
+    .tree:nth-child(even){animation-delay:2s;}
+    @keyframes sway{0%,100%{transform:rotate(-2deg);}50%{transform:rotate(2deg);}}
+    /* Screens */
+    .screen{
+      position:relative;z-index:10;
+      width:min(90vw,560px);
+      background:rgba(10,30,10,0.92);
+      border:3px solid #4caf50;
+      border-radius:24px;
+      padding:36px 32px;
+      text-align:center;
+      box-shadow:0 0 60px #00ff4444,0 0 20px #00ff4422;
+    }
+    .screen.hidden{display:none;}
+    h1{
+      font-size:48px;
+      color:#7fff7f;
+      text-shadow:0 0 20px #00ff44;
+      margin-bottom:8px;
+    }
+    .subtitle{color:#a8e6a8;font-size:16px;margin-bottom:28px;}
+    /* Difficulty buttons */
+    .diff-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;}
+    .btn{
+      font-size:18px;
+      font-family:inherit;
+      font-weight:bold;
+      border:none;
+      border-radius:12px;
+      padding:14px 28px;
+      cursor:pointer;
+      transition:transform 0.1s,box-shadow 0.1s;
+      color:#fff;
+    }
+    .btn:hover{transform:scale(1.07);box-shadow:0 4px 20px #00ff4466;}
+    .btn:active{transform:scale(0.97);}
+    .btn-easy{background:linear-gradient(135deg,#2e7d32,#66bb6a);}
+    .btn-medium{background:linear-gradient(135deg,#f57f17,#ffca28);color:#1a1a1a;}
+    .btn-hard{background:linear-gradient(135deg,#b71c1c,#ef5350);}
+    .btn-play{background:linear-gradient(135deg,#1b5e20,#43a047);font-size:22px;padding:16px 48px;}
+    .btn-back{background:linear-gradient(135deg,#1a3a2a,#2e7d32);font-size:14px;padding:8px 20px;margin-top:12px;}
+    /* Animal display */
+    .animal-area{
+      font-size:100px;
+      line-height:1.1;
+      margin:0 auto 8px;
+      animation:bounce 0.6s ease;
+      position:relative;
+      display:inline-block;
+    }
+    @keyframes bounce{
+      0%{transform:scale(0.5);opacity:0;}
+      60%{transform:scale(1.15);}
+      100%{transform:scale(1);opacity:1;}
+    }
+    @keyframes shake{
+      0%,100%{transform:translateX(0);}
+      20%{transform:translateX(-10px);}
+      40%{transform:translateX(10px);}
+      60%{transform:translateX(-8px);}
+      80%{transform:translateX(8px);}
+    }
+    @keyframes celebrate{
+      0%,100%{transform:scale(1) rotate(0deg);}
+      25%{transform:scale(1.2) rotate(-10deg);}
+      75%{transform:scale(1.2) rotate(10deg);}
+    }
+    .animal-name{color:#a8e6a8;font-size:14px;margin-bottom:4px;letter-spacing:2px;text-transform:uppercase;}
+    .animal-says{
+      color:#ffeb3b;
+      font-size:15px;
+      min-height:22px;
+      margin-bottom:16px;
+      font-style:italic;
+    }
+    /* Question */
+    .question{
+      font-size:42px;
+      color:#fff;
+      margin-bottom:24px;
+      text-shadow:0 0 10px #ffffff44;
+      letter-spacing:2px;
+    }
+    /* Answer choices */
+    .choices{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-bottom:20px;
+    }
+    .choice{
+      font-size:26px;
+      font-family:inherit;
+      font-weight:bold;
+      border:none;
+      border-radius:14px;
+      padding:18px 12px;
+      cursor:pointer;
+      background:linear-gradient(135deg,#1b5e20,#2e7d32);
+      color:#fff;
+      border:2px solid #4caf50;
+      transition:transform 0.1s,background 0.15s;
+    }
+    .choice:hover{transform:scale(1.05);background:linear-gradient(135deg,#2e7d32,#43a047);}
+    .choice.correct{
+      background:linear-gradient(135deg,#1b5e20,#66bb6a);
+      border-color:#00e676;
+      animation:celebrate 0.5s ease;
+    }
+    .choice.wrong{
+      background:linear-gradient(135deg,#7f0000,#c62828);
+      border-color:#ff1744;
+      animation:shake 0.4s ease;
+    }
+    .choice:disabled{cursor:default;}
+    /* HUD */
+    .hud{
+      display:flex;justify-content:space-between;
+      align-items:center;
+      margin-bottom:20px;
+    }
+    .hud-box{
+      background:rgba(0,0,0,0.4);
+      border:1px solid #4caf5066;
+      border-radius:10px;
+      padding:8px 16px;
+      color:#a8e6a8;
+      font-size:13px;
+    }
+    .hud-box span{
+      display:block;
+      font-size:22px;
+      color:#fff;
+      font-weight:bold;
+    }
+    /* Progress bar */
+    .progress-wrap{
+      height:8px;
+      background:#0d1f0d;
+      border-radius:4px;
+      margin-bottom:20px;
+      overflow:hidden;
+    }
+    .progress-bar{
+      height:100%;background:linear-gradient(90deg,#43a047,#00e676);
+      border-radius:4px;
+      transition:width 0.4s ease;
+    }
+    /* Results */
+    .result-animal{font-size:80px;margin-bottom:12px;}
+    .result-title{font-size:36px;color:#7fff7f;margin-bottom:8px;}
+    .result-score{font-size:64px;color:#ffeb3b;font-weight:bold;margin-bottom:4px;}
+    .result-sub{color:#a8e6a8;font-size:16px;margin-bottom:24px;}
+    .stars{font-size:40px;margin-bottom:16px;letter-spacing:8px;}
+    /* Particles */
+    #particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5;}
+  </style>
+</head>
+<body>
+<canvas id="particles"></canvas>
+<div class="trees">
+  <span class="tree">🌲</span><span class="tree">🌳</span><span class="tree">🌲</span>
+  <span class="tree">🌳</span><span class="tree">🌲</span><span class="tree">🌳</span>
+  <span class="tree">🌲</span><span class="tree">🌳</span><span class="tree">🌲</span>
+</div>
+
+<!-- START SCREEN -->
+<div id="startScreen" class="screen">
+  <h1>🌲 Forest Math 🌲</h1>
+  <p class="subtitle">Help the forest animals solve math problems!</p>
+  <div style="font-size:64px;margin-bottom:16px">🦊🦉🐻🐰🦌</div>
+  <p style="color:#a8e6a8;margin-bottom:20px;font-size:15px">Choose your difficulty:</p>
+  <div class="diff-row">
+    <button class="btn btn-easy" onclick="startGame('easy')">🌱 Easy<br><small style='font-size:12px;font-weight:normal'>+ and −  up to 10</small></button>
+    <button class="btn btn-medium" onclick="startGame('medium')">🍄 Medium<br><small style='font-size:12px;font-weight:normal'>+ − × up to 20</small></button>
+    <button class="btn btn-hard" onclick="startGame('hard')">🔥 Hard<br><small style='font-size:12px;font-weight:normal'>+ − × ÷ up to 50</small></button>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="gameScreen" class="screen hidden">
+  <div class="hud">
+    <div class="hud-box">Score<span id="score">0</span></div>
+    <div class="hud-box">Question<span id="qNum">1/10</span></div>
+    <div class="hud-box">Streak<span id="streak">🔥 0</span></div>
+  </div>
+  <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+  <div class="animal-area" id="animalEmoji">🦊</div>
+  <div class="animal-name" id="animalName">Fox</div>
+  <div class="animal-says" id="animalSays"></div>
+  <div class="question" id="question">2 + 2 = ?</div>
+  <div class="choices" id="choices"></div>
+  <button class="btn btn-back" onclick="goHome()">↩ Menu</button>
+</div>
+
+<!-- RESULT SCREEN -->
+<div id="resultScreen" class="screen hidden">
+  <div class="result-animal" id="resultAnimal">🦉</div>
+  <div class="result-title" id="resultTitle">Amazing!</div>
+  <div class="stars" id="resultStars">⭐⭐⭐</div>
+  <div class="result-score" id="resultScore">100</div>
+  <div class="result-sub" id="resultSub">10/10 correct</div>
+  <button class="btn btn-play" onclick="goHome()">Play Again!</button>
+</div>
+
+<script>
+// ---- Forest Animals ----
+const ANIMALS = [
+  {emoji:'🦊',name:'Fox',says:['So sly!','Quick!','Clever!']},
+  {emoji:'🦉',name:'Owl',says:['Hoo-ray!','Wise one!','Brilliant!']},
+  {emoji:'🐻',name:'Bear',says:['Growl yeah!','Bear-illiant!','Roar!']},
+  {emoji:'🐰',name:'Rabbit',says:['Hoppin\' good!','Ear-resistible!','Speedy!']},
+  {emoji:'🦌',name:'Deer',says:['Oh deer!','Fan-deer-stic!','Leaping!']},
+  {emoji:'🐿️',name:'Squirrel',says:['Nuts about math!','Nutty good!','Acorn-y!']},
+  {emoji:'🦔',name:'Hedgehog',says:['Prickly smart!','Sharp!','Pointy!']},
+  {emoji:'🐺',name:'Wolf',says:['Howling great!','Pack leader!','Wild!']},
+  {emoji:'🦡',name:'Badger',says:['Bold move!','Badgering it!','Fierce!']},
+  {emoji:'🐸',name:'Frog',says:['Leap of logic!','Ribbit right!','Jumping joy!']},
+];
+
+// ---- Particle system ----
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let particles = [];
+function resizeCanvas(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function spawnParticles(x, y, color, count=12){
+  for(let i=0;i<count;i++){
+    const angle = (Math.PI*2/count)*i + Math.random()*0.5;
+    const speed = 3 + Math.random()*4;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle)*speed,
+      vy: Math.sin(angle)*speed - 2,
+      alpha: 1,
+      color,
+      r: 4+Math.random()*6,
+      life: 1,
+    });
+  }
+}
+
+function animParticles(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles = particles.filter(p=>p.life>0);
+  for(const p of particles){
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.2;
+    p.life -= 0.03;
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(animParticles);
+}
+animParticles();
+
+// ---- Game state ----
+let difficulty, questions, currentQ, score, streak, correctCount;
+const TOTAL_Q = 10;
+
+function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+
+function generateQuestion(diff){
+  let a, b, op, answer, maxN;
+  if(diff==='easy'){
+    maxN = 10;
+    op = ['+','-'][randInt(0,1)];
+  } else if(diff==='medium'){
+    maxN = 20;
+    op = ['+','-','×'][randInt(0,2)];
+  } else {
+    maxN = 50;
+    op = ['+','-','×','÷'][randInt(0,3)];
+  }
+
+  if(op==='×'){
+    const mMax = diff==='medium'?5:10;
+    a = randInt(1,mMax); b = randInt(1,mMax);
+    answer = a*b;
+  } else if(op==='÷'){
+    b = randInt(1,10); answer = randInt(1,10);
+    a = b*answer;
+  } else if(op==='-'){
+    a = randInt(1,maxN); b = randInt(0,a);
+    answer = a-b;
+  } else {
+    a = randInt(0,maxN); b = randInt(0,maxN-a);
+    answer = a+b;
+  }
+
+  // Generate 3 wrong answers
+  const wrongSet = new Set();
+  while(wrongSet.size < 3){
+    let w = answer + randInt(-10,10);
+    if(w !== answer && w >= 0) wrongSet.add(w);
+  }
+  const choices = [answer, ...wrongSet].sort(()=>Math.random()-0.5);
+  return { text:`${a} ${op} ${b} = ?`, answer, choices };
+}
+
+function buildQuestions(diff){
+  return Array.from({length:TOTAL_Q}, ()=>generateQuestion(diff));
+}
+
+function startGame(diff){
+  difficulty = diff;
+  questions = buildQuestions(diff);
+  currentQ = 0;
+  score = 0;
+  streak = 0;
+  correctCount = 0;
+  show('gameScreen');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const q = questions[currentQ];
+  const animal = ANIMALS[currentQ % ANIMALS.length];
+
+  document.getElementById('qNum').textContent = `${currentQ+1}/${TOTAL_Q}`;
+  document.getElementById('score').textContent = score;
+  document.getElementById('streak').textContent = `🔥 ${streak}`;
+  document.getElementById('progressBar').style.width = `${(currentQ/TOTAL_Q)*100}%`;
+
+  // Animal
+  const emoji = document.getElementById('animalEmoji');
+  emoji.textContent = animal.emoji;
+  emoji.style.animation = 'none';
+  void emoji.offsetWidth;
+  emoji.style.animation = 'bounce 0.6s ease';
+  document.getElementById('animalName').textContent = animal.name;
+  document.getElementById('animalSays').textContent = '';
+
+  // Question
+  document.getElementById('question').textContent = q.text;
+
+  // Choices
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  q.choices.forEach(c=>{
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.textContent = c;
+    btn.onclick = ()=>handleAnswer(btn, c, q.answer, animal);
+    choicesEl.appendChild(btn);
+  });
+}
+
+function handleAnswer(btn, chosen, correct, animal){
+  // Disable all
+  document.querySelectorAll('.choice').forEach(b=>b.disabled=true);
+
+  const isCorrect = chosen === correct;
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+
+  // Mark correct answer if wrong
+  if(!isCorrect){
+    document.querySelectorAll('.choice').forEach(b=>{
+      if(parseInt(b.textContent)===correct) b.classList.add('correct');
+    });
+  }
+
+  const says = document.getElementById('animalSays');
+  if(isCorrect){
+    streak++;
+    correctCount++;
+    const bonus = streak > 2 ? streak : 0;
+    score += 10 + bonus;
+    document.getElementById('score').textContent = score;
+    document.getElementById('streak').textContent = `🔥 ${streak}`;
+    says.textContent = animal.says[Math.floor(Math.random()*animal.says.length)];
+    // Particles
+    const r = btn.getBoundingClientRect();
+    spawnParticles(r.left+r.width/2, r.top+r.height/2, '#00e676');
+    if(streak>=3) spawnParticles(r.left+r.width/2, r.top+r.height/2,'#ffeb3b',6);
+  } else {
+    streak = 0;
+    document.getElementById('streak').textContent = `🔥 0`;
+    says.textContent = `The answer was ${correct}!`;
+    const r = btn.getBoundingClientRect();
+    spawnParticles(r.left+r.width/2, r.top+r.height/2,'#ff1744',8);
+  }
+
+  setTimeout(()=>{
+    currentQ++;
+    if(currentQ >= TOTAL_Q) showResults();
+    else renderQuestion();
+  }, 1100);
+}
+
+function showResults(){
+  show('resultScreen');
+  document.getElementById('progressBar').style.width='100%';
+  const pct = correctCount/TOTAL_Q;
+  const animal = ANIMALS[randInt(0,ANIMALS.length-1)];
+  document.getElementById('resultAnimal').textContent = animal.emoji;
+  document.getElementById('resultScore').textContent = score;
+  document.getElementById('resultSub').textContent = `${correctCount}/${TOTAL_Q} correct`;
+
+  let title, stars;
+  if(pct===1){title='PERFECT! 🎉';stars='⭐⭐⭐';}
+  else if(pct>=0.8){title='Amazing!';stars='⭐⭐⭐';}
+  else if(pct>=0.6){title='Great job!';stars='⭐⭐';}
+  else if(pct>=0.4){title='Good try!';stars='⭐';}
+  else{title='Keep practicing!';stars='🌱';}
+
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultStars').textContent = stars;
+
+  // Celebration particles
+  if(pct>=0.8){
+    const colors=['#ffeb3b','#00e676','#40c4ff','#ff4081'];
+    for(let i=0;i<6;i++){
+      setTimeout(()=>{
+        spawnParticles(
+          randInt(100,window.innerWidth-100),
+          randInt(100,window.innerHeight-100),
+          colors[i%colors.length], 20
+        );
+      }, i*200);
+    }
+  }
+}
+
+function show(id){
+  ['startScreen','gameScreen','resultScreen'].forEach(s=>{
+    document.getElementById(s).classList.toggle('hidden', s!==id);
+  });
+}
+
+function goHome(){
+  show('startScreen');
+}
+</script>
+</body>
+</html>
