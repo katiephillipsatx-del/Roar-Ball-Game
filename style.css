@@ -1,0 +1,221 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #000;
+  overflow: hidden;
+  font-family: 'Impact', 'Arial Black', sans-serif;
+}
+
+#renderCanvas {
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  touch-action: none;
+}
+
+/* ── HUD ── */
+#hud {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 24px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#hud-left, #hud-right {
+  background: rgba(0,0,0,0.6);
+  border: 2px solid #ff6a00;
+  border-radius: 8px;
+  padding: 8px 16px;
+  min-width: 80px;
+  text-align: center;
+}
+
+.hud-label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #ff6a00;
+}
+
+#score, #streak {
+  font-size: 36px;
+  color: #fff;
+  line-height: 1;
+}
+
+#hud-center {
+  text-align: center;
+}
+
+#game-title {
+  font-size: 13px;
+  letter-spacing: 4px;
+  color: #ff6a00;
+}
+
+#timer {
+  font-size: 48px;
+  color: #fff;
+  text-shadow: 0 0 20px #ff6a00;
+  line-height: 1;
+}
+
+#timer.danger {
+  color: #ff2020;
+  text-shadow: 0 0 20px #ff2020;
+  animation: pulse 0.5s infinite alternate;
+}
+
+@keyframes pulse {
+  from { opacity: 1; }
+  to   { opacity: 0.5; }
+}
+
+/* ── Charge bar ── */
+#charge-container {
+  position: fixed;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 12px;
+  background: rgba(0,0,0,0.5);
+  border: 2px solid #ff6a00;
+  border-radius: 6px;
+  overflow: hidden;
+  display: none;
+  z-index: 10;
+}
+
+#charge-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #ff6a00, #ffde00);
+  transition: width 0.05s linear;
+}
+
+/* ── Controls hint ── */
+#controls-hint {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.45);
+  font-size: 11px;
+  letter-spacing: 1px;
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+/* ── Toast ── */
+#toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 52px;
+  color: #ffde00;
+  text-shadow: 0 0 30px #ff6a00, 2px 2px 0 #000;
+  letter-spacing: 6px;
+  pointer-events: none;
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+#toast.show {
+  opacity: 1;
+}
+
+/* ── Overlays ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  display: none;
+}
+
+.overlay.active {
+  display: flex;
+}
+
+.overlay-box {
+  text-align: center;
+  color: #fff;
+  max-width: 480px;
+  padding: 40px 32px;
+  border: 2px solid #ff6a00;
+  border-radius: 12px;
+  background: rgba(10,5,0,0.9);
+}
+
+.overlay-box h1 {
+  font-size: 72px;
+  letter-spacing: 8px;
+  color: #ff6a00;
+  text-shadow: 0 0 40px #ff6a00;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: #aaa;
+  margin-bottom: 4px;
+}
+
+.movie-credit {
+  font-size: 13px;
+  color: #ff6a00;
+  margin-bottom: 20px;
+}
+
+.instructions {
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #ccc;
+  margin-bottom: 28px;
+}
+
+#final-score {
+  font-size: 96px;
+  color: #ffde00;
+  text-shadow: 0 0 40px #ff6a00;
+  line-height: 1;
+  margin: 16px 0 8px;
+}
+
+#final-grade {
+  font-size: 24px;
+  letter-spacing: 4px;
+  color: #ff6a00;
+  margin-bottom: 28px;
+}
+
+button {
+  background: #ff6a00;
+  color: #000;
+  border: none;
+  font-family: 'Impact', sans-serif;
+  font-size: 22px;
+  letter-spacing: 4px;
+  padding: 14px 48px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+button:hover {
+  background: #ffde00;
+  transform: scale(1.04);
+}

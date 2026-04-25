@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ROAR BALL</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="renderCanvas"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div id="hud-left">
+      <div class="hud-label">SCORE</div>
+      <div id="score">0</div>
+    </div>
+    <div id="hud-center">
+      <div id="game-title">ROAR BALL</div>
+      <div id="timer">2:00</div>
+    </div>
+    <div id="hud-right">
+      <div class="hud-label">STREAK</div>
+      <div id="streak">0</div>
+    </div>
+  </div>
+
+  <!-- Charge bar (shooting) -->
+  <div id="charge-container">
+    <div id="charge-bar"></div>
+  </div>
+
+  <!-- Controls hint -->
+  <div id="controls-hint">
+    WASD Move &nbsp;|&nbsp; SPACE Hold to charge shot &nbsp;|&nbsp; SHIFT Sprint &nbsp;|&nbsp; ROAR to survive the hazards
+  </div>
+
+  <!-- Overlay screens -->
+  <div id="overlay" class="overlay active">
+    <div class="overlay-box">
+      <h1>ROAR BALL</h1>
+      <p class="subtitle">Regionally Organized Animal Roarball</p>
+      <p class="movie-credit">As seen in <em>THE GOAT (2026)</em></p>
+      <p class="instructions">
+        Score as many baskets as you can before time runs out.<br/>
+        Survive the court hazards — lava, ice, and jungle vines await.
+      </p>
+      <button id="start-btn">PLAY</button>
+    </div>
+  </div>
+
+  <div id="gameover-overlay" class="overlay">
+    <div class="overlay-box">
+      <h1>FINAL SCORE</h1>
+      <div id="final-score">0</div>
+      <div id="final-grade"></div>
+      <button id="restart-btn">PLAY AGAIN</button>
+    </div>
+  </div>
+
+  <!-- Toast for events -->
+  <div id="toast"></div>
+
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <script src="https://cdn.babylonjs.com/cannon.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
